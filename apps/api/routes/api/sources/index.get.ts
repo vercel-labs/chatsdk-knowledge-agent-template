@@ -1,12 +1,12 @@
 import { defineHandler } from 'nitro/h3'
-import { SOURCES, getGitHubSources, getYouTubeSources } from '~/workflows/sync-docs'
+import { getSources, getGitHubSources, getYouTubeSources } from '~/workflows/sync-docs'
 
 /**
  * GET /api/sources
  * Returns the list of configured content sources
  */
-export default defineHandler(() => {
-  const github = getGitHubSources().map((s) => ({
+export default defineHandler(async () => {
+  const github = (await getGitHubSources()).map((s) => ({
     id: s.id,
     label: s.label,
     type: s.type,
@@ -16,7 +16,7 @@ export default defineHandler(() => {
     readmeOnly: s.readmeOnly || false,
   }))
 
-  const youtube = getYouTubeSources().map((s) => ({
+  const youtube = (await getYouTubeSources()).map((s) => ({
     id: s.id,
     label: s.label,
     type: s.type,
@@ -25,7 +25,7 @@ export default defineHandler(() => {
   }))
 
   return {
-    total: SOURCES.length,
+    total: (await getSources()).length,
     github: {
       count: github.length,
       sources: github,

@@ -1,4 +1,4 @@
-// Types
+// Types and sources from @savoir/config
 export type {
   Source,
   GitHubSource,
@@ -10,20 +10,17 @@ export type {
   SyncConfig,
   SyncOptions,
   PushResult,
-} from './types.js'
+} from '@savoir/config'
 
-// Sources
 export {
-  SOURCES,
-  GITHUB_SOURCES,
-  YOUTUBE_SOURCES,
-  getSourceById,
+  getSources,
   getGitHubSources,
   getYouTubeSources,
+  getSourceById,
   getSourcesByType,
-} from './sources.js'
+} from '@savoir/config'
 
-// GitHub
+// GitHub sync functions
 export {
   syncGitHubSource,
   resetSourceDir,

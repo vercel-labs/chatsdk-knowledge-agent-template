@@ -18,7 +18,7 @@ export async function syncSingleSource(
   const result = await syncGitHubSource(source, syncDir)
 
   if (result.success) {
-    logger.log('sync', `${source.id}: ${result.fileCount} files in ${formatDuration(result.duration)}`)
+    logger.log('sync', `${source.id}: ${result.fileCount} files in ${formatDuration(result.duration ?? 0)}`)
   } else {
     logger.error({ source: source.id, error: result.error, message: 'Sync failed' })
     throw new Error(`Failed to sync ${source.id}: ${result.error}`)

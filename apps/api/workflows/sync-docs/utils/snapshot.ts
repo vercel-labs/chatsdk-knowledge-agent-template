@@ -1,6 +1,6 @@
 import { readdir, stat, readFile } from 'node:fs/promises'
 import { join } from 'pathe'
-import type { PushResult } from './types.js'
+import type { PushResult } from '@savoir/config'
 
 interface GitHubTreeItem {
   path: string

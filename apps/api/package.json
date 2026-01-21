@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@savoir/config": "workspace:*",
     "@savoir/logger": "workspace:*",
     "@types/node": "^25.0.9",
     "giget": "^2.0.0",

@@ -7,10 +7,10 @@ export async function getSourcesToSync(sourceFilter?: string): Promise<GitHubSou
   'use step'
 
   const logger = getLogger()
-  let sources = getGitHubSources()
+  let sources = await getGitHubSources()
 
   if (sourceFilter) {
-    const source = getSourceById(sourceFilter)
+    const source = await getSourceById(sourceFilter)
     if (!source || source.type !== 'github') {
       throw new FatalError(`Source not found: ${sourceFilter}`)
     }

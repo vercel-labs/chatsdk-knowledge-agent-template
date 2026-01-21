@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile, readdir, stat, unlink, rmdir } from 'node:fs/promises'
 import { resolve, join, extname } from 'pathe'
 import { downloadTemplate } from 'giget'
-import type { GitHubSource, SyncResult, ContentFile } from './types.js'
+import type { GitHubSource, SyncResult, ContentFile } from '@savoir/config'
 
 const ALLOWED_EXTENSIONS = new Set(['.md', '.mdx', '.yml', '.yaml', '.json'])
 

@@ -9,9 +9,13 @@ export default defineHandler(() => {
     name: 'Savoir API',
     version: '0.1.0',
     endpoints: {
-      sources: 'GET /api/sources',
-      syncAll: 'POST /api/sync',
-      syncOne: 'POST /api/sync/:source',
+      sources: {
+        list: 'GET /api/sources',
+      },
+      sync: {
+        all: 'POST /api/sync',
+        one: 'POST /api/sync/:source',
+      },
     },
   }
 })
