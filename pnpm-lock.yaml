@@ -42,6 +42,9 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
+      eslint:
+        specifier: ^9.28.0
+        version: 9.39.2(jiti@2.6.1)
       nitro:
         specifier: latest
         version: 3.0.1-alpha.1(@vercel/functions@3.3.6(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.972.0)))(chokidar@5.0.0)(rolldown@1.0.0-beta.60)
@@ -64,6 +67,9 @@ importers:
       '@types/node':
         specifier: ^22.15.21
         version: 22.19.7
+      eslint:
+        specifier: ^9.28.0
+        version: 9.39.2(jiti@2.6.1)
       tsdown:
         specifier: ^0.12.4
         version: 0.12.9(typescript@5.9.3)
@@ -76,6 +82,9 @@ importers:
       '@types/node':
         specifier: ^22.15.21
         version: 22.19.7
+      eslint:
+        specifier: ^9.28.0
+        version: 9.39.2(jiti@2.6.1)
       tsdown:
         specifier: ^0.12.4
         version: 0.12.9(typescript@5.9.3)
