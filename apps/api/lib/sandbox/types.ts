@@ -1,0 +1,76 @@
+import type { Sandbox } from '@vercel/sandbox'
+
+/**
+ * Sandbox session stored in KV
+ */
+export interface SandboxSession {
+  sandboxId: string
+  snapshotId: string
+  createdAt: number
+  lastAccessedAt: number
+  expiresAt: number
+}
+
+/**
+ * Snapshot metadata stored in KV
+ */
+export interface SnapshotMetadata {
+  snapshotId: string
+  createdAt: number
+  sourceRepo: string
+  commitSha?: string
+}
+
+/**
+ * Search result from ripgrep
+ */
+export interface SearchResult {
+  path: string
+  lineNumber: number
+  content: string
+}
+
+/**
+ * File content with path
+ */
+export interface FileContent {
+  path: string
+  content: string
+}
+
+/**
+ * Search and read combined result
+ */
+export interface SearchAndReadResult {
+  matches: SearchResult[]
+  files: FileContent[]
+}
+
+/**
+ * Sandbox manager configuration
+ * Uses Vercel OIDC token automatically.
+ */
+export interface SandboxManagerConfig {
+  // GitHub authentication for private repos
+  githubToken?: string
+  // Snapshot repository configuration
+  snapshotRepo: string
+  snapshotBranch?: string
+  sessionTtlMs?: number
+}
+
+/**
+ * Active sandbox instance with metadata
+ */
+export interface ActiveSandbox {
+  sandbox: Sandbox
+  session: SandboxSession
+}
+
+/**
+ * KV storage keys
+ */
+export const KV_KEYS = {
+  CURRENT_SNAPSHOT: 'snapshot:current',
+  session: (sessionId: string) => `session:${sessionId}`,
+} as const

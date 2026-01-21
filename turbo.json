@@ -7,6 +7,9 @@
       "env": [
         "AI_GATEWAY_API_KEY",
         "GITHUB_TOKEN",
+        "GITHUB_SNAPSHOT_REPO",
+        "GITHUB_SNAPSHOT_BRANCH",
+        "SAVOIR_SECRET_KEY",
         "TURSO_DATABASE_URL",
         "TURSO_AUTH_TOKEN",
         "DATABASE_URL_UNPOOLED",

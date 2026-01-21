@@ -7,6 +7,7 @@ import {
   syncSingleSource,
   pushToSnapshotStep,
   cleanupWorkspace,
+  triggerSnapshotStep,
 } from './steps/index.js'
 
 interface SyncWorkflowResult {
@@ -60,6 +61,15 @@ export async function syncDocumentation(
   let pushResult = null
   if (push && successCount > 0) {
     pushResult = await pushToSnapshotStep(syncDir, config, successCount, totalFiles)
+
+    // Trigger sandbox snapshot creation after successful push
+    if (pushResult.success) {
+      await triggerSnapshotStep({
+        githubToken: config.githubToken, // For private repos
+        snapshotRepo: config.snapshotRepo,
+        snapshotBranch: config.snapshotBranch,
+      })
+    }
   }
 
   await cleanupWorkspace(syncDir)

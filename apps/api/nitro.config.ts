@@ -5,6 +5,12 @@ export default defineConfig({
 
   modules: ['workflow/nitro'],
 
+  storage: {
+    kv: {
+      driver: 'vercel-kv',
+    },
+  },
+
   runtimeConfig: {
     // GitHub token for API access
     githubToken: process.env.GITHUB_TOKEN || '',

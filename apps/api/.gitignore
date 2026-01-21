@@ -6,3 +6,5 @@ dist
 .output
 .env
 .env.local
+.vercel
+.env*.local
