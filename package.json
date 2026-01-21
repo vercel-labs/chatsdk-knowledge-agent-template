@@ -13,6 +13,7 @@
     "url": "https://github.com/HugoRCD/savoir/issues"
   },
   "scripts": {
+    "prepare": "turbo build --filter='./packages/*'",
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:api": "pnpm --filter @savoir/api dev",

@@ -1,12 +1,15 @@
 import { rm } from 'node:fs/promises'
+import { getLogger } from '@savoir/logger'
 
 export async function cleanupWorkspace(syncDir: string): Promise<void> {
   'use step'
 
+  const logger = getLogger()
+
   try {
     await rm(syncDir, { recursive: true, force: true })
-    console.log('[workflow] Workspace cleaned up')
+    logger.log('sync', 'Workspace cleaned up')
   } catch {
-    console.warn('[workflow] Failed to cleanup workspace')
+    logger.log('sync', 'Failed to cleanup workspace')
   }
 }

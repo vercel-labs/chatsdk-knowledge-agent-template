@@ -71,32 +71,39 @@ export default defineHandler(async (event) => {
       await rm(resolve(syncDir, 'docs', outputPath), { recursive: true, force: true })
     }
 
-    console.log(`[sync] Syncing ${source.id}...`)
+    const log = event.context.log
     const result = await syncGitHubSource(source as GitHubSource, syncDir)
-
-    if (result.success) {
-      console.log(`[sync] ${source.id}: ${result.fileCount} files in ${result.duration}ms`)
-    } else {
-      console.error(`[sync] ${source.id} failed: ${result.error}`)
-    }
 
     // Push to snapshot repository if enabled
     let pushResult = null
     if (shouldPush && result.success) {
-      console.log(`[sync] Pushing to ${config.snapshotRepo}...`)
       pushResult = await pushToSnapshot(syncDir, {
         repo: config.snapshotRepo,
         branch: config.snapshotBranch || 'main',
         token: config.githubToken,
         message: `chore: sync ${source.label} (${result.fileCount} files)`,
       })
-
-      if (pushResult.success) {
-        console.log(`[sync] Pushed ${pushResult.filesChanged} files, commit: ${pushResult.commitSha}`)
-      } else {
-        console.error(`[sync] Push failed: ${pushResult.error}`)
-      }
     }
+
+    log.set({
+      source: {
+        id: source.id,
+        label: source.label,
+        type: source.type,
+      },
+      sync: {
+        success: result.success,
+        fileCount: result.fileCount,
+        syncDurationMs: result.duration,
+        error: result.error,
+      },
+      push: pushResult ? {
+        success: pushResult.success,
+        filesChanged: pushResult.filesChanged,
+        commitSha: pushResult.commitSha,
+        error: pushResult.error,
+      } : null,
+    })
 
     // Cleanup temp directory
     await rm(syncDir, { recursive: true, force: true }).catch(() => {})

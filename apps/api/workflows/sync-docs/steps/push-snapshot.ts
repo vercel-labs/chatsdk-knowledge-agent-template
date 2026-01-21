@@ -1,3 +1,4 @@
+import { getLogger } from '@savoir/logger'
 import type { SyncConfig } from '../utils/index.js'
 import { pushToSnapshot } from '../utils/index.js'
 
@@ -9,7 +10,8 @@ export async function pushToSnapshotStep(
 ): Promise<{ success: boolean; commitSha?: string; error?: string }> {
   'use step'
 
-  console.log(`[workflow] Pushing to ${config.snapshotRepo}...`)
+  const logger = getLogger()
+  logger.log('sync', `Pushing to ${config.snapshotRepo}...`)
 
   const result = await pushToSnapshot(syncDir, {
     repo: config.snapshotRepo,
@@ -19,7 +21,7 @@ export async function pushToSnapshotStep(
   })
 
   if (result.success) {
-    console.log(`[workflow] Pushed ${result.filesChanged} files, commit: ${result.commitSha}`)
+    logger.log('sync', `Pushed ${result.filesChanged} files, commit: ${result.commitSha}`)
   } else {
     throw new Error(`Push failed: ${result.error}`)
   }

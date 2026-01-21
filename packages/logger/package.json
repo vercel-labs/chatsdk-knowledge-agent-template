@@ -1,0 +1,38 @@
+{
+  "name": "@savoir/logger",
+  "version": "0.0.1",
+  "description": "Logging utilities with context and timing support",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepublishOnly": "pnpm build"
+  },
+    "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsdown": "^0.12.4",
+    "typescript": "^5.8.3"
+  }
+}

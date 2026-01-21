@@ -1,3 +1,4 @@
+import { getLogger } from '@savoir/logger'
 import { FatalError } from 'workflow'
 import type { GitHubSource } from '../utils/index.js'
 import { getGitHubSources, getSourceById } from '../utils/index.js'
@@ -5,6 +6,7 @@ import { getGitHubSources, getSourceById } from '../utils/index.js'
 export async function getSourcesToSync(sourceFilter?: string): Promise<GitHubSource[]> {
   'use step'
 
+  const logger = getLogger()
   let sources = getGitHubSources()
 
   if (sourceFilter) {
@@ -15,6 +17,6 @@ export async function getSourcesToSync(sourceFilter?: string): Promise<GitHubSou
     sources = [source as GitHubSource]
   }
 
-  console.log(`[workflow] Found ${sources.length} source(s) to sync`)
+  logger.log('sync', `Found ${sources.length} source(s) to sync`)
   return sources
 }

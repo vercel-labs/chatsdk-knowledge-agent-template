@@ -1,10 +1,12 @@
 import { mkdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'pathe'
+import { getLogger } from '@savoir/logger'
 
 export async function prepareWorkspace(reset: boolean): Promise<string> {
   'use step'
 
+  const logger = getLogger()
   const syncDir = resolve(tmpdir(), 'savoir-sync', Date.now().toString())
   await mkdir(syncDir, { recursive: true })
 
@@ -13,7 +15,7 @@ export async function prepareWorkspace(reset: boolean): Promise<string> {
   }
 
   await mkdir(resolve(syncDir, 'docs'), { recursive: true })
-  console.log(`[workflow] Workspace ready: ${syncDir}`)
+  logger.log('sync', `Workspace ready: ${syncDir}`)
 
   return syncDir
 }

@@ -1,3 +1,4 @@
+import { getLogger } from '@savoir/logger'
 import { FatalError } from 'workflow'
 import type { SyncResult, SyncConfig, SyncOptions } from './utils/index.js'
 import {
@@ -62,6 +63,11 @@ export async function syncDocumentation(
   }
 
   await cleanupWorkspace(syncDir)
+
+  // Log summary
+  const logger = getLogger()
+  const status = failCount === 0 ? '✓' : '✗'
+  logger.log('sync', `${status} Done: ${successCount}/${sources.length} sources, ${totalFiles} files`)
 
   return {
     success: failCount === 0 && (!push || pushResult?.success !== false),

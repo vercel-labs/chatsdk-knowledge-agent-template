@@ -55,16 +55,11 @@ export default defineHandler(async (event) => {
     const sources = getGitHubSources()
     const results: SyncResult[] = []
 
+    const log = event.context.log
+
     for (const source of sources) {
-      console.log(`[sync] Syncing ${source.id}...`)
       const result = await syncGitHubSource(source, syncDir)
       results.push(result)
-
-      if (result.success) {
-        console.log(`[sync] ${source.id}: ${result.fileCount} files in ${result.duration}ms`)
-      } else {
-        console.error(`[sync] ${source.id} failed: ${result.error}`)
-      }
     }
 
     const successCount = results.filter((r) => r.success).length
@@ -74,20 +69,27 @@ export default defineHandler(async (event) => {
     // Push to snapshot repository if enabled
     let pushResult = null
     if (shouldPush && successCount > 0) {
-      console.log(`[sync] Pushing to ${config.snapshotRepo}...`)
       pushResult = await pushToSnapshot(syncDir, {
         repo: config.snapshotRepo,
         branch: config.snapshotBranch || 'main',
         token: config.githubToken,
         message: `chore: sync ${successCount} sources (${totalFiles} files)`,
       })
-
-      if (pushResult.success) {
-        console.log(`[sync] Pushed ${pushResult.filesChanged} files, commit: ${pushResult.commitSha}`)
-      } else {
-        console.error(`[sync] Push failed: ${pushResult.error}`)
-      }
     }
+
+    log.set({
+      sync: {
+        sourcesTotal: sources.length,
+        sourcesSuccess: successCount,
+        sourcesFailed: failCount,
+        filesTotal: totalFiles,
+      },
+      push: pushResult ? {
+        success: pushResult.success,
+        filesChanged: pushResult.filesChanged,
+        commitSha: pushResult.commitSha,
+      } : null,
+    })
 
     // Cleanup temp directory
     await rm(syncDir, { recursive: true, force: true }).catch(() => {})
