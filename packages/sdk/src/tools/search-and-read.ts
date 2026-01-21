@@ -10,7 +10,7 @@ export function createSearchAndReadTool(client: SavoirClient) {
     description: `Search the documentation for content matching a query and return the full file contents.
 Use this tool to find relevant documentation about a topic.
 Returns both the matching lines with context and the complete file contents for deeper understanding.`,
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe('The search query (supports regex patterns)'),
       limit: z.number().int().min(1).max(100).default(20).describe('Maximum number of results to return'),
     }),

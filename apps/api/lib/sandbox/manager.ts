@@ -1,8 +1,8 @@
 import { Sandbox } from '@vercel/sandbox'
 import { getLogger } from '@savoir/logger'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import type { ActiveSandbox, FileContent, SearchAndReadResult, SearchResult, SandboxManagerConfig } from './types'
-import { getSnapshotIdOrThrow } from './snapshot'
+import type { ActiveSandbox, FileContent, SearchAndReadResult, SearchResult, SandboxManagerConfig, SnapshotMetadata } from './types'
+import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { deleteSession, generateSessionId, getSession, setSession, touchSession } from './session'
 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000 // 30 minutes
@@ -85,8 +85,68 @@ async function getSandboxById(sandboxId: string): Promise<Sandbox | null> {
 }
 
 /**
+ * Create a new sandbox from a git repository and take a snapshot
+ */
+export async function createSnapshotFromRepo(repoUrl: string, branch: string = 'main'): Promise<string> {
+  const config = getConfig()
+  const logger = getLogger()
+
+  logger.log('sandbox', `Creating sandbox from repo: ${repoUrl}#${branch}`)
+
+  const sandbox = await Sandbox.create({
+    source: getGitSourceOptions(repoUrl, branch, config.githubToken),
+    timeout: SANDBOX_TIMEOUT_MS,
+    runtime: 'node24',
+  })
+
+  logger.log('sandbox', `Sandbox created: ${sandbox.sandboxId}, taking snapshot...`)
+
+  // Take snapshot (this also stops the sandbox)
+  const snapshot = await sandbox.snapshot()
+
+  logger.log('sandbox', `Snapshot created: ${snapshot.snapshotId}`)
+  return snapshot.snapshotId
+}
+
+/**
+ * Get or create a snapshot, auto-creating from repo if none exists
+ */
+async function getOrCreateSnapshot(): Promise<string> {
+  const logger = getLogger()
+  const config = getConfig()
+
+  // Check if snapshot exists
+  const snapshot = await getCurrentSnapshot()
+  if (snapshot) {
+    return snapshot.snapshotId
+  }
+
+  // No snapshot exists, create one from the repo
+  logger.log('sandbox', 'No snapshot found, creating one from repo...')
+
+  if (!config.snapshotRepo) {
+    throw new Error('No snapshot available and GITHUB_SNAPSHOT_REPO is not configured.')
+  }
+
+  const repoUrl = `https://github.com/${config.snapshotRepo}.git`
+  const snapshotId = await createSnapshotFromRepo(repoUrl, config.snapshotBranch)
+
+  // Save the snapshot metadata
+  const metadata: SnapshotMetadata = {
+    snapshotId,
+    createdAt: Date.now(),
+    sourceRepo: config.snapshotRepo,
+  }
+  await setCurrentSnapshot(metadata)
+
+  logger.log('sandbox', `Snapshot created and saved: ${snapshotId}`)
+  return snapshotId
+}
+
+/**
  * Get or create a sandbox for a session
  * If sessionId is provided, will try to reuse an existing sandbox
+ * Auto-creates a snapshot from repo if none exists
  */
 export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSandbox> {
   const logger = getLogger()
@@ -100,15 +160,15 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
       if (sandbox) {
         logger.log('sandbox', `Reusing sandbox ${sandbox.sandboxId} for session ${sessionId}`)
         await touchSession(sessionId, config.sessionTtlMs)
-        return { sandbox, session }
+        return { sandbox, session, sessionId }
       }
       // Sandbox no longer available, clean up session
       await deleteSession(sessionId)
     }
   }
 
-  // Create new sandbox
-  const snapshotId = await getSnapshotIdOrThrow()
+  // Get or create snapshot (auto-creates from repo if needed)
+  const snapshotId = await getOrCreateSnapshot()
   const sandbox = await createSandboxFromSnapshot(snapshotId)
 
   // Create session
@@ -123,11 +183,11 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     config.sessionTtlMs,
   )
 
-  return { sandbox, session }
+  return { sandbox, session, sessionId: newSessionId }
 }
 
 /**
- * Search files in sandbox using ripgrep
+ * Search files in sandbox using grep (more widely available than ripgrep)
  */
 export async function search(
   sandbox: Sandbox,
@@ -137,41 +197,45 @@ export async function search(
   const logger = getLogger()
   logger.log('sandbox', `Searching for: ${query}`)
 
-  // Use ripgrep for searching (installed by default in sandbox)
+  // Use grep for searching (-r recursive, -n line numbers, -i case insensitive, -l list files)
   const result = await sandbox.runCommand({
-    cmd: 'rg',
+    cmd: 'grep',
     args: [
-      '--json',
-      '--max-count',
-      String(limit),
-      '--type',
-      'md',
-      '--type',
-      'yaml',
-      '--type',
-      'json',
+      '-r', // Recursive
+      '-n', // Line numbers
+      '-i', // Case insensitive
+      '-H', // Print filename
+      '--include=*.md',
+      '--include=*.yaml',
+      '--include=*.yml',
+      '--include=*.json',
+      '--include=*.ts',
+      '--include=*.js',
       query,
-      '/vercel/sandbox',
+      '.',
     ],
     cwd: '/vercel/sandbox',
   })
 
   const stdout = await result.stdout()
-  const lines = stdout.split('\n').filter(Boolean)
+  const stderr = await result.stderr()
+
+  if (stderr) {
+    logger.log('sandbox', `grep stderr: ${stderr}`)
+  }
+
+  const lines = stdout.split('\n').filter(Boolean).slice(0, limit)
 
   const results: SearchResult[] = []
   for (const line of lines) {
-    try {
-      const json = JSON.parse(line)
-      if (json.type === 'match') {
-        results.push({
-          path: json.data.path.text.replace('/vercel/sandbox/', ''),
-          lineNumber: json.data.line_number,
-          content: json.data.lines.text.trim(),
-        })
-      }
-    } catch {
-      // Skip malformed lines
+    // grep output format: ./path/to/file:lineNumber:content
+    const match = line.match(/^\.\/(.+?):(\d+):(.*)$/)
+    if (match && match[1] && match[2] && match[3]) {
+      results.push({
+        path: match[1],
+        lineNumber: parseInt(match[2], 10),
+        content: match[3].trim(),
+      })
     }
   }
 
@@ -232,29 +296,4 @@ export async function searchAndRead(
   const files = await read(sandbox, uniquePaths)
 
   return { matches, files }
-}
-
-/**
- * Create a new sandbox from a git repository and take a snapshot
- * Supports private repos via GitHub token authentication
- */
-export async function createSnapshotFromRepo(repoUrl: string, branch: string = 'main'): Promise<string> {
-  const config = getConfig()
-  const logger = getLogger()
-
-  logger.log('sandbox', `Creating sandbox from repo: ${repoUrl}#${branch}`)
-
-  const sandbox = await Sandbox.create({
-    source: getGitSourceOptions(repoUrl, branch, config.githubToken),
-    timeout: SANDBOX_TIMEOUT_MS,
-    runtime: 'node24',
-  })
-
-  logger.log('sandbox', `Sandbox created: ${sandbox.sandboxId}, taking snapshot...`)
-
-  // Take snapshot (this also stops the sandbox)
-  const snapshot = await sandbox.snapshot()
-
-  logger.log('sandbox', `Snapshot created: ${snapshot.snapshotId}`)
-  return snapshot.snapshotId
 }

@@ -65,6 +65,7 @@ export interface SandboxManagerConfig {
 export interface ActiveSandbox {
   sandbox: Sandbox
   session: SandboxSession
+  sessionId: string
 }
 
 /**

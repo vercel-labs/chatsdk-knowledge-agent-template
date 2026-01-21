@@ -2,7 +2,6 @@ import type {
   ReadResponse,
   SavoirConfig,
   SearchAndReadResponse,
-  SearchResponse,
 } from './types'
 import { NetworkError, SavoirError } from './errors'
 
@@ -95,19 +94,6 @@ export class SavoirClient {
     limit: number = 20,
   ): Promise<SearchAndReadResponse> {
     return await this.request<SearchAndReadResponse>('/api/sandbox/search-and-read', {
-      query,
-      limit,
-    })
-  }
-
-  /**
-   * Search for content and return matching lines
-   */
-  async search(
-    query: string,
-    limit: number = 20,
-  ): Promise<SearchResponse> {
-    return await this.request<SearchResponse>('/api/sandbox/search', {
       query,
       limit,
     })

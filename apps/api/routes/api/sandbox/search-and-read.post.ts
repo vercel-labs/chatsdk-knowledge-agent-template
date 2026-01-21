@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getOrCreateSandbox, searchAndRead } from '~/lib/sandbox'
 
 const bodySchema = z.object({
-  query: z.string().min(1).max(500),
+  query: z.string({ error: 'query is required - provide a search term like "useAsyncData" or "middleware"' }).min(1, 'query cannot be empty').max(500),
   limit: z.number().int().min(1).max(100).default(20),
   sessionId: z.string().optional(),
 })
@@ -13,7 +13,7 @@ const bodySchema = z.object({
  * Search for content and return matching files.
  *
  * Body:
- * - query: string - Search query (ripgrep pattern)
+ * - query: string - Search query (grep pattern)
  * - limit: number - Maximum results (default: 20, max: 100)
  * - sessionId: string - Optional session ID for sandbox reuse
  */
@@ -24,7 +24,7 @@ export default defineHandler(async (event) => {
   log.set({ query: body.query, limit: body.limit, sessionId: body.sessionId })
 
   // Get or create sandbox
-  const { sandbox, session } = await getOrCreateSandbox(body.sessionId)
+  const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
 
   log.set({ sandboxId: sandbox.sandboxId })
 
@@ -37,9 +37,7 @@ export default defineHandler(async (event) => {
   })
 
   return {
-    sessionId: session.sandboxId.startsWith('sess_')
-      ? body.sessionId
-      : `sess_${session.sandboxId}`,
+    sessionId,
     matches: result.matches,
     files: result.files,
   }

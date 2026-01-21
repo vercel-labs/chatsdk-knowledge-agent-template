@@ -1,9 +1,49 @@
-import { createAgentUIStreamResponse, generateText, ToolLoopAgent, type UIMessage } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, ToolLoopAgent, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { getLogger } from '@savoir/logger'
+import { generateTitle } from '../../utils/generate-title'
+
+const SYSTEM_PROMPT = `You are an AI assistant specialized in the Nuxt/Nitro ecosystem.
+
+## CRITICAL: Documentation First
+
+Your knowledge may be outdated. ONLY answer based on what you find in the documentation.
+- If you can't find information in the docs, say "I couldn't find this in the documentation"
+- NEVER make up information or guess - only state what you found in docs
+- NEVER mention package versions unless you verified them in the docs
+
+## Tools
+
+You have access to documentation search tools:
+
+- **search_and_read**: Search AND read files in one step (PREFERRED - faster and more efficient)
+- **read**: Read specific files by path (use when you already know the exact file path)
+
+## How to Search Effectively
+
+1. **Use ONE simple keyword**: "composables" ✓, "vue composables usage" ✗
+2. **Always prefer search_and_read** - it's faster and returns content directly
+3. **Search by concept**: "middleware", "plugins", "routing", "state", "data-fetching"
+4. **Search by package/module name**: "unstorage", "ofetch", "nitro", "h3", "unhead"
+
+## Workflow
+
+1. User asks a question
+2. Call **search_and_read** with a relevant keyword
+3. Read the results and find the answer
+4. If not found, try different keywords or broader terms
+5. Answer based ONLY on what you found in the documentation
+
+## Response Style
+
+- Be concise and helpful
+- Include relevant code examples from the docs
+- Use markdown formatting
+- Cite the source file when quoting documentation
+`
 
 defineRouteMeta({
   openAPI: {
@@ -77,7 +117,7 @@ export default defineEventHandler(async (event) => {
 
     const agent = new ToolLoopAgent({
       model,
-      instructions: `You are a coding assistant specialized in the Nuxt/Nitro ecosystem and related tools. You have access to a filesystem containing the entire documentation of this ecosystem. Answer questions accurately, concisely, and rely on your deep knowledge of Nuxt, Nitro, and best practices.`,
+      instructions: SYSTEM_PROMPT,
       tools: savoir.tools,
       onStepFinish: (stepResult) => {
         stepCount++
@@ -107,14 +147,20 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    // Generate title in background if needed
-    if (!chat.title && messages[0]) {
-      generateTitleInBackground({ firstMessage: messages[0], chatId: id as string, requestId })
-    }
+    const stream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        if (!chat.title && messages[0]) {
+          generateTitle({
+            firstMessage: messages[0],
+            chatId: id as string,
+            requestId,
+            writer,
+          })
+        }
 
-    return createAgentUIStreamResponse({
-      agent,
-      uiMessages: messages,
+        const result = await agent.stream({ messages: await convertToModelMessages(messages) })
+        writer.merge(result.toUIMessageStream())
+      },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()
         await db.insert(schema.messages).values(responseMessages.map((message: UIMessage) => ({
@@ -133,41 +179,11 @@ export default defineEventHandler(async (event) => {
         log.emit()
       },
     })
+
+    return createUIMessageStreamResponse({ stream })
   } catch (error) {
     log.error(error instanceof Error ? error : new Error(String(error)))
     log.emit({ outcome: 'error' })
     throw error
   }
 })
-
-interface GenerateTitleOptions {
-  firstMessage: UIMessage
-  chatId: string
-  requestId: string
-}
-
-/**
- * Generate chat title in background (fire-and-forget)
- * Note: Title will be fetched by the client on next refresh
- */
-function generateTitleInBackground(options: GenerateTitleOptions) {
-  const { firstMessage, chatId, requestId } = options
-  const logger = getLogger()
-
-  // Fire-and-forget: don't await
-  generateText({
-    model: 'google/gemini-3-flash',
-    system: `You are a title generator for a chat:
-      - Generate a short title based on the first user's message
-      - The title should be less than 30 characters long
-      - The title should be a summary of the user's message
-      - Do not use quotes (' or ") or colons (:) or any other punctuation
-      - Do not use markdown, just plain text`,
-    prompt: JSON.stringify(firstMessage),
-  }).then(async ({ text: title }) => {
-    await db.update(schema.chats).set({ title }).where(eq(schema.chats.id, chatId))
-    logger.log('chat', `[${requestId}] Title: ${title}`)
-  }).catch(() => {
-    logger.log('chat', `[${requestId}] Title generation failed`)
-  })
-}

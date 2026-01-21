@@ -47,14 +47,6 @@ export interface SearchAndReadResponse {
 }
 
 /**
- * Response from the search endpoint
- */
-export interface SearchResponse {
-  sessionId: string
-  matches: SearchResult[]
-}
-
-/**
  * Response from the read endpoint
  */
 export interface ReadResponse {

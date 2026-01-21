@@ -22,7 +22,7 @@ export default defineHandler(async (event) => {
   log.set({ pathCount: body.paths.length, sessionId: body.sessionId })
 
   // Get or create sandbox
-  const { sandbox, session } = await getOrCreateSandbox(body.sessionId)
+  const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
 
   log.set({ sandboxId: sandbox.sandboxId })
 
@@ -32,9 +32,7 @@ export default defineHandler(async (event) => {
   log.set({ fileCount: files.length })
 
   return {
-    sessionId: session.sandboxId.startsWith('sess_')
-      ? body.sessionId
-      : `sess_${session.sandboxId}`,
+    sessionId,
     files,
   }
 })

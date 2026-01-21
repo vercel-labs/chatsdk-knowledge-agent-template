@@ -1,8 +1,8 @@
 import { SavoirClient } from './client'
-import { createReadTool, createSearchAndReadTool, createSearchTool } from './tools'
+import { createReadTool, createSearchAndReadTool } from './tools'
 import type { SavoirConfig } from './types'
 
-export type { SavoirConfig, SearchResult, FileContent, SearchAndReadResponse, SearchResponse, ReadResponse } from './types'
+export type { SavoirConfig, SearchResult, FileContent, SearchAndReadResponse, ReadResponse } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 
@@ -20,7 +20,6 @@ export interface Savoir {
    */
   tools: {
     search_and_read: ReturnType<typeof createSearchAndReadTool>
-    search: ReturnType<typeof createSearchTool>
     read: ReturnType<typeof createReadTool>
   }
 
@@ -62,7 +61,6 @@ export function createSavoir(config: SavoirConfig): Savoir {
     client,
     tools: {
       search_and_read: createSearchAndReadTool(client),
-      search: createSearchTool(client),
       read: createReadTool(client),
     },
     getSessionId: () => client.getSessionId(),
