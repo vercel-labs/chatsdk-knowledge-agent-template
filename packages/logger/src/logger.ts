@@ -69,8 +69,7 @@ export function createLogger(config: LoggerConfig): Logger {
         `${dim}${timestamp}${reset} ${color}[${service}]${reset}`,
         JSON.stringify(rest, null, 2),
       )
-    }
-    else {
+    } else {
       console[level === 'error' ? 'error' : 'log'](JSON.stringify(formatted))
     }
   }
@@ -85,8 +84,7 @@ export function createLogger(config: LoggerConfig): Logger {
 
     if (pretty) {
       console.log(`${cyan}[${tag}]${reset} ${message}`)
-    }
-    else {
+    } else {
       console.log(JSON.stringify({
         timestamp: new Date().toISOString(),
         level: 'info',
@@ -115,8 +113,7 @@ export function createLogger(config: LoggerConfig): Logger {
             ...(error.stack && { stack: error.stack }),
             ...extraContext,
           }
-        }
-        else {
+        } else {
           errorInfo = { message: error, ...extraContext }
         }
       },

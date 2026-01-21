@@ -19,6 +19,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
+    "eslint": "^9.28.0",
     "tsdown": "^0.12.4",
     "typescript": "^5.8.3"
   }

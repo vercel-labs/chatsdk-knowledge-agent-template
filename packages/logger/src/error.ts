@@ -26,6 +26,7 @@ export interface ErrorOptions {
  * ```
  */
 export class SavoirError extends Error {
+
   readonly why?: string
   readonly fix?: string
   readonly link?: string
@@ -96,6 +97,7 @@ export class SavoirError extends Error {
       stack: this.stack,
     }
   }
+
 }
 
 /**

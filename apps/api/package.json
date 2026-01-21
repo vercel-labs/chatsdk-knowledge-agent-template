@@ -22,6 +22,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "eslint": "^9.28.0",
     "nitro": "latest",
     "rolldown": "latest",
     "typescript": "^5.8.3"

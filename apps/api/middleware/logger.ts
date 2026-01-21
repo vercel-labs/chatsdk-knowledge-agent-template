@@ -51,8 +51,7 @@ export default defineMiddleware(async (event, next) => {
     })
 
     return response
-  }
-  catch (error) {
+  } catch (error) {
     const statusCode = (error as { statusCode?: number }).statusCode ?? 500
 
     log.error(error as Error)
@@ -62,8 +61,7 @@ export default defineMiddleware(async (event, next) => {
     })
 
     throw error
-  }
-  finally {
+  } finally {
     // Only emit logs for non-excluded paths, or always emit on errors
     if (shouldEmit || log.getContext().outcome === 'error') {
       log.emit()
