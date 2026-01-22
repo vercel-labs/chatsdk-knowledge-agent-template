@@ -153,6 +153,41 @@ const { text } = await generateText({
 
 ## Code Guidelines
 
+### Comments
+
+Only add comments when the code is truly complex or non-obvious. Avoid section divider comments in templates like `<!-- Header -->`, `<!-- Actions -->`, etc. Well-structured code with clear naming is self-documenting.
+
+**Exception:** Section dividers ARE useful in data structures (schemas, configs, type definitions) to group related fields.
+
+```typescript
+// ❌ Bad - obvious section dividers
+<!-- Header -->
+<div>...</div>
+<!-- Actions -->
+<div>...</div>
+
+// ✅ Good - no comments needed in templates
+<div>...</div>
+<div>...</div>
+
+// ✅ Good - section dividers in schemas help readability
+export const sources = sqliteTable('sources', {
+  // Common fields
+  label: text('label'),
+
+  // GitHub fields
+  repo: text('repo'),
+  branch: text('branch'),
+
+  // YouTube fields
+  channelId: text('channel_id'),
+})
+
+// ✅ Good - comment explains non-obvious logic
+// Debounce to avoid rate limiting on rapid keystrokes
+const debouncedSearch = useDebounceFn(search, 300)
+```
+
 ### File Naming
 
 - **Files**: kebab-case (`sandbox-manager.ts`, `sync-source.ts`)
