@@ -33,120 +33,114 @@ function handleSync() {
   }, 2000)
 }
 
-const hasBadges = computed(() => {
-  if (props.source.type === 'github') {
-    return props.source.branch || props.source.contentPath || props.source.outputPath || props.source.readmeOnly
+const sourceUrl = computed(() => {
+  if (props.source.type === 'github' && props.source.repo) {
+    return `https://github.com/${props.source.repo}`
   }
-  return props.source.maxVideos
+  if (props.source.type === 'youtube') {
+    if (props.source.handle) return `https://youtube.com/${props.source.handle}`
+    if (props.source.channelId) return `https://youtube.com/channel/${props.source.channelId}`
+  }
+  return null
+})
+
+const sourceIdentifier = computed(() => {
+  if (props.source.type === 'github') return props.source.repo
+  return props.source.handle || props.source.channelId
 })
 </script>
 
 <template>
-  <div class="group relative rounded-xl border border-default bg-default/50 hover:bg-elevated/50 transition-all duration-200 hover:shadow-sm">
-    <div class="p-4">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex items-start gap-3 min-w-0">
-          <div
-            class="flex items-center justify-center size-9 rounded-lg shrink-0 transition-colors"
-            :class="source.type === 'github'
-              ? 'bg-neutral-100 dark:bg-neutral-800/80'
-              : 'bg-red-50 dark:bg-red-950/50'"
+  <div class="py-3.5 first:pt-3 last:pb-3">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <div class="flex items-baseline gap-2">
+          <h3 class="font-medium text-[15px] text-highlighted leading-tight">{{ source.label }}</h3>
+          <span class="text-muted/50">·</span>
+          <a
+            v-if="sourceUrl"
+            :href="sourceUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-[13px] text-muted hover:text-highlighted transition-colors truncate"
           >
-            <UIcon
-              :name="source.type === 'github' ? 'i-simple-icons-github' : 'i-simple-icons-youtube'"
-              class="size-4"
-              :class="source.type === 'youtube' ? 'text-red-500' : 'text-neutral-700 dark:text-neutral-300'"
-            />
-          </div>
-
-          <div class="min-w-0 pt-0.5">
-            <h3 class="font-medium text-highlighted leading-tight">{{ source.label }}</h3>
-            <p class="text-sm text-muted mt-0.5 truncate">
-              <template v-if="source.type === 'github'">
-                {{ source.repo }}
-              </template>
-              <template v-else>
-                {{ source.handle || source.channelId }}
-              </template>
-            </p>
-          </div>
+            {{ sourceIdentifier }}
+          </a>
+          <span v-else class="text-[13px] text-muted truncate">
+            {{ sourceIdentifier }}
+          </span>
         </div>
 
-        <div class="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <UTooltip text="Sync now" :delay-open="300">
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              icon="i-lucide-refresh-cw"
-              :loading="isSyncing"
-              class="rounded-lg"
-              @click="handleSync"
-            />
-          </UTooltip>
-          <UTooltip text="Edit" :delay-open="300">
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              icon="i-lucide-pencil"
-              class="rounded-lg"
-              @click="emit('edit')"
-            />
-          </UTooltip>
-          <UTooltip text="Delete" :delay-open="300">
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="error"
-              icon="i-lucide-trash-2"
-              class="rounded-lg"
-              @click="emit('delete')"
-            />
-          </UTooltip>
+        <div class="flex flex-wrap items-center gap-1.5 mt-2">
+          <template v-if="source.type === 'github'">
+            <div
+              v-if="source.branch"
+              class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted"
+            >
+              <UIcon name="i-lucide-git-branch" class="size-3 opacity-60" />
+              {{ source.branch }}
+            </div>
+            <div
+              v-if="source.contentPath"
+              class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted"
+            >
+              <UIcon name="i-lucide-folder" class="size-3 opacity-60" />
+              {{ source.contentPath }}
+            </div>
+            <UTooltip v-if="source.outputPath" text="Output folder in snapshot" :delay-open="200">
+              <div class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted">
+                <UIcon name="i-lucide-folder-output" class="size-3 opacity-60" />
+                {{ source.outputPath }}
+              </div>
+            </UTooltip>
+            <div
+              v-if="source.readmeOnly"
+              class="inline-flex items-center h-[22px] px-2 rounded-md text-[11px] font-medium text-warning bg-warning/10"
+            >
+              README only
+            </div>
+          </template>
+          <template v-else>
+            <div
+              v-if="source.maxVideos"
+              class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted"
+            >
+              <UIcon name="i-lucide-video" class="size-3 opacity-60" />
+              {{ source.maxVideos }} videos max
+            </div>
+          </template>
         </div>
       </div>
 
-      <div v-if="hasBadges" class="flex flex-wrap items-center gap-1.5 mt-3 pl-12">
-        <template v-if="source.type === 'github'">
-          <span
-            v-if="source.branch"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-neutral-100 dark:bg-neutral-800/80 text-muted"
-          >
-            <UIcon name="i-lucide-git-branch" class="size-3" />
-            {{ source.branch }}
-          </span>
-          <span
-            v-if="source.contentPath"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-neutral-100 dark:bg-neutral-800/80 text-muted"
-          >
-            <UIcon name="i-lucide-folder" class="size-3" />
-            {{ source.contentPath }}
-          </span>
-          <span
-            v-if="source.outputPath"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300"
-          >
-            <UIcon name="i-lucide-arrow-right" class="size-3" />
-            {{ source.outputPath }}
-          </span>
-          <span
-            v-if="source.readmeOnly"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
-          >
-            <UIcon name="i-lucide-file-text" class="size-3" />
-            README only
-          </span>
-        </template>
-        <template v-else>
-          <span
-            v-if="source.maxVideos"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-neutral-100 dark:bg-neutral-800/80 text-muted"
-          >
-            <UIcon name="i-lucide-video" class="size-3" />
-            Max {{ source.maxVideos }} videos
-          </span>
-        </template>
+      <div class="flex items-center shrink-0 -mr-1">
+        <UTooltip text="Sync now" :delay-open="300" :ui="{ content: 'px-2 py-1 text-xs' }">
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :loading="isSyncing"
+            @click="handleSync"
+          />
+        </UTooltip>
+        <UTooltip text="Edit" :delay-open="300" :ui="{ content: 'px-2 py-1 text-xs' }">
+          <UButton
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="emit('edit')"
+          />
+        </UTooltip>
+        <UTooltip text="Delete" :delay-open="300" :ui="{ content: 'px-2 py-1 text-xs' }">
+          <UButton
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            size="xs"
+            @click="emit('delete')"
+          />
+        </UTooltip>
       </div>
     </div>
   </div>

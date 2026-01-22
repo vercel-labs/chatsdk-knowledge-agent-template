@@ -161,7 +161,7 @@ async function save() {
                 <p class="text-xs text-muted">Path to the documentation folder</p>
               </div>
 
-              <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/50">
+              <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-muted">
                 <div>
                   <p class="text-sm font-medium text-highlighted">README Only</p>
                   <p class="text-xs text-muted">Only sync the README.md file</p>
