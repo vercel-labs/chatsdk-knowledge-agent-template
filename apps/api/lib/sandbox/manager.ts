@@ -167,11 +167,9 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     }
   }
 
-  // Get or create snapshot (auto-creates from repo if needed)
   const snapshotId = await getOrCreateSnapshot()
   const sandbox = await createSandboxFromSnapshot(snapshotId)
 
-  // Create session
   const newSessionId = sessionId || generateSessionId()
   const session = await setSession(
     newSessionId,

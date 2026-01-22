@@ -1,4 +1,3 @@
-// Types
 export type {
   ActiveSandbox,
   FileContent,
@@ -9,7 +8,6 @@ export type {
   SnapshotMetadata,
 } from './types'
 
-// Session management
 export {
   deleteSession,
   generateSessionId,
@@ -18,7 +16,6 @@ export {
   touchSession,
 } from './session'
 
-// Snapshot management
 export {
   getCurrentSnapshot,
   getSnapshotIdOrThrow,
@@ -26,7 +23,6 @@ export {
   setCurrentSnapshot,
 } from './snapshot'
 
-// Sandbox operations
 export {
   createSnapshotFromRepo,
   getOrCreateSandbox,

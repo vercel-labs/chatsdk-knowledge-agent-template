@@ -64,6 +64,25 @@ export interface ApiErrorResponse {
 }
 
 /**
+ * Source passed for sync
+ */
+export interface SyncSource {
+  id: string
+  type: 'github' | 'youtube'
+  label: string
+  // GitHub fields
+  repo?: string | null
+  branch?: string | null
+  contentPath?: string | null
+  outputPath?: string | null
+  readmeOnly?: boolean | null
+  // YouTube fields
+  channelId?: string | null
+  handle?: string | null
+  maxVideos?: number | null
+}
+
+/**
  * Options for the sync operation
  */
 export interface SyncOptions {
@@ -71,6 +90,10 @@ export interface SyncOptions {
   reset?: boolean
   /** Push to snapshot repo after sync */
   push?: boolean
+  /** Sources to sync (passed from chat app DB) */
+  sources?: SyncSource[]
+  /** Filter to sync only specific source */
+  sourceFilter?: string
 }
 
 /**

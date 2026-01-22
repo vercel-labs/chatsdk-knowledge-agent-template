@@ -110,10 +110,31 @@ export interface SyncConfig {
   snapshotBranch: string
 }
 
+/**
+ * Source passed directly from the chat app DB
+ */
+export interface DBSource {
+  id: string
+  type: 'github' | 'youtube'
+  label: string
+  // GitHub fields
+  repo?: string | null
+  branch?: string | null
+  contentPath?: string | null
+  outputPath?: string | null
+  readmeOnly?: boolean | null
+  // YouTube fields
+  channelId?: string | null
+  handle?: string | null
+  maxVideos?: number | null
+}
+
 export interface SyncOptions {
   reset?: boolean
   push?: boolean
   sourceFilter?: string
+  /** Sources passed directly from DB (takes precedence over config file) */
+  sources?: DBSource[]
 }
 
 export interface PushResult {
