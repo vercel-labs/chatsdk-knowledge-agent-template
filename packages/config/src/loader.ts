@@ -12,15 +12,49 @@ import { validateConfig } from './validation'
 import { normalizeGitHubSource, normalizeYouTubeSource, normalizeCustomSource } from './normalize'
 
 let configCwd: string | undefined
+let staticConfig: LoadedConfig | undefined
 
 export interface LoadOptions {
   cwd?: string
 }
 
 /**
- * Load the Savoir configuration from savoir.config.{ts,js,json,yaml}
+ * Set static config directly (for serverless environments where filesystem isn't available).
+ * Call this at app startup with your imported config.
+ *
+ * @example
+ * ```ts
+ * import config from './savoir.config'
+ * setStaticConfig(config)
+ * ```
+ */
+export function setStaticConfig(config: SavoirConfigInput): void {
+  const validated = validateConfig(config)
+
+  const github = (validated.sources?.github ?? []).map(normalizeGitHubSource)
+  const youtube = (validated.sources?.youtube ?? []).map(normalizeYouTubeSource)
+  const custom = ((validated.sources?.custom ?? []) as CustomSourceInput[]).map(normalizeCustomSource)
+
+  staticConfig = {
+    config: validated as SavoirConfigInput,
+    sources: [...github, ...youtube, ...custom] as Source[],
+    github,
+    youtube,
+    custom,
+  }
+}
+
+/**
+ * Load the Savoir configuration.
+ * Uses static config if set, otherwise loads from savoir.config.{ts,js,json,yaml}
  */
 export async function loadSavoirConfig(options?: LoadOptions): Promise<LoadedConfig> {
+  // Use static config if available (serverless)
+  if (staticConfig) {
+    return staticConfig
+  }
+
+  // Otherwise load from filesystem (local dev)
   if (options?.cwd) {
     configCwd = options.cwd
   }

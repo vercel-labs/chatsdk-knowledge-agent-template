@@ -1,10 +1,13 @@
 import { definePlugin } from 'nitro'
-import { setConfigCwd } from '@savoir/config'
+import { setStaticConfig } from '@savoir/config'
+// @ts-expect-error - alias defined in nitro.config.ts
+import savoirConfig from '#savoir-config'
 
 /**
- * Set the config directory at startup.
+ * Initialize config at startup.
+ * Uses bundled config (works in serverless where filesystem isn't available).
  */
 export default definePlugin(() => {
-  // Config is at the project root (parent of apps/api)
-  setConfigCwd(process.cwd().replace(/\/apps\/api$/, ''))
+  const config = savoirConfig.default ?? savoirConfig
+  setStaticConfig(config)
 })
