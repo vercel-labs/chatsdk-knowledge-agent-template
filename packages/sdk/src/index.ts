@@ -43,8 +43,9 @@ export interface Savoir {
  * import { generateText } from 'ai'
  *
  * const savoir = createSavoir({
- *   apiKey: process.env.SAVOIR_API_KEY!,
- *   sessionId: 'optional-session-id', // For sandbox reuse
+ *   apiUrl: process.env.SAVOIR_API_URL!, // Required
+ *   apiKey: process.env.SAVOIR_API_KEY,  // Optional if API doesn't require auth
+ *   sessionId: 'optional-session-id',    // For sandbox reuse
  * })
  *
  * const { text } = await generateText({

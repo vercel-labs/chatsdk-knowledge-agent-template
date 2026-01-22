@@ -4,14 +4,14 @@
 export interface SavoirConfig {
   /**
    * Base URL for the Savoir API
-   * @default 'https://api.savoir.dev'
    */
-  apiUrl?: string
+  apiUrl: string
 
   /**
    * API key for authentication
+   * Optional if the API doesn't require authentication
    */
-  apiKey: string
+  apiKey?: string
 
   /**
    * Optional session ID for sandbox reuse

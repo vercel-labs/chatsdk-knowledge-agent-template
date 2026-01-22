@@ -102,9 +102,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const { savoir: savoirConfig } = useRuntimeConfig()
     const savoir = createSavoir({
-      apiKey: process.env.SAVOIR_API_KEY!,
-      apiUrl: import.meta.dev ? 'http://localhost:3001' : 'https://api.savoir.dev',
+      apiUrl: savoirConfig.apiUrl,
+      apiKey: savoirConfig.apiKey || undefined,
     })
 
     // Metrics tracking

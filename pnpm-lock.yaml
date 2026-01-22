@@ -191,6 +191,9 @@ importers:
 
   packages/sdk:
     dependencies:
+      '@savoir/logger':
+        specifier: workspace:*
+        version: link:../logger
       ai:
         specifier: ^6.0.31
         version: 6.0.43(zod@4.3.5)

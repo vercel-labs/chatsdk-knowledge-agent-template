@@ -47,12 +47,20 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    githubToken: process.env.GITHUB_TOKEN || '',
-    githubAppId: process.env.GITHUB_APP_ID || '',
-    githubAppPrivateKey: process.env.GITHUB_APP_PRIVATE_KEY || '',
-    githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET || '',
+    savoir: {
+      apiUrl: '',
+      apiKey: '',
+    },
+    github: {
+      token: '',
+      appId: '',
+      appPrivateKey: '',
+      webhookSecret: '',
+    },
     public: {
-      githubBotTrigger: process.env.GITHUB_BOT_TRIGGER || '@nuxt-agent'
-    }
+      github: {
+        botTrigger: '@nuxt-agent',
+      },
+    },
   }
 })

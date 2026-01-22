@@ -4,8 +4,7 @@ import type {
   SearchAndReadResponse,
 } from './types'
 import { NetworkError, SavoirError } from './errors'
-
-const DEFAULT_API_URL = 'https://api.savoir.dev'
+import { createError } from '@savoir/logger'
 
 /**
  * HTTP client for the Savoir API
@@ -13,11 +12,19 @@ const DEFAULT_API_URL = 'https://api.savoir.dev'
 export class SavoirClient {
 
   private readonly apiUrl: string
-  private readonly apiKey: string
+  private readonly apiKey?: string
   private sessionId?: string
 
   constructor(config: SavoirConfig) {
-    this.apiUrl = config.apiUrl?.replace(/\/$/, '') || DEFAULT_API_URL
+    if (!config.apiUrl) {
+      throw createError({
+        message: 'Missing apiUrl in Savoir configuration',
+        why: 'The Savoir SDK requires an API URL to connect to',
+        fix: 'Set SAVOIR_API_URL environment variable or pass apiUrl to createSavoir()',
+      })
+    }
+
+    this.apiUrl = config.apiUrl.replace(/\/$/, '')
     this.apiKey = config.apiKey
     this.sessionId = config.sessionId
   }
@@ -45,13 +52,18 @@ export class SavoirClient {
   ): Promise<T> {
     const url = `${this.apiUrl}${path}`
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
+        headers,
         body: JSON.stringify({
           ...body,
           sessionId: this.sessionId,

@@ -31,6 +31,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
+    "@savoir/logger": "workspace:*",
     "ai": "^6.0.31",
     "zod": "^4.3.5"
   },
