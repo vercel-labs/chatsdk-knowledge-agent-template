@@ -1,10 +1,10 @@
+import { createError } from '@savoir/logger'
 import type {
   ReadResponse,
   SavoirConfig,
   SearchAndReadResponse,
 } from './types'
 import { NetworkError, SavoirError } from './errors'
-import { createError } from '@savoir/logger'
 
 /**
  * HTTP client for the Savoir API
