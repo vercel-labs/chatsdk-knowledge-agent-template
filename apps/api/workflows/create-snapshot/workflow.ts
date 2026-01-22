@@ -83,15 +83,20 @@ async function storeSnapshotMetadataStep(
     sourceRepo,
   }
 
-  // Check if we're in production (Vercel KV env vars are set)
+  // Check if we're in production (Upstash env vars are set)
   const isProduction = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 
   if (isProduction) {
-    // Use Vercel KV in production
-    const { kv } = await import('@vercel/kv')
-    await kv.set('snapshot:current', metadata)
-    logger.log('snapshot', 'Snapshot metadata stored in Vercel KV')
-  } else {
+    // Use Upstash Redis in production
+    const { Redis } = await import('@upstash/redis')
+    const redis = new Redis({
+      url: process.env.KV_REST_API_URL!,
+      token: process.env.KV_REST_API_TOKEN!,
+    })
+    await redis.set('snapshot:current', metadata)
+    logger.log('snapshot', 'Snapshot metadata stored in Upstash Redis')
+  }
+  else {
     // Use filesystem in development
     const kvDir = join(process.cwd(), '.data', 'kv')
     const filePath = join(kvDir, 'snapshot:current.json')

@@ -17,7 +17,7 @@
     "@savoir/config": "workspace:*",
     "@savoir/logger": "workspace:*",
     "@types/node": "^25.0.9",
-    "@vercel/kv": "^3.0.0",
+    "@upstash/redis": "^1.36.1",
     "@vercel/sandbox": "^1.2.0",
     "giget": "^2.0.0",
     "pathe": "^2.0.3",
