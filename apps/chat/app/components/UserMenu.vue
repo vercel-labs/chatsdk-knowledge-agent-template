@@ -207,6 +207,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([
       icon: 'i-lucide-settings',
       children: [
         {
+          label: 'Sources',
+          icon: 'i-lucide-book-open',
+          to: '/admin/sources',
+        },
+        {
           label: 'Sync all',
           icon: 'i-lucide-refresh-cw',
           onSelect: triggerSync,

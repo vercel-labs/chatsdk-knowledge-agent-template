@@ -176,6 +176,8 @@ export class SavoirClient {
     return await this.post<SyncResponse>('/api/sync', {
       reset: options?.reset ?? false,
       push: options?.push ?? true,
+      sources: options?.sources,
+      sourceFilter: options?.sourceFilter,
     })
   }
 

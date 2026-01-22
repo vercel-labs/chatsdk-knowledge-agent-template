@@ -54,3 +54,27 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [chats.id]
   })
 }))
+
+export const sources = sqliteTable('sources', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  type: text('type', { enum: ['github', 'youtube'] }).notNull(),
+
+  // Common fields
+  label: text('label').notNull(),
+
+  // GitHub fields
+  repo: text('repo'),
+  branch: text('branch'),
+  contentPath: text('content_path'),
+  outputPath: text('output_path'),
+  readmeOnly: integer('readme_only', { mode: 'boolean' }).default(false),
+
+  // YouTube fields
+  channelId: text('channel_id'),
+  handle: text('handle'),
+  maxVideos: integer('max_videos').default(50),
+
+  // Metadata
+  ...timestamps,
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, table => [index('sources_type_idx').on(table.type)])

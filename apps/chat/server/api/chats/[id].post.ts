@@ -108,7 +108,6 @@ export default defineEventHandler(async (event) => {
       apiKey: savoirConfig.apiKey || undefined,
     })
 
-    // Metrics tracking
     let stepCount = 0
     let toolCallCount = 0
     let totalInputTokens = 0

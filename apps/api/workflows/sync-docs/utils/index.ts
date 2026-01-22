@@ -10,6 +10,7 @@ export type {
   SyncConfig,
   SyncOptions,
   PushResult,
+  DBSource,
 } from '@savoir/config'
 
 export {

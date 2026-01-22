@@ -60,7 +60,6 @@ export async function syncAllSourcesInSandbox(
     results.push(result)
   }
 
-  // Take snapshot
   logger.log('sync', 'Taking snapshot...')
   const snapshot = await sandbox.snapshot()
   logger.log('sync', `Snapshot created: ${snapshot.snapshotId}`)
@@ -165,7 +164,6 @@ async function syncSource(
       cwd: '/vercel/sandbox',
     })
 
-    // Count files
     const countResult = await sandbox.runCommand({
       cmd: 'sh',
       args: ['-c', `find ${targetDir} -type f -name "*.md" -o -name "*.mdx" | wc -l`],

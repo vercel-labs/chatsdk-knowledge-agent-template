@@ -33,7 +33,7 @@ export async function syncDocumentation(
 ): Promise<SyncWorkflowResult> {
   'use workflow'
 
-  const { sourceFilter } = options
+  const { sourceFilter, sources: dbSources } = options
   const logger = getLogger()
 
   if (!config.snapshotRepo) {
@@ -41,7 +41,7 @@ export async function syncDocumentation(
   }
 
   // Step 1: Get sources to sync
-  const sources = await getSourcesToSync(sourceFilter)
+  const sources = await getSourcesToSync({ sourceFilter, sources: dbSources })
 
   if (sources.length === 0) {
     throw new FatalError('No sources to sync')
@@ -73,7 +73,6 @@ export async function syncDocumentation(
   await kv.setItem(KV_KEYS.CURRENT_SNAPSHOT, metadata)
   logger.log('sync', 'Snapshot metadata stored in KV')
 
-  // Log summary
   const status = failCount === 0 ? '✓' : '✗'
   logger.log('sync', `${status} Done: ${successCount}/${sources.length} sources, ${totalFiles} files`)
 

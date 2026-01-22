@@ -21,12 +21,10 @@ export default defineHandler(async (event) => {
 
   log.set({ pathCount: body.paths.length, sessionId: body.sessionId })
 
-  // Get or create sandbox
   const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
 
   log.set({ sandboxId: sandbox.sandboxId })
 
-  // Read files
   const files = await read(sandbox, body.paths)
 
   log.set({ fileCount: files.length })
