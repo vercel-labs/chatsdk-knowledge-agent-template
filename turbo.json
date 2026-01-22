@@ -9,6 +9,7 @@
         "GITHUB_TOKEN",
         "GITHUB_SNAPSHOT_REPO",
         "GITHUB_SNAPSHOT_BRANCH",
+        "SAVOIR_API_URL",
         "SAVOIR_SECRET_KEY",
         "TURSO_DATABASE_URL",
         "TURSO_AUTH_TOKEN",
