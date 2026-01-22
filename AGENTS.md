@@ -153,6 +153,103 @@ const { text } = await generateText({
 
 ## Code Guidelines
 
+### Comments
+
+Only add comments when the code is truly complex or non-obvious. Avoid section divider comments in templates like `<!-- Header -->`, `<!-- Actions -->`, etc. Well-structured code with clear naming is self-documenting.
+
+**Exception:** Section dividers ARE useful in data structures (schemas, configs, type definitions) to group related fields.
+
+```typescript
+// ❌ Bad - obvious section dividers
+<!-- Header -->
+<div>...</div>
+<!-- Actions -->
+<div>...</div>
+
+// ✅ Good - no comments needed in templates
+<div>...</div>
+<div>...</div>
+
+// ✅ Good - section dividers in schemas help readability
+export const sources = sqliteTable('sources', {
+  // Common fields
+  label: text('label'),
+
+  // GitHub fields
+  repo: text('repo'),
+  branch: text('branch'),
+
+  // YouTube fields
+  channelId: text('channel_id'),
+})
+
+// ✅ Good - comment explains non-obvious logic
+// Debounce to avoid rate limiting on rapid keystrokes
+const debouncedSearch = useDebounceFn(search, 300)
+```
+
+### Nuxt UI
+
+Always use Nuxt UI components and semantic color classes:
+
+```html
+<!-- ❌ Bad - native elements -->
+<button class="...">Click</button>
+<input class="..." />
+
+<!-- ✅ Good - Nuxt UI components -->
+<UButton>Click</UButton>
+<UInput />
+
+<!-- ❌ Bad - manual light/dark -->
+<div class="bg-neutral-100 dark:bg-neutral-800">
+
+<!-- ✅ Good - semantic classes (with optional opacity) -->
+<div class="bg-muted">
+<div class="bg-muted/50">
+<div class="bg-elevated">
+<div class="bg-default">
+<div class="text-muted">
+<div class="text-muted/60">
+<div class="text-highlighted">
+<div class="border-default">
+```
+
+### Nuxt Auto-imports
+
+Nuxt auto-imports from these directories - no `import` statements needed:
+
+| Directory | Available in | Example |
+|-----------|--------------|---------|
+| `app/composables/` | Client | `useChat()`, `useMarkdown()` |
+| `app/components/` | Client | `<SourceCard />`, `<ChatMessage />` |
+| `server/utils/` | Server | `requireAuth()`, `generateTitle()` |
+| `shared/utils/` | Both | Shared utilities |
+| `shared/types/` | Both | Via `#shared/types` |
+
+```typescript
+// ❌ Bad - unnecessary import
+import { useChat } from '~/composables/useChat'
+import type { ChatMessage } from '~~/shared/types/Chat'
+
+const chat = useChat()
+const message: ChatMessage = {
+  id: '1',
+  content: 'Hello, world!',
+  role: 'user',
+  createdAt: new Date(),
+}
+
+// ✅ Good - auto-imported
+const chat = useChat()
+const message: ChatMessage = {
+  id: '1',
+  content: 'Hello, world!',
+  role: 'user',
+  createdAt: new Date(),
+}
+```
+
 ### File Naming
 
 - **Files**: kebab-case (`sandbox-manager.ts`, `sync-source.ts`)
@@ -189,12 +286,56 @@ execute: async ({ query }) => {
 
 ### Logging
 
-Use structured logging with context:
+Use `@savoir/logger` for all logging. Two patterns:
+
+**1. Simple logs** - general purpose logging everywhere:
 
 ```typescript
-log('info', 'sandbox', `Created: ${sandboxId}`)
-log('warn', 'sync', `Source ${sourceId} failed: ${error.message}`)
+import { getLogger } from '@savoir/logger'
+
+const logger = getLogger()
+
+logger.log('sync', 'Syncing 3 sources...')
+logger.log('sync', 'nuxt-icon: 12 files in 31ms')
+logger.log('sandbox', `Created: ${sandboxId}`)
+logger.log('chat', `[${requestId}] Starting agent with ${model}`)
 ```
+
+**2. Wide events** - for request logging (one event per request):
+
+```typescript
+import { getLogger } from '@savoir/logger'
+
+const logger = getLogger()
+
+export default defineEventHandler(async (event) => {
+  const log = logger.request({
+    method: event.method,
+    path: event.path,
+  })
+
+  try {
+    const user = await getUser(event)
+    log.set({ userId: user.id, plan: user.plan })
+
+    const result = await doWork()
+    log.set({ itemCount: result.items.length })
+
+    return result
+  } catch (error) {
+    log.error(error)
+    throw error
+  } finally {
+    log.emit()
+  }
+})
+```
+
+**Key principles:**
+- One wide event per request (emitted in `finally`)
+- Add context progressively with `log.set()`
+- Record errors with `log.error()` before emit
+- Include business context (user plan, item count, etc.)
 
 ## Environment Variables
 
