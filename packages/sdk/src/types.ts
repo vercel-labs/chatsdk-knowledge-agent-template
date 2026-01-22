@@ -62,3 +62,86 @@ export interface ApiErrorResponse {
   message: string
   error?: string
 }
+
+/**
+ * Options for the sync operation
+ */
+export interface SyncOptions {
+  /** Clear all content before sync */
+  reset?: boolean
+  /** Push to snapshot repo after sync */
+  push?: boolean
+}
+
+/**
+ * Response from the sync endpoint
+ */
+export interface SyncResponse {
+  status: 'started'
+  message: string
+  options: {
+    reset: boolean
+    push: boolean
+  }
+}
+
+/**
+ * Response from the snapshot endpoint
+ */
+export interface SnapshotResponse {
+  status: 'started'
+  message: string
+}
+
+/**
+ * GitHub source configuration
+ */
+export interface GitHubSource {
+  id: string
+  label: string
+  type: 'github'
+  repo: string
+  branch: string
+  outputPath: string
+  readmeOnly: boolean
+}
+
+/**
+ * YouTube source configuration
+ */
+export interface YouTubeSource {
+  id: string
+  label: string
+  type: 'youtube'
+  channelId: string
+  handle: string
+}
+
+/**
+ * Response from the sources endpoint
+ */
+export interface SourcesResponse {
+  total: number
+  github: {
+    count: number
+    sources: GitHubSource[]
+  }
+  youtube: {
+    count: number
+    sources: YouTubeSource[]
+  }
+}
+
+/**
+ * Response from the sync source endpoint
+ */
+export interface SyncSourceResponse {
+  status: 'started'
+  message: string
+  source: string
+  options: {
+    reset: boolean
+    push: boolean
+    sourceFilter: string
+  }
+}

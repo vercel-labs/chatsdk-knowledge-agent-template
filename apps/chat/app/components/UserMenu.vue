@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { SourcesResponse } from '@savoir/sdk'
 
 defineProps<{
   collapsed?: boolean
@@ -8,9 +9,63 @@ defineProps<{
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const { user, clear } = useUserSession()
+const toast = useToast()
 
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
+
+const { data: sources } = useLazyFetch<SourcesResponse>('/api/admin/sources')
+
+async function triggerSync() {
+  try {
+    await $fetch('/api/admin/sync', { method: 'POST' })
+    toast.add({
+      title: 'Sync started',
+      description: 'Documentation sync workflow has been triggered.',
+      color: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: 'Sync failed',
+      description: error instanceof Error ? error.message : 'Unknown error',
+      color: 'error',
+    })
+  }
+}
+
+async function triggerSyncSource(sourceId: string, label: string) {
+  try {
+    await $fetch(`/api/admin/sync/${sourceId}`, { method: 'POST' })
+    toast.add({
+      title: 'Sync started',
+      description: `Sync workflow for "${label}" has been triggered.`,
+      color: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: 'Sync failed',
+      description: error instanceof Error ? error.message : 'Unknown error',
+      color: 'error',
+    })
+  }
+}
+
+async function triggerSnapshot() {
+  try {
+    await $fetch('/api/admin/snapshot', { method: 'POST' })
+    toast.add({
+      title: 'Snapshot started',
+      description: 'Snapshot creation workflow has been triggered.',
+      color: 'success',
+    })
+  } catch (error) {
+    toast.add({
+      title: 'Snapshot failed',
+      description: error instanceof Error ? error.message : 'Unknown error',
+      color: 'error',
+    })
+  }
+}
 
 const items = computed<DropdownMenuItem[][]>(() => ([
   [
@@ -41,7 +96,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([
             slot: 'chip',
             checked: appConfig.ui.colors.primary === color,
             type: 'checkbox',
-            onSelect: (e) => {
+            onSelect: (e: Event) => {
               e.preventDefault()
 
               appConfig.ui.colors.primary = color
@@ -61,7 +116,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([
             slot: 'chip',
             type: 'checkbox',
             checked: appConfig.ui.colors.neutral === color,
-            onSelect: (e) => {
+            onSelect: (e: Event) => {
               e.preventDefault()
 
               appConfig.ui.colors.neutral = color
@@ -78,7 +133,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([
           icon: 'i-lucide-sun',
           type: 'checkbox',
           checked: colorMode.value === 'light',
-          onSelect(e: Event) {
+          onSelect: (e: Event) => {
             e.preventDefault()
 
             colorMode.preference = 'light'
@@ -146,6 +201,39 @@ const items = computed<DropdownMenuItem[][]>(() => ([
       to: 'https://github.com/nuxt-ui-templates/chat',
       target: '_blank'
     }
+  ], [
+    {
+      label: 'Admin',
+      icon: 'i-lucide-settings',
+      children: [
+        {
+          label: 'Sync all',
+          icon: 'i-lucide-refresh-cw',
+          onSelect: triggerSync,
+        },
+        {
+          label: 'Sync source',
+          icon: 'i-lucide-git-branch',
+          children: sources.value ? [
+            ...sources.value.github.sources.map(source => ({
+              label: source.label,
+              icon: 'i-simple-icons-github',
+              onSelect: () => triggerSyncSource(source.id, source.label),
+            })),
+            ...sources.value.youtube.sources.map(source => ({
+              label: source.label,
+              icon: 'i-simple-icons-youtube',
+              onSelect: () => triggerSyncSource(source.id, source.label),
+            })),
+          ] : [{ label: 'Loading...', disabled: true }],
+        },
+        {
+          label: 'Create snapshot',
+          icon: 'i-lucide-camera',
+          onSelect: triggerSnapshot,
+        },
+      ],
+    },
   ], [
     {
       label: 'Log out',

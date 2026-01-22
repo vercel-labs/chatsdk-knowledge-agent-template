@@ -2,7 +2,7 @@ import { SavoirClient } from './client'
 import { createReadTool, createSearchAndReadTool } from './tools'
 import type { SavoirConfig } from './types'
 
-export type { SavoirConfig, SearchResult, FileContent, SearchAndReadResponse, ReadResponse } from './types'
+export type { SavoirConfig, SearchResult, FileContent, SearchAndReadResponse, ReadResponse, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 

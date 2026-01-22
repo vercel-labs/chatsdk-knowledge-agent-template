@@ -3,6 +3,11 @@ import type {
   ReadResponse,
   SavoirConfig,
   SearchAndReadResponse,
+  SnapshotResponse,
+  SourcesResponse,
+  SyncOptions,
+  SyncResponse,
+  SyncSourceResponse,
 } from './types'
 import { NetworkError, SavoirError } from './errors'
 
@@ -44,11 +49,48 @@ export class SavoirClient {
   }
 
   /**
-   * Make a request to the API
+   * Make a GET request to the API
    */
-  private async request<T>(
+  private async get<T>(path: string): Promise<T> {
+    const url = `${this.apiUrl}${path}`
+
+    const headers: Record<string, string> = {}
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`
+    }
+
+    try {
+      const response = await fetch(url, { method: 'GET', headers })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new SavoirError({
+          statusCode: response.status,
+          message: data.message || 'Unknown error',
+          error: data.error,
+        })
+      }
+
+      return data as T
+    } catch (error) {
+      if (error instanceof SavoirError) {
+        throw error
+      }
+
+      throw new NetworkError(
+        `Failed to connect to Savoir API: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error : undefined,
+      )
+    }
+  }
+
+  /**
+   * Make a POST request to the API
+   */
+  private async post<T>(
     path: string,
-    body: Record<string, unknown>,
+    body: Record<string, unknown> = {},
   ): Promise<T> {
     const url = `${this.apiUrl}${path}`
 
@@ -105,7 +147,7 @@ export class SavoirClient {
     query: string,
     limit: number = 20,
   ): Promise<SearchAndReadResponse> {
-    return await this.request<SearchAndReadResponse>('/api/sandbox/search-and-read', {
+    return await this.post<SearchAndReadResponse>('/api/sandbox/search-and-read', {
       query,
       limit,
     })
@@ -115,9 +157,43 @@ export class SavoirClient {
    * Read specific files by path
    */
   async read(paths: string[]): Promise<ReadResponse> {
-    return await this.request<ReadResponse>('/api/sandbox/read', {
+    return await this.post<ReadResponse>('/api/sandbox/read', {
       paths,
     })
+  }
+
+  /**
+   * Get list of configured sources
+   */
+  async getSources(): Promise<SourcesResponse> {
+    return await this.get<SourcesResponse>('/api/sources')
+  }
+
+  /**
+   * Trigger documentation sync workflow for all sources
+   */
+  async sync(options?: SyncOptions): Promise<SyncResponse> {
+    return await this.post<SyncResponse>('/api/sync', {
+      reset: options?.reset ?? false,
+      push: options?.push ?? true,
+    })
+  }
+
+  /**
+   * Trigger documentation sync workflow for a specific source
+   */
+  async syncSource(sourceId: string, options?: SyncOptions): Promise<SyncSourceResponse> {
+    return await this.post<SyncSourceResponse>(`/api/sync/${sourceId}`, {
+      reset: options?.reset ?? false,
+      push: options?.push ?? true,
+    })
+  }
+
+  /**
+   * Trigger snapshot creation workflow
+   */
+  async createSnapshot(): Promise<SnapshotResponse> {
+    return await this.post<SnapshotResponse>('/api/sandbox/snapshot', {})
   }
 
 }
