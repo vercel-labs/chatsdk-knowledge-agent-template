@@ -78,20 +78,17 @@ git clone https://github.com/HugoRCD/savoir.git
 cd savoir
 
 # Install dependencies
-pnpm install
+bun install
 
 # Configure environment variables
 cp apps/chat/.env.example apps/chat/.env
 # Edit .env with your configuration
 
 # Run database migrations
-pnpm --filter @savoir/chat db:migrate
-
-# Seed sources from savoir.config.ts
-pnpm --filter @savoir/chat db:seed
+turbo run db:migrate --filter=@savoir/chat
 
 # Start the app
-pnpm dev
+bun run dev
 ```
 
 **Required environment variables:**
@@ -109,11 +106,7 @@ NUXT_SAVOIR_SECRET_KEY=your-secret-key
 
 ## Configuration
 
-Sources are stored in the database. To seed the initial sources, edit `savoir.config.ts` at the project root and run:
-
-```bash
-pnpm --filter @savoir/chat db:seed
-```
+Sources are stored in the database and can be managed via the API (`/api/sources`). See `savoir.config.ts` at the project root for example source definitions:
 
 The config file format:
 
@@ -146,19 +139,19 @@ See [SOURCES.md](./docs/SOURCES.md) for detailed source configuration options.
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start the app in dev mode
-pnpm dev
+bun run dev
 
 # Build all packages
-pnpm build
+bun run build
 
 # Run tests
-pnpm test
+bun run test
 
 # Lint and fix
-pnpm lint:fix
+bun run lint:fix
 ```
 
 ## Related Projects

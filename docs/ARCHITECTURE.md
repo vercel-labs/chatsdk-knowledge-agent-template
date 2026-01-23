@@ -79,6 +79,14 @@ savoir/
 │       │   │   └── sources/  # Sources CRUD
 │       │   ├── lib/
 │       │   │   └── sandbox/  # Sandbox manager library
+│       │   │       ├── types.ts          # Type definitions
+│       │   │       ├── context.ts        # Sandbox creation
+│       │   │       ├── session.ts        # Session management (KV)
+│       │   │       ├── snapshot.ts       # Snapshot operations (KV)
+│       │   │       ├── manager.ts        # High-level sandbox API
+│       │   │       ├── git.ts            # Git operations in sandbox
+│       │   │       ├── source-sync.ts    # Content sync helpers
+│       │   │       └── index.ts          # Public exports
 │       │   ├── workflows/    # Vercel Workflows
 │       │   │   ├── sync-docs/
 │       │   │   └── create-snapshot/
@@ -132,13 +140,6 @@ export const sources = sqliteTable('sources', {
 })
 ```
 
-#### Seeding
-
-```bash
-# Seed from savoir.config.ts
-pnpm --filter @savoir/chat db:seed
-```
-
 ### 2. SDK (`@savoir/sdk`)
 
 The SDK provides AI SDK-compatible tools that communicate with the Savoir API.
@@ -174,8 +175,12 @@ The sandbox system uses [Vercel Sandbox Snapshots](https://vercel.com/docs/verce
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         Sync Workflow                                    │
 │                                                                          │
-│  1. Read sources ──▶ 2. Clone in sandbox ──▶ 3. Take snapshot           │
-│     from DB              and sync content                                │
+│  1. Read     ──▶  2. Clone    ──▶  3. Sync     ──▶  4. Git     ──▶     │
+│     sources       in sandbox       content          push                │
+│     from DB                                                              │
+│                                                          │               │
+│                                                          ▼               │
+│                                                   5. Take snapshot       │
 │                                                          │               │
 │                                                          ▼               │
 │                                                   ┌─────────────┐        │
@@ -206,16 +211,20 @@ POST /api/sync
 │                         Vercel Workflow                                  │
 │                     (Durable execution engine)                           │
 │                                                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
-│  │   Step 1    │  │   Step 2    │  │   Step N    │  │  Final Step │     │
-│  │ Sync source │─▶│ Sync source │─▶│    ...      │─▶│   Create    │     │
-│  │   "nuxt"    │  │   "nitro"   │  │             │  │  Snapshot   │     │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘     │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │                       stepSyncAll                                 │  │
+│  │                                                                   │  │
+│  │  1. Create sandbox from snapshot                                 │  │
+│  │  2. Sync all sources (GitHub repos, etc.)                        │  │
+│  │  3. Git commit and push changes                                  │  │
+│  │  4. Take new snapshot                                            │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
 │                                                                          │
 │  Features:                                                               │
 │  - Automatic retries on failure                                          │
-│  - Progress tracking via `pnpm workflow:web`                             │
+│  - Progress tracking via `bun run workflow:web`                          │
 │  - Durable state (survives server restarts)                              │
+│  - All operations in single step (avoids serialization issues)           │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 

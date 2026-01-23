@@ -1,12 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "AI_GATEWAY_API_KEY",
+    "NUXT_GITHUB_TOKEN"
+  ],
   "tasks": {
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env", ".env.*"],
       "outputs": [".vercel/output/**", ".nuxt/**", ".output/**", "dist/**"],
       "env": [
-        "AI_GATEWAY_API_KEY",
-        "NUXT_GITHUB_TOKEN",
         "NUXT_GITHUB_SNAPSHOT_REPO",
         "NUXT_GITHUB_SNAPSHOT_BRANCH",
         "NUXT_SAVOIR_API_URL",
@@ -23,24 +29,31 @@
       ]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true,
-      "env": [
-        "AI_GATEWAY_API_KEY",
-        "NUXT_GITHUB_TOKEN"
-      ]
+      "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["transit"]
     },
     "lint:fix": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["transit"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["transit"]
     },
     "test": {
       "dependsOn": ["^build"]
+    },
+    "sync:docs": {
+      "cache": false
+    },
+    "snapshot:create": {
+      "cache": false
+    },
+    "workflow:web": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

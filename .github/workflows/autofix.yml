@@ -13,23 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: latest
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: 📦 Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: 💅 Lint code
-        run: pnpm run lint:fix
+        run: bun run lint:fix
 
       - uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
         with:

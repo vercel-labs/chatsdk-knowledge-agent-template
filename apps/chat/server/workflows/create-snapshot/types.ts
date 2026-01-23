@@ -1,6 +1,5 @@
 /**
  * Types for create-snapshot workflow
- * Self-contained - no external imports from app code
  */
 
 export interface SnapshotConfig {

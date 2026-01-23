@@ -8,7 +8,7 @@
 import { getLogger } from '@savoir/logger'
 import { FatalError } from 'workflow'
 import type { SnapshotConfig, SnapshotResult } from './types'
-import { stepCreateSandboxAndSnapshot } from './steps'
+import { stepCreateAndSnapshot } from './steps'
 
 export async function createSnapshot(config: SnapshotConfig): Promise<SnapshotResult> {
   'use workflow'
@@ -20,7 +20,7 @@ export async function createSnapshot(config: SnapshotConfig): Promise<SnapshotRe
   }
 
   try {
-    const snapshotId = await stepCreateSandboxAndSnapshot(config)
+    const { snapshotId } = await stepCreateAndSnapshot(config)
 
     logger.log('snapshot', `✓ Workflow completed: ${snapshotId}`)
 

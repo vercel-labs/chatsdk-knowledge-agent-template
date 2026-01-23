@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
     id: dbSource.id,
     type: 'github',
     label: dbSource.label,
+    basePath: dbSource.basePath || '/docs',
     repo: dbSource.repo || '',
     branch: dbSource.branch || 'main',
     contentPath: dbSource.contentPath || '',

@@ -1,5 +1,5 @@
 import { Sandbox } from '@vercel/sandbox'
-import { getLogger } from '@savoir/logger'
+import { createError, getLogger } from '@savoir/logger'
 import type { ActiveSandbox, FileContent, SearchAndReadResult, SearchResult, SandboxManagerConfig, SnapshotMetadata } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { deleteSession, generateSessionId, getSession, setSession, touchSession } from './session'
@@ -7,9 +7,7 @@ import { deleteSession, generateSessionId, getSession, setSession, touchSession 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000 // 30 minutes
 const SANDBOX_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 
-/**
- * Get sandbox configuration from runtime config
- */
+/** Returns sandbox configuration from runtime environment */
 function getConfig(): SandboxManagerConfig {
   const config = useRuntimeConfig()
   return {
@@ -20,9 +18,7 @@ function getConfig(): SandboxManagerConfig {
   }
 }
 
-/**
- * Build git source options with authentication for private repos
- */
+/** Creates git source config with optional authentication for private repos */
 function getGitSourceOptions(repoUrl: string, branch: string, githubToken?: string) {
   const source: {
     type: 'git'
@@ -45,9 +41,7 @@ function getGitSourceOptions(repoUrl: string, branch: string, githubToken?: stri
   return source
 }
 
-/**
- * Create a new sandbox from the current snapshot
- */
+/** Creates and initializes sandbox from snapshot ID */
 async function createSandboxFromSnapshot(snapshotId: string): Promise<Sandbox> {
   const logger = getLogger()
 
@@ -66,9 +60,7 @@ async function createSandboxFromSnapshot(snapshotId: string): Promise<Sandbox> {
   return sandbox
 }
 
-/**
- * Get an existing sandbox by ID or return null if not available
- */
+/** Returns sandbox if running, null otherwise */
 async function getSandboxById(sandboxId: string): Promise<Sandbox | null> {
   try {
     const sandbox = await Sandbox.get({ sandboxId })
@@ -83,9 +75,7 @@ async function getSandboxById(sandboxId: string): Promise<Sandbox | null> {
   }
 }
 
-/**
- * Create a new sandbox from a git repository and take a snapshot
- */
+/** Creates sandbox from git repository and returns snapshot ID */
 export async function createSnapshotFromRepo(repoUrl: string, branch: string = 'main'): Promise<string> {
   const config = getConfig()
   const logger = getLogger()
@@ -107,9 +97,7 @@ export async function createSnapshotFromRepo(repoUrl: string, branch: string = '
   return snapshot.snapshotId
 }
 
-/**
- * Get or create a snapshot, auto-creating from repo if none exists
- */
+/** Returns current snapshot ID or creates one from configured repo */
 async function getOrCreateSnapshot(): Promise<string> {
   const logger = getLogger()
   const config = getConfig()
@@ -121,10 +109,12 @@ async function getOrCreateSnapshot(): Promise<string> {
   }
 
   // No snapshot exists, create one from the repo
-  logger.log('sandbox', 'No snapshot found, creating one from repo...')
-
   if (!config.snapshotRepo) {
-    throw new Error('No snapshot available and NUXT_GITHUB_SNAPSHOT_REPO is not configured.')
+    throw createError({
+      message: 'No snapshot available',
+      why: 'NUXT_GITHUB_SNAPSHOT_REPO environment variable is not configured',
+      fix: 'Set NUXT_GITHUB_SNAPSHOT_REPO to your snapshot repository (e.g., "owner/repo")',
+    })
   }
 
   const repoUrl = `https://github.com/${config.snapshotRepo}.git`
@@ -142,11 +132,7 @@ async function getOrCreateSnapshot(): Promise<string> {
   return snapshotId
 }
 
-/**
- * Get or create a sandbox for a session
- * If sessionId is provided, will try to reuse an existing sandbox
- * Auto-creates a snapshot from repo if none exists
- */
+/** Returns active sandbox for session, reusing existing or creating new. Auto-creates snapshot if needed */
 export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSandbox> {
   const logger = getLogger()
   const config = getConfig()
@@ -240,9 +226,7 @@ export async function search(
   return results
 }
 
-/**
- * Read files from sandbox
- */
+/** Reads files at paths from sandbox and returns contents */
 export async function read(
   sandbox: Sandbox,
   paths: string[],
@@ -274,10 +258,7 @@ export async function read(
   return files
 }
 
-/**
- * Search and read files in a single operation
- * Returns matching search results and full file contents for unique files
- */
+/** Searches for query and returns matches with full file contents */
 export async function searchAndRead(
   sandbox: Sandbox,
   query: string,

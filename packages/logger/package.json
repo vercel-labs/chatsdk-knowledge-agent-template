@@ -28,7 +28,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "bun run build"
   },
     "devDependencies": {
     "@types/node": "^22.15.21",

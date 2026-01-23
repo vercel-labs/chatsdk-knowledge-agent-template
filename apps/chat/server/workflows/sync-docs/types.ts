@@ -12,6 +12,7 @@ export interface GitHubSource {
   id: string
   type: 'github'
   label: string
+  basePath: string
   repo: string
   branch: string
   contentPath: string

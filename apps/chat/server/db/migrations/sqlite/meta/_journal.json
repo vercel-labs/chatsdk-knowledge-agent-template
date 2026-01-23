@@ -22,6 +22,13 @@
       "when": 1737590400000,
       "tag": "0002_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1737676800000,
+      "tag": "0003_base_path",
+      "breakpoints": true
     }
   ]
 }

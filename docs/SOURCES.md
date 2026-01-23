@@ -32,16 +32,9 @@ export const sources = sqliteTable('sources', {
 })
 ```
 
-## Seeding Sources
+## Configuration File
 
-Sources can be seeded from `savoir.config.ts` using the seed task:
-
-```bash
-cd apps/chat
-pnpm db:seed
-```
-
-The config file at the project root:
+Sources can be defined in `savoir.config.ts` at the project root:
 
 ```typescript
 // savoir.config.ts

@@ -384,6 +384,85 @@ export default defineEventHandler(async (event) => {
 - Record errors with `log.error()` before emit
 - Include business context (user plan, item count, etc.)
 
+## Code Quality Best Practices
+
+### Comment Best Practices
+
+Write **short, clear JSDoc** that explains what functions do, not why they exist.
+
+**Good comments:**
+- Focus on behavior and return values
+- Explain non-obvious implementation choices
+- Are concise (1 line preferred, 2-3 max)
+- Use imperative mood: "Returns X if Y"
+
+**Examples:**
+```typescript
+/** Returns session if exists and not expired, null otherwise */
+export async function getSession(sessionId: string): Promise<SandboxSession | null>
+
+/** Creates sandbox from repository and takes snapshot */
+export async function stepCreateAndSnapshot(config: SnapshotConfig)
+
+// Inline comment for non-obvious choice:
+// Use grep instead of ripgrep (more widely available in sandboxes)
+const result = await sandbox.runCommand({ cmd: 'grep', ... })
+```
+
+**Avoid:**
+- Repeating the function name: `/** Get session */`
+- Explaining conversation context: `/** Note: Done in single step to avoid serialization */`
+- Multi-line JSDoc for simple functions
+- Comments on interfaces (type names are self-documenting)
+
+### Logging Best Practices
+
+Use `@savoir/logger` for structured logging with context.
+
+#### Logger Features
+
+**Simple logs** for workflow progress:
+```typescript
+import { getLogger } from '@savoir/logger'
+const logger = getLogger()
+
+logger.log('sandbox', `Created: ${sandboxId}`)
+logger.log('sync', `${sourceId}: synced ${fileCount} files`)
+```
+
+**Wide events** for request logging:
+```typescript
+const log = logger.request({ method: 'POST', path: '/api/sync' })
+log.set({ userId, sourceCount: sources.length })
+// ... do work ...
+log.emit() // Emits with duration, context, and optional error
+```
+
+**Structured errors** with context:
+```typescript
+import { createError } from '@savoir/logger'
+
+throw createError({
+  message: 'Failed to sync repository',
+  why: 'GitHub API rate limit exceeded',
+  fix: 'Wait 1 hour or use a different token',
+  link: 'https://docs.github.com/en/rest/rate-limit',
+  cause: originalError,
+})
+```
+
+#### What to Log
+
+**Good logs include:**
+- Unique identifiers (`sandboxId`, `sessionId`, `userId`)
+- Quantifiable metrics (`count`, `fileCount`, `successCount`)
+- Final summaries with statistics
+
+**Avoid:**
+- Obvious steps: `logger.log('sync', 'Taking snapshot...')`
+- Messages without data: `logger.log('sync', 'No changes to push')`
+- Redundant pairs where only the second has data
+
 ## Environment Variables
 
 ### Chat App (`apps/chat`)
@@ -407,49 +486,43 @@ SAVOIR_API_URL=https://...        # API base URL (your deployed chat app)
 
 ## Database
 
-Sources are stored in SQLite via NuxtHub. To seed the database from `savoir.config.ts`:
-
-```bash
-cd apps/chat
-pnpm db:seed
-```
+Sources are stored in SQLite via NuxtHub and can be managed via the API (`/api/sources`).
 
 ## Testing
 
 - **Framework**: Vitest
-- **Run tests**: `pnpm test` at root
+- **Run tests**: `bun run test` at root
 - **Test location**: `test/` directory in each package/app
 
 ```bash
 # Run all tests
-pnpm test
+bun run test
 
 # Run specific package tests
-pnpm --filter @savoir/sdk test
+turbo run test --filter=@savoir/sdk
 
 # Watch mode
-pnpm --filter @savoir/sdk test:watch
+turbo run test:watch --filter=@savoir/sdk
 ```
 
 ## Commands
 
 ```bash
 # Development
-pnpm install          # Install all dependencies
-pnpm dev              # Start chat app in dev mode
-pnpm build            # Build all packages and apps
+bun install           # Install all dependencies
+bun run dev           # Start chat app in dev mode
+bun run build         # Build all packages and apps
 
 # Database
-pnpm --filter @savoir/chat db:generate  # Generate migrations
-pnpm --filter @savoir/chat db:migrate   # Run migrations
-pnpm --filter @savoir/chat db:seed      # Seed sources from savoir.config.ts
+turbo run db:generate --filter=@savoir/chat  # Generate migrations
+turbo run db:migrate --filter=@savoir/chat   # Run migrations
 
 # Workflows
-pnpm --filter @savoir/chat workflow:web # Monitor workflow progress
+turbo run workflow:web --filter=@savoir/chat # Monitor workflow progress
 
 # Linting & Testing
-pnpm lint             # Lint all packages
-pnpm lint:fix         # Fix linting issues
-pnpm test             # Run tests
-pnpm typecheck        # Type check all packages
+bun run lint          # Lint all packages
+bun run lint:fix      # Fix linting issues
+bun run test          # Run tests
+bun run typecheck     # Type check all packages
 ```

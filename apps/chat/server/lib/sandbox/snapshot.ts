@@ -2,31 +2,23 @@ import { kv } from '@nuxthub/kv'
 import type { SnapshotMetadata } from './types'
 import { KV_KEYS } from './types'
 
-/**
- * Get the current snapshot metadata from KV storage
- */
+/** Returns current snapshot metadata from KV, null if none exists */
 export async function getCurrentSnapshot(): Promise<SnapshotMetadata | null> {
   return await kv.get<SnapshotMetadata>(KV_KEYS.CURRENT_SNAPSHOT)
 }
 
-/**
- * Set the current snapshot metadata in KV storage
- */
+/** Stores snapshot metadata as current snapshot in KV */
 export async function setCurrentSnapshot(metadata: SnapshotMetadata): Promise<void> {
   await kv.set(KV_KEYS.CURRENT_SNAPSHOT, metadata)
 }
 
-/**
- * Check if a snapshot exists
- */
+/** Returns true if a snapshot exists in KV */
 export async function hasSnapshot(): Promise<boolean> {
   const snapshot = await getCurrentSnapshot()
   return snapshot !== null
 }
 
-/**
- * Get snapshot ID or throw if none exists
- */
+/** Returns current snapshot ID, throws if no snapshot exists */
 export async function getSnapshotIdOrThrow(): Promise<string> {
   const snapshot = await getCurrentSnapshot()
   if (!snapshot) {

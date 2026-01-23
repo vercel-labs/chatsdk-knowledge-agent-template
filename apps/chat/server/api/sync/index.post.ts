@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
       id: s.id,
       type: 'github' as const,
       label: s.label,
+      basePath: s.basePath || '/docs',
       repo: s.repo || '',
       branch: s.branch || 'main',
       contentPath: s.contentPath || '',

@@ -4,6 +4,8 @@ import { z } from 'zod'
 const bodySchema = z.object({
   type: z.enum(['github', 'youtube']),
   label: z.string().min(1),
+  // Common output field
+  basePath: z.string().optional().default('/docs'),
   // GitHub fields
   repo: z.string().optional(),
   branch: z.string().optional().default('main'),
@@ -28,6 +30,7 @@ export default defineEventHandler(async (event) => {
       id: crypto.randomUUID(),
       type: body.type,
       label: body.label,
+      basePath: body.basePath,
       repo: body.repo,
       branch: body.branch,
       contentPath: body.contentPath,

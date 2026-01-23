@@ -30,3 +30,19 @@ export {
   search,
   searchAndRead,
 } from './manager'
+
+export { createGitSource, createSandbox, generateAuthRepoUrl } from './context'
+
+export type { GitConfig, GitPushOptions, GitPushResult } from './git'
+export {
+  addFiles,
+  checkoutBranch,
+  commit,
+  configureGit,
+  generateCommitMessage,
+  hasChanges,
+  push,
+  pushChanges,
+} from './git'
+
+export { syncGitHubSource, syncSources } from './source-sync'

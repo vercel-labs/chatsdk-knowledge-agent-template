@@ -4,6 +4,8 @@ import { z } from 'zod'
 
 const bodySchema = z.object({
   label: z.string().min(1).optional(),
+  // Common output field
+  basePath: z.string().optional(),
   // GitHub fields
   repo: z.string().optional(),
   branch: z.string().optional(),

@@ -12,24 +12,31 @@
   "bugs": {
     "url": "https://github.com/HugoRCD/savoir/issues"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "overrides": {
+    "vite": "^8.0.0-beta.0"
+  },
   "scripts": {
-    "prepare": "turbo build --filter='./packages/*'",
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "dev:chat": "pnpm --filter @savoir/chat dev",
-    "sync:docs": "pnpm --filter @savoir/chat sync:docs",
-    "snapshot:create": "pnpm --filter @savoir/chat snapshot:create",
-    "lint": "turbo lint",
-    "lint:fix": "turbo lint:fix",
-    "typecheck": "turbo typecheck",
-    "test": "turbo test",
+    "prepare": "turbo run build --filter='./packages/*'",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:chat": "turbo run dev --filter=@savoir/chat",
+    "sync:docs": "turbo run sync:docs --filter=@savoir/chat",
+    "snapshot:create": "turbo run snapshot:create --filter=@savoir/chat",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
     "automd": "automd",
-    "workflow": "pnpm --filter @savoir/chat workflow:web"
+    "workflow": "turbo run workflow:web --filter=@savoir/chat"
   },
   "devDependencies": {
     "@hrcd/eslint-config": "^3.0.3",
     "automd": "^0.4.2",
     "turbo": "^2.5.3"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "bun@1.2.22"
 }

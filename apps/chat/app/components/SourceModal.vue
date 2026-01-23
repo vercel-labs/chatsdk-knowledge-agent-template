@@ -34,6 +34,7 @@ const form = ref({
   branch: props.source?.branch || 'main',
   contentPath: props.source?.contentPath || '',
   outputPath: props.source?.outputPath || '',
+  basePath: props.source?.type === 'youtube' ? '/youtube' : '/docs',
   readmeOnly: props.source?.readmeOnly || false,
   channelId: props.source?.channelId || '',
   handle: props.source?.handle || '',
@@ -41,9 +42,34 @@ const form = ref({
 })
 
 const typeOptions = [
-  { label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },
-  { label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' },
+  { label: 'GitHub Repository', value: 'github', icon: 'i-simple-icons-github' },
+  { label: 'YouTube Channel', value: 'youtube', icon: 'i-simple-icons-youtube' },
 ]
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+const outputFolderFromLabel = computed(() => slugify(form.value.label))
+
+const effectiveOutputPath = computed(() => {
+  return form.value.outputPath || outputFolderFromLabel.value
+})
+
+const snapshotPreviewPath = computed(() => {
+  const base = form.value.basePath || (form.value.type === 'youtube' ? '/youtube' : '/docs')
+  const folder = effectiveOutputPath.value || 'folder-name'
+  return `${base}/${folder}/`
+})
+
+watch(() => form.value.type, (newType) => {
+  form.value.basePath = newType === 'youtube' ? '/youtube' : '/docs'
+})
 
 async function save() {
   isSubmitting.value = true
@@ -51,7 +77,12 @@ async function save() {
     const url = isEditing.value ? `/api/sources/${props.source!.id}` : '/api/sources'
     const method = isEditing.value ? 'PUT' : 'POST'
 
-    await $fetch(url, { method, body: form.value })
+    const body = {
+      ...form.value,
+      outputPath: form.value.outputPath || outputFolderFromLabel.value,
+    }
+
+    await $fetch(url, { method, body })
     toast.add({
       title: isEditing.value ? 'Source updated' : 'Source created',
       icon: 'i-lucide-check',
@@ -73,9 +104,9 @@ async function save() {
 <template>
   <UModal
     :ui="{
-      footer: 'justify-end',
-      title: 'text-base font-medium',
-      description: 'text-sm',
+      footer: 'justify-end gap-3',
+      content: 'sm:max-w-2xl',
+      body: 'p-0',
     }"
     :close="{ onClick: () => emit('close') }"
     default-open
@@ -83,128 +114,150 @@ async function save() {
   >
     <template #header>
       <div>
-        <h2 class="text-base font-medium text-highlighted">
+        <h2 class="text-lg font-semibold text-highlighted">
           {{ isEditing ? 'Edit Source' : 'Add Source' }}
         </h2>
         <p class="text-sm text-muted mt-0.5">
-          {{ isEditing ? 'Update the source configuration' : 'Configure a new content source' }}
+          Configure a content source for documentation sync
         </p>
       </div>
     </template>
 
     <template #body>
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-highlighted">Type</label>
-          <USelectMenu
-            v-model="form.type"
-            :items="typeOptions"
-            value-key="value"
-            :disabled="isEditing"
-            class="w-full"
-          />
+      <div class="flex flex-col gap-5 p-5">
+        <!-- Section 1: Basic Info -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-highlighted">Type</label>
+            <USelectMenu
+              v-model="form.type"
+              :items="typeOptions"
+              value-key="value"
+              :disabled="isEditing"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-highlighted">
+              Label <span class="text-error">*</span>
+            </label>
+            <UInput v-model="form.label" placeholder="e.g. Nuxt" />
+          </div>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-highlighted">
-            Label
-            <span class="text-red-500">*</span>
-          </label>
-          <UInput v-model="form.label" placeholder="e.g. Nuxt Documentation" class="w-full" />
-          <p class="text-xs text-muted">
-            A friendly name to identify this source
-          </p>
+        <!-- Section 2: Snapshot Location -->
+        <div class="p-4 bg-muted/30 rounded-lg border border-default">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <UIcon name="i-lucide-folder-output" class="size-4 text-primary" />
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-highlighted">
+                Snapshot Location
+              </h3>
+              <p class="text-xs text-muted mt-0.5">
+                Where synced files will be stored
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs text-muted">Base Path</label>
+              <UInput v-model="form.basePath" placeholder="/docs" class="font-mono text-sm" />
+            </div>
+            <div class="col-span-2 flex flex-col gap-1.5">
+              <label class="text-xs text-muted">Folder Name</label>
+              <UInput
+                v-model="form.outputPath"
+                :placeholder="outputFolderFromLabel || 'folder-name'"
+                class="font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center gap-2 text-xs">
+            <UIcon name="i-lucide-arrow-right" class="size-3 text-primary" />
+            <span class="text-muted">Preview:</span>
+            <code class="text-highlighted font-mono bg-default px-1.5 py-0.5 rounded">
+              {{ snapshotPreviewPath }}
+            </code>
+          </div>
         </div>
 
-        <template v-if="form.type === 'github'">
-          <div class="border-t border-default pt-4 mt-1">
-            <p class="text-xs font-medium text-muted uppercase tracking-wide mb-4">
-              GitHub Configuration
-            </p>
-
-            <div class="flex flex-col gap-4">
+        <!-- Section 3: Source-specific fields -->
+        <div class="flex flex-col gap-4">
+          <!-- GitHub Fields -->
+          <template v-if="form.type === 'github'">
+            <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-sm font-medium text-highlighted">
-                  Repository
-                  <span class="text-red-500">*</span>
+                  Repository <span class="text-error">*</span>
                 </label>
                 <UInput
                   v-model="form.repo"
                   placeholder="nuxt/nuxt"
                   icon="i-simple-icons-github"
-                  class="w-full"
                 />
                 <p class="text-xs text-muted">
-                  The repository in owner/repo format
+                  owner/repo format
                 </p>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-sm font-medium text-highlighted">Branch</label>
-                  <UInput
-                    v-model="form.branch"
-                    placeholder="main"
-                    icon="i-lucide-git-branch"
-                    class="w-full"
-                  />
-                </div>
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-sm font-medium text-highlighted">Output Path</label>
-                  <UInput
-                    v-model="form.outputPath"
-                    placeholder="nuxt"
-                    icon="i-lucide-folder-output"
-                    class="w-full"
-                  />
-                </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-highlighted">Branch</label>
+                <UInput
+                  v-model="form.branch"
+                  placeholder="main"
+                  icon="i-lucide-git-branch"
+                />
               </div>
+            </div>
 
+            <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
                 <label class="text-sm font-medium text-highlighted">Content Path</label>
                 <UInput
                   v-model="form.contentPath"
                   placeholder="docs/content"
-                  icon="i-lucide-folder"
-                  class="w-full"
+                  icon="i-lucide-folder-open"
                 />
                 <p class="text-xs text-muted">
-                  Path to the documentation folder
+                  Folder containing docs in repo
                 </p>
               </div>
 
-              <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-muted">
-                <div>
-                  <p class="text-sm font-medium text-highlighted">
-                    README Only
-                  </p>
-                  <p class="text-xs text-muted">
-                    Only sync the README.md file
-                  </p>
-                </div>
-                <USwitch v-model="form.readmeOnly" />
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-highlighted">Options</label>
+                <label class="flex items-center gap-3 h-9 px-3 rounded-lg border border-default bg-default cursor-pointer hover:bg-muted/30 transition-colors">
+                  <USwitch v-model="form.readmeOnly" size="xs" />
+                  <span class="text-sm">README only</span>
+                </label>
               </div>
             </div>
-          </div>
-        </template>
 
-        <template v-if="form.type === 'youtube'">
-          <div class="border-t border-default pt-4 mt-1">
-            <p class="text-xs font-medium text-muted uppercase tracking-wide mb-4">
-              YouTube Configuration
-            </p>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-default">
+              <UIcon name="i-lucide-info" class="size-3.5 text-muted shrink-0" />
+              <p class="text-xs text-muted">
+                Only <code class="text-highlighted">.md</code>, <code class="text-highlighted">.mdx</code>, <code class="text-highlighted">.yml</code>, <code class="text-highlighted">.yaml</code>, <code class="text-highlighted">.json</code> files are synced
+              </p>
+            </div>
+          </template>
 
-            <div class="flex flex-col gap-4">
+          <!-- YouTube Fields -->
+          <template v-if="form.type === 'youtube'">
+            <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-highlighted">Channel ID</label>
+                <label class="text-sm font-medium text-highlighted">
+                  Channel ID <span class="text-error">*</span>
+                </label>
                 <UInput
                   v-model="form.channelId"
                   placeholder="UCxxxxxxxxxxxxxxxxxxxxxx"
                   icon="i-simple-icons-youtube"
-                  class="w-full"
                 />
                 <p class="text-xs text-muted">
-                  The unique channel identifier (starts with UC)
+                  Starts with UC
                 </p>
               </div>
 
@@ -212,15 +265,13 @@ async function save() {
                 <label class="text-sm font-medium text-highlighted">Handle</label>
                 <UInput
                   v-model="form.handle"
-                  placeholder="@channel"
+                  placeholder="@TheAlexLichter"
                   icon="i-lucide-at-sign"
-                  class="w-full"
                 />
-                <p class="text-xs text-muted">
-                  The channel's @handle for display
-                </p>
               </div>
+            </div>
 
+            <div class="w-1/2">
               <div class="flex flex-col gap-1.5">
                 <label class="text-sm font-medium text-highlighted">Max Videos</label>
                 <UInput
@@ -229,29 +280,21 @@ async function save() {
                   :min="1"
                   :max="500"
                   icon="i-lucide-video"
-                  class="w-full"
                 />
                 <p class="text-xs text-muted">
-                  Maximum number of videos to sync (default: 50)
+                  Between 1 and 500
                 </p>
               </div>
             </div>
-          </div>
-        </template>
+          </template>
+        </div>
       </div>
     </template>
 
     <template #footer>
-      <UButton
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        label="Cancel"
-        @click="emit('close')"
-      />
+      <UButton color="neutral" variant="ghost" label="Cancel" @click="emit('close')" />
       <UButton
         :label="isEditing ? 'Save Changes' : 'Create Source'"
-        size="sm"
         :loading="isSubmitting"
         @click="save"
       />

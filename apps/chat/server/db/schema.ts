@@ -62,6 +62,9 @@ export const sources = sqliteTable('sources', {
   // Common fields
   label: text('label').notNull(),
 
+  // Common output field
+  basePath: text('base_path').default('/docs'),
+
   // GitHub fields
   repo: text('repo'),
   branch: text('branch'),

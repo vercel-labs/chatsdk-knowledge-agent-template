@@ -2,15 +2,13 @@
  * Sync Documentation Workflow
  *
  * Syncs documentation from GitHub sources into a Vercel Sandbox,
- * then takes a snapshot for instant startup.
- *
- * Sources are passed as parameters.
+ * pushes changes to git, then takes a snapshot for instant startup.
  */
 
 import { getLogger } from '@savoir/logger'
 import { FatalError } from 'workflow'
 import type { GitHubSource, SyncConfig, SyncResult } from './types'
-import { stepSyncAllSourcesInSandbox } from './steps'
+import { stepSyncAll } from './steps'
 
 export async function syncDocumentation(
   config: SyncConfig,
@@ -28,11 +26,10 @@ export async function syncDocumentation(
     throw new FatalError('No sources provided')
   }
 
-  const { snapshotId, results } = await stepSyncAllSourcesInSandbox(sources, config)
+  const { snapshotId, results, totalFiles } = await stepSyncAll(config, sources)
 
   const successCount = results.filter(r => r.success).length
   const failCount = results.filter(r => !r.success).length
-  const totalFiles = results.reduce((sum, r) => sum + (r.fileCount || 0), 0)
 
   const status = failCount === 0 ? '✓' : '✗'
   logger.log('sync', `${status} Done: ${successCount}/${sources.length} sources, ${totalFiles} files`)
