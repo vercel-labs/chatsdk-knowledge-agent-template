@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@hrcd/eslint-config": "^3.0.3",
-    "@types/node": "^24.10.0",
+    "@types/node": "^25.0.10",
     "drizzle-kit": "^0.31.0",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
