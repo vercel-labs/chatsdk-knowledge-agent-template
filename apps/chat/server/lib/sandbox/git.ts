@@ -1,6 +1,6 @@
 import type { Sandbox } from '@vercel/sandbox'
-import type { SyncSourceResult } from '../../workflows/sync-docs/types'
 import { createError } from '@savoir/logger'
+import type { SyncSourceResult } from '../../workflows/sync-docs/types'
 
 export interface GitConfig {
   email: string

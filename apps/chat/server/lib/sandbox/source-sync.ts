@@ -1,6 +1,6 @@
 import type { Sandbox } from '@vercel/sandbox'
-import type { GitHubSource, SyncSourceResult } from '../../workflows/sync-docs/types'
 import { createError } from '@savoir/logger'
+import type { GitHubSource, SyncSourceResult } from '../../workflows/sync-docs/types'
 
 /** Syncs GitHub source to sandbox, returns result with file count and status */
 export async function syncGitHubSource(
