@@ -35,8 +35,5 @@
     "automd": "^0.4.2",
     "turbo": "^2.7.5"
   },
-  "overrides": {
-    "find-up": "7.0.0"
-  },
   "packageManager": "bun@1.2.22"
 }
