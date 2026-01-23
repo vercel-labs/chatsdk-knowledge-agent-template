@@ -16,9 +16,6 @@
     "apps/*",
     "packages/*"
   ],
-  "overrides": {
-    "vite": "^8.0.0-beta.0"
-  },
   "scripts": {
     "prepare": "turbo run build --filter='./packages/*'",
     "build": "turbo run build",
