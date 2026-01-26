@@ -1,9 +1,7 @@
 <script setup lang="ts">
 const { user, clear } = useUserSession()
 
-const navItems = [
-  { label: 'Sources', to: '/admin/sources', icon: 'i-lucide-book-open' },
-]
+const navItems = [{ label: 'Sources', to: '/admin/sources', icon: 'i-lucide-book-open' },]
 </script>
 
 <template>

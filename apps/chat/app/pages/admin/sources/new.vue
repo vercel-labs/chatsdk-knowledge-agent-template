@@ -298,252 +298,252 @@ const hasValidSources = computed(() => sources.value.some(s => s.data.label))
 
 <template>
   <UContainer class="py-10 max-w-3xl">
-        <header class="mb-8">
-          <div class="flex items-center gap-3 mb-1">
-            <UButton
-              icon="i-lucide-arrow-left"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              to="/admin/sources"
+    <header class="mb-8">
+      <div class="flex items-center gap-3 mb-1">
+        <UButton
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          to="/admin/sources"
+        />
+        <h1 class="text-lg font-semibold text-highlighted">
+          Add Sources
+        </h1>
+      </div>
+      <p class="text-[13px] text-muted ml-9">
+        Upload screenshots or config files to auto-extract sources
+      </p>
+    </header>
+
+    <div class="space-y-6">
+      <!-- Drop Zone -->
+      <div
+        class="relative p-8 border-2 border-dashed rounded-xl transition-all cursor-pointer"
+        :class="[
+          isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-default hover:border-muted hover:bg-muted/5',
+        ]"
+        @drop="handleDrop"
+        @dragover="handleDragOver"
+        @dragleave="handleDragLeave"
+        @click="fileInputRef?.click()"
+      >
+        <input
+          ref="fileInputRef"
+          type="file"
+          :accept="`image/*,${CONFIG_ACCEPT}`"
+          multiple
+          class="hidden"
+          @change="handleFileSelect"
+        >
+
+        <div class="text-center">
+          <div class="size-14 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+            <UIcon
+              :name="isDragging ? 'i-lucide-download' : 'i-lucide-files'"
+              class="size-7 text-muted transition-transform"
+              :class="{ 'scale-110': isDragging }"
             />
-            <h1 class="text-lg font-semibold text-highlighted">
-              Add Sources
-            </h1>
           </div>
-          <p class="text-[13px] text-muted ml-9">
-            Upload screenshots or config files to auto-extract sources
+          <p class="text-sm font-medium text-highlighted mb-1">
+            Drop files here
           </p>
-        </header>
+          <p class="text-xs text-muted">
+            Screenshots, .ts, .json, .yml, .yaml
+          </p>
+        </div>
+      </div>
 
-        <div class="space-y-6">
-          <!-- Drop Zone -->
-          <div
-            class="relative p-8 border-2 border-dashed rounded-xl transition-all cursor-pointer"
-            :class="[
-              isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-default hover:border-muted hover:bg-muted/5',
-            ]"
-            @drop="handleDrop"
-            @dragover="handleDragOver"
-            @dragleave="handleDragLeave"
-            @click="fileInputRef?.click()"
+      <!-- Pending Files -->
+      <div v-if="pendingFiles.length > 0" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-medium text-highlighted">
+            Files to extract ({{ pendingFiles.length }})
+          </h2>
+          <UButton
+            icon="i-lucide-sparkles"
+            size="xs"
+            :loading="isExtracting"
+            @click="extractAll"
           >
-            <input
-              ref="fileInputRef"
-              type="file"
-              :accept="`image/*,${CONFIG_ACCEPT}`"
-              multiple
-              class="hidden"
-              @change="handleFileSelect"
+            Extract sources
+          </UButton>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <div
+            v-for="item in pendingFiles"
+            :key="item.id"
+            class="relative group"
+          >
+            <div
+              v-if="item.type === 'image'"
+              class="w-20 h-14 rounded-lg border border-default overflow-hidden"
             >
-
-            <div class="text-center">
-              <div class="size-14 rounded-xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <UIcon
-                  :name="isDragging ? 'i-lucide-download' : 'i-lucide-files'"
-                  class="size-7 text-muted transition-transform"
-                  :class="{ 'scale-110': isDragging }"
-                />
-              </div>
-              <p class="text-sm font-medium text-highlighted mb-1">
-                Drop files here
-              </p>
-              <p class="text-xs text-muted">
-                Screenshots, .ts, .json, .yml, .yaml
-              </p>
-            </div>
-          </div>
-
-          <!-- Pending Files -->
-          <div v-if="pendingFiles.length > 0" class="space-y-3">
-            <div class="flex items-center justify-between">
-              <h2 class="text-sm font-medium text-highlighted">
-                Files to extract ({{ pendingFiles.length }})
-              </h2>
-              <UButton
-                icon="i-lucide-sparkles"
-                size="xs"
-                :loading="isExtracting"
-                @click="extractAll"
+              <img
+                :src="item.previewUrl"
+                :alt="item.file.name"
+                class="w-full h-full object-cover"
               >
-                Extract sources
-              </UButton>
             </div>
-
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-for="item in pendingFiles"
-                :key="item.id"
-                class="relative group"
-              >
-                <div
-                  v-if="item.type === 'image'"
-                  class="w-20 h-14 rounded-lg border border-default overflow-hidden"
-                >
-                  <img
-                    :src="item.previewUrl"
-                    :alt="item.file.name"
-                    class="w-full h-full object-cover"
-                  >
-                </div>
-                <div
-                  v-else
-                  class="w-20 h-14 rounded-lg border border-default bg-muted/30 flex flex-col items-center justify-center gap-1"
-                >
-                  <UIcon :name="getFileIcon(item)" class="size-5 text-muted" />
-                  <span class="text-[10px] text-muted truncate max-w-16 px-1">{{ item.file.name }}</span>
-                </div>
-                <button
-                  class="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  @click.stop="removeFile(item.id)"
-                >
-                  <UIcon name="i-lucide-x" class="size-3" />
-                </button>
-              </div>
+            <div
+              v-else
+              class="w-20 h-14 rounded-lg border border-default bg-muted/30 flex flex-col items-center justify-center gap-1"
+            >
+              <UIcon :name="getFileIcon(item)" class="size-5 text-muted" />
+              <span class="text-[10px] text-muted truncate max-w-16 px-1">{{ item.file.name }}</span>
             </div>
+            <button
+              class="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              @click.stop="removeFile(item.id)"
+            >
+              <UIcon name="i-lucide-x" class="size-3" />
+            </button>
           </div>
+        </div>
+      </div>
 
-          <!-- Extracted Sources -->
-          <div v-if="sources.length > 0" class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-sm font-medium text-highlighted">
-                Sources ({{ sources.length }})
-              </h2>
+      <!-- Extracted Sources -->
+      <div v-if="sources.length > 0" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-medium text-highlighted">
+            Sources ({{ sources.length }})
+          </h2>
+          <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            @click="addManualSource"
+          >
+            Add manually
+          </UButton>
+        </div>
+
+        <div class="space-y-3">
+          <div
+            v-for="source in sources"
+            :key="source.id"
+            class="p-4 rounded-xl border border-default bg-default/50"
+          >
+            <div class="flex items-start gap-4 mb-3">
+              <div class="flex-1 min-w-0">
+                <div v-if="source.confidence < 1" class="text-xs text-muted mb-2">
+                  {{ Math.round(source.confidence * 100) }}% confidence
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                  <USelectMenu
+                    v-model="source.data.type"
+                    :items="typeOptions"
+                    value-key="value"
+                    size="sm"
+                    @update:model-value="source.data.basePath = $event === 'youtube' ? '/youtube' : '/docs'"
+                  />
+                  <div class="col-span-2">
+                    <UInput
+                      v-model="source.data.label"
+                      placeholder="Label (e.g. Nuxt)"
+                      size="sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <UButton
-                icon="i-lucide-plus"
-                size="xs"
+                icon="i-lucide-x"
                 color="neutral"
                 variant="ghost"
-                @click="addManualSource"
-              >
-                Add manually
-              </UButton>
+                size="xs"
+                @click="removeSource(source.id)"
+              />
             </div>
 
             <div class="space-y-3">
-              <div
-                v-for="source in sources"
-                :key="source.id"
-                class="p-4 rounded-xl border border-default bg-default/50"
-              >
-                <div class="flex items-start gap-4 mb-3">
-                  <div class="flex-1 min-w-0">
-                    <div v-if="source.confidence < 1" class="text-xs text-muted mb-2">
-                      {{ Math.round(source.confidence * 100) }}% confidence
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-3">
-                      <USelectMenu
-                        v-model="source.data.type"
-                        :items="typeOptions"
-                        value-key="value"
-                        size="sm"
-                        @update:model-value="source.data.basePath = $event === 'youtube' ? '/youtube' : '/docs'"
-                      />
-                      <div class="col-span-2">
-                        <UInput
-                          v-model="source.data.label"
-                          placeholder="Label (e.g. Nuxt)"
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <UButton
-                    icon="i-lucide-x"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    @click="removeSource(source.id)"
+              <template v-if="source.data.type === 'github'">
+                <div class="grid grid-cols-3 gap-3">
+                  <UInput
+                    v-model="source.data.repo"
+                    placeholder="owner/repo"
+                    size="sm"
+                    icon="i-simple-icons-github"
+                  />
+                  <UInput
+                    v-model="source.data.branch"
+                    placeholder="main"
+                    size="sm"
+                    icon="i-lucide-git-branch"
+                  />
+                  <UInput
+                    v-model="source.data.contentPath"
+                    placeholder="docs/content"
+                    size="sm"
+                    icon="i-lucide-folder-open"
                   />
                 </div>
+              </template>
 
-                <div class="space-y-3">
-                  <template v-if="source.data.type === 'github'">
-                    <div class="grid grid-cols-3 gap-3">
-                      <UInput
-                        v-model="source.data.repo"
-                        placeholder="owner/repo"
-                        size="sm"
-                        icon="i-simple-icons-github"
-                      />
-                      <UInput
-                        v-model="source.data.branch"
-                        placeholder="main"
-                        size="sm"
-                        icon="i-lucide-git-branch"
-                      />
-                      <UInput
-                        v-model="source.data.contentPath"
-                        placeholder="docs/content"
-                        size="sm"
-                        icon="i-lucide-folder-open"
-                      />
-                    </div>
-                  </template>
-
-                  <template v-else>
-                    <div class="grid grid-cols-2 gap-3">
-                      <UInput
-                        v-model="source.data.channelId"
-                        placeholder="UCxxxx..."
-                        size="sm"
-                        icon="i-simple-icons-youtube"
-                      />
-                      <UInput
-                        v-model="source.data.handle"
-                        placeholder="@handle"
-                        size="sm"
-                        icon="i-lucide-at-sign"
-                      />
-                    </div>
-                  </template>
-
-                  <div class="flex items-center gap-2 text-xs text-muted">
-                    <UIcon name="i-lucide-package" class="size-3.5" />
-                    <span>Snapshot:</span>
-                    <code class="text-highlighted font-mono">{{ getSnapshotPreview(source) }}</code>
-                  </div>
+              <template v-else>
+                <div class="grid grid-cols-2 gap-3">
+                  <UInput
+                    v-model="source.data.channelId"
+                    placeholder="UCxxxx..."
+                    size="sm"
+                    icon="i-simple-icons-youtube"
+                  />
+                  <UInput
+                    v-model="source.data.handle"
+                    placeholder="@handle"
+                    size="sm"
+                    icon="i-lucide-at-sign"
+                  />
                 </div>
+              </template>
+
+              <div class="flex items-center gap-2 text-xs text-muted">
+                <UIcon name="i-lucide-package" class="size-3.5" />
+                <span>Snapshot:</span>
+                <code class="text-highlighted font-mono">{{ getSnapshotPreview(source) }}</code>
               </div>
             </div>
           </div>
-
-          <!-- Empty state -->
-          <div
-            v-if="sources.length === 0 && pendingFiles.length === 0"
-            class="text-center py-8"
-          >
-            <p class="text-sm text-muted mb-3">
-              No sources yet
-            </p>
-            <UButton
-              icon="i-lucide-plus"
-              size="sm"
-              color="neutral"
-              variant="outline"
-              @click="addManualSource"
-            >
-              Add manually
-            </UButton>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end gap-3 pt-4 border-t border-default">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              label="Cancel"
-              to="/admin/sources"
-            />
-            <UButton
-              :label="`Create ${sources.filter(s => s.data.label).length} Source${sources.filter(s => s.data.label).length !== 1 ? 's' : ''}`"
-              :loading="isSubmitting"
-              :disabled="!hasValidSources || isExtracting"
-              @click="saveAll"
-            />
-          </div>
         </div>
-      </UContainer>
+      </div>
+
+      <!-- Empty state -->
+      <div
+        v-if="sources.length === 0 && pendingFiles.length === 0"
+        class="text-center py-8"
+      >
+        <p class="text-sm text-muted mb-3">
+          No sources yet
+        </p>
+        <UButton
+          icon="i-lucide-plus"
+          size="sm"
+          color="neutral"
+          variant="outline"
+          @click="addManualSource"
+        >
+          Add manually
+        </UButton>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3 pt-4 border-t border-default">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          label="Cancel"
+          to="/admin/sources"
+        />
+        <UButton
+          :label="`Create ${sources.filter(s => s.data.label).length} Source${sources.filter(s => s.data.label).length !== 1 ? 's' : ''}`"
+          :loading="isSubmitting"
+          :disabled="!hasValidSources || isExtracting"
+          @click="saveAll"
+        />
+      </div>
+    </div>
+  </UContainer>
 </template>

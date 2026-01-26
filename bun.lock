@@ -33,6 +33,7 @@
         "nuxt": "^4.3.0",
         "nuxt-auth-utils": "^0.5.27",
         "pathe": "^2.0.3",
+        "sharp": "^0.34.5",
         "shiki-stream": "^0.1.4",
         "workflow": "4.0.1-beta.50",
         "zod": "^4.3.6",
