@@ -20,9 +20,10 @@ const bodySchema = z.object({
 
 /**
  * POST /api/sources
- * Create a new source
+ * Create a new source (admin only)
  */
 export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
   const body = await readValidatedBody(event, bodySchema.parse)
 
   const [source] = await db.insert(schema.sources)

@@ -11,12 +11,13 @@ const bodySchema = z
 
 /**
  * POST /api/sync
- * Sync all sources using Vercel Sandbox.
+ * Sync all sources using Vercel Sandbox (admin only).
  *
  * Body (optional):
  * - sourceFilter: string - Only sync a specific source
  */
 export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
   const body = await readValidatedBody(event, data => bodySchema.parse(data))
   const config = useRuntimeConfig()
 

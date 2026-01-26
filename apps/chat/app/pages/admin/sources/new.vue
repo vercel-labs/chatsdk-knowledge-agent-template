@@ -30,7 +30,8 @@ const CONFIG_EXTENSIONS = ['.ts', '.js', '.json', '.yml', '.yaml', '.toml']
 const CONFIG_ACCEPT = CONFIG_EXTENSIONS.join(',')
 
 definePageMeta({
-  middleware: 'auth',
+  layout: 'admin',
+  middleware: 'admin',
 })
 
 const router = useRouter()
@@ -296,13 +297,7 @@ const hasValidSources = computed(() => sources.value.some(s => s.data.label))
 </script>
 
 <template>
-  <UDashboardPanel id="admin-sources-new">
-    <template #header>
-      <DashboardNavbar />
-    </template>
-
-    <template #body>
-      <UContainer class="py-10 max-w-3xl">
+  <UContainer class="py-10 max-w-3xl">
         <header class="mb-8">
           <div class="flex items-center gap-3 mb-1">
             <UButton
@@ -551,6 +546,4 @@ const hasValidSources = computed(() => sources.value.some(s => s.data.label))
           </div>
         </div>
       </UContainer>
-    </template>
-  </UDashboardPanel>
 </template>

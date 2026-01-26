@@ -18,7 +18,8 @@ interface SerializedSource {
 }
 
 definePageMeta({
-  middleware: 'auth',
+  layout: 'admin',
+  middleware: 'admin',
 })
 
 const toast = useToast()
@@ -89,13 +90,7 @@ function handleSaved() {
 </script>
 
 <template>
-  <UDashboardPanel id="admin-sources">
-    <template #header>
-      <DashboardNavbar />
-    </template>
-
-    <template #body>
-      <UContainer class="py-10 max-w-xl">
+  <UContainer class="py-10 max-w-xl">
         <header class="mb-10">
           <div class="flex items-center justify-between">
             <h1 class="text-lg font-semibold text-highlighted">
@@ -216,12 +211,10 @@ function handleSaved() {
         </div>
       </UContainer>
 
-      <SourceModal
-        v-if="editingSource"
-        :source="editingSource"
-        @close="editingSource = null"
-        @saved="handleSaved"
-      />
-    </template>
-  </UDashboardPanel>
+    <SourceModal
+      v-if="editingSource"
+      :source="editingSource"
+      @close="editingSource = null"
+      @saved="handleSaved"
+    />
 </template>

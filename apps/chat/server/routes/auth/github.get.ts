@@ -1,6 +1,12 @@
 import { db, schema } from '@nuxthub/db'
 import { eq, and } from 'drizzle-orm'
 
+function isAdminUser(email: string, username: string): boolean {
+  const config = useRuntimeConfig()
+  const adminUsers = config.adminUsers?.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) || []
+  return adminUsers.includes(email.toLowerCase()) || adminUsers.includes(username.toLowerCase())
+}
+
 export default defineOAuthGitHubEventHandler({
   async onSuccess(event, { user: ghUser }) {
     const session = await getUserSession(event)
@@ -21,16 +27,26 @@ export default defineOAuthGitHubEventHandler({
           .where(eq(schema.chats.userId, session.user.id))
       }
 
+      // Update role if it changed
+      const newRole = isAdminUser(existingUser.email, existingUser.username) ? 'admin' : 'user'
+      if (existingUser.role !== newRole) {
+        await db.update(schema.users)
+          .set({ role: newRole })
+          .where(eq(schema.users.id, existingUser.id))
+        existingUser.role = newRole
+      }
+
       await setUserSession(event, { user: existingUser })
     } else {
-      // Create new user
+      const role = isAdminUser(ghUser.email || '', ghUser.login) ? 'admin' : 'user'
       const [newUser] = await db.insert(schema.users).values({
         email: ghUser.email || '',
         name: ghUser.name || ghUser.login,
         avatar: ghUser.avatar_url,
         username: ghUser.login,
         provider: 'github',
-        providerId: String(ghUser.id)
+        providerId: String(ghUser.id),
+        role,
       }).returning()
 
       // Migrate anonymous chats to new user

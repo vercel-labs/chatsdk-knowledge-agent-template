@@ -8,6 +8,7 @@ declare module '#auth-utils' {
     username: string
     provider: 'github'
     providerId: number
+    role: 'user' | 'admin'
   }
 }
 

@@ -13,6 +13,7 @@ export const users = sqliteTable('users', {
   username: text('username').notNull(),
   provider: text('provider').notNull(), // 'github'
   providerId: text('provider_id').notNull(),
+  role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   ...timestamps
 }, table => [uniqueIndex('users_provider_id_idx').on(table.provider, table.providerId)])
 

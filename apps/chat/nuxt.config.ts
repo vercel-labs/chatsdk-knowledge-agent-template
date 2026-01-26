@@ -56,6 +56,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Admin users (comma-separated GitHub emails or usernames)
+    adminUsers: '',
     // Savoir SDK config
     savoir: {
       apiKey: '',

@@ -9,9 +9,10 @@ const paramsSchema = z.object({
 
 /**
  * POST /api/sync/:source
- * Sync a specific source using Vercel Sandbox.
+ * Sync a specific source using Vercel Sandbox (admin only).
  */
 export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
   const { source: sourceId } = await getValidatedRouterParams(event, paramsSchema.parse)
   const config = useRuntimeConfig()
 

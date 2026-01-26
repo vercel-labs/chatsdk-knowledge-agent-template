@@ -3,9 +3,10 @@ import { eq } from 'drizzle-orm'
 
 /**
  * DELETE /api/sources/:id
- * Delete a source
+ * Delete a source (admin only)
  */
 export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
   const id = getRouterParam(event, 'id')
   if (!id) {
     throw createError({ statusCode: 400, message: 'Missing source id' })
