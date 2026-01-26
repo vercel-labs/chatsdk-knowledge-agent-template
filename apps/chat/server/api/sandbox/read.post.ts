@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { useLogger } from 'evlog'
-import { getOrCreateSandbox, read } from '../../lib/sandbox'
+import { getOrCreateSandbox, read } from '../../utils/sandbox/manager'
 
 const bodySchema = z.object({
   paths: z.array(z.string().min(1)).min(1).max(50),

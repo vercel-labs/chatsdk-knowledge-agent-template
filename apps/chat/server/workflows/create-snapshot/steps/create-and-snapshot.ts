@@ -2,7 +2,7 @@
 
 import { log } from 'evlog'
 import type { SnapshotConfig } from '../types'
-import { createSandbox } from '../../../lib/sandbox/context'
+import { createSandbox } from '../../../utils/sandbox/context'
 
 export interface SnapshotResult {
   snapshotId: string

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { useLogger } from 'evlog'
-import { getOrCreateSandbox, searchAndRead } from '../../lib/sandbox'
+import { getOrCreateSandbox, searchAndRead } from '../../utils/sandbox/manager'
 
 const bodySchema = z.object({
   query: z.string({ error: 'query is required - provide a search term like "useAsyncData" or "middleware"' }).min(1, 'query cannot be empty').max(500),

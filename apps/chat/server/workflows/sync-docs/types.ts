@@ -22,6 +22,7 @@ export interface GitHubSource {
 
 export interface SyncSourceResult {
   sourceId: string
+  label: string
   success: boolean
   fileCount: number
   error?: string

@@ -4,7 +4,7 @@ import { db, schema } from '@nuxthub/db'
 import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
-import { generateTitle } from '../../utils/generate-title'
+import { generateTitle } from '../../utils/chat/generate-title'
 
 const SYSTEM_PROMPT = `You are an AI assistant specialized in the Nuxt/Nitro ecosystem.
 

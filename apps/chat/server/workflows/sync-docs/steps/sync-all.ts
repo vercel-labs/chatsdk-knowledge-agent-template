@@ -2,9 +2,9 @@
 
 import { log } from 'evlog'
 import type { GitHubSource, SyncConfig, SyncSourceResult } from '../types'
-import { createSandbox, generateAuthRepoUrl } from '../../../lib/sandbox/context'
-import { syncSources } from '../../../lib/sandbox/source-sync'
-import { pushChanges, generateCommitMessage } from '../../../lib/sandbox/git'
+import { createSandbox, generateAuthRepoUrl } from '../../../utils/sandbox/context'
+import { syncSources } from '../../../utils/sandbox/source-sync'
+import { pushChanges, generateCommitMessage } from '../../../utils/sandbox/git'
 
 export interface SyncAllResult {
   snapshotId: string
@@ -26,9 +26,9 @@ export async function stepSyncAll(
 
   for (const result of results) {
     if (result.success) {
-      log.info('sync', `${result.sourceId}: synced ${result.fileCount} files`)
+      log.info('sync', `${result.label}: synced ${result.fileCount} files`)
     } else {
-      log.error('sync', `${result.sourceId}: failed - ${result.error}`)
+      log.error('sync', `${result.label}: failed - ${result.error}`)
     }
   }
 

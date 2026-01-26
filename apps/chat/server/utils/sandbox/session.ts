@@ -5,7 +5,7 @@ import { KV_KEYS } from './types'
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000 // 30 minutes
 
 /** Returns session if exists and not expired, null otherwise */
-export async function getSession(sessionId: string): Promise<SandboxSession | null> {
+export async function getSandboxSession(sessionId: string): Promise<SandboxSession | null> {
   const session = await kv.get<SandboxSession>(KV_KEYS.session(sessionId))
 
   if (!session) {
@@ -21,7 +21,7 @@ export async function getSession(sessionId: string): Promise<SandboxSession | nu
 }
 
 /** Creates or updates session with TTL, returns full session with timestamps */
-export async function setSession(
+export async function setSandboxSession(
   sessionId: string,
   session: Omit<SandboxSession, 'lastAccessedAt' | 'expiresAt'>,
   ttlMs: number = DEFAULT_SESSION_TTL_MS,
@@ -39,11 +39,11 @@ export async function setSession(
 }
 
 /** Refreshes session expiration time, returns updated session or null if not found */
-export async function touchSession(
+export async function touchSandboxSession(
   sessionId: string,
   ttlMs: number = DEFAULT_SESSION_TTL_MS,
 ): Promise<SandboxSession | null> {
-  const session = await getSession(sessionId)
+  const session = await getSandboxSession(sessionId)
   if (!session) {
     return null
   }
@@ -57,7 +57,7 @@ export async function touchSession(
 }
 
 /** Deletes session from storage */
-export async function deleteSession(sessionId: string): Promise<void> {
+export async function deleteSandboxSession(sessionId: string): Promise<void> {
   await kv.del(KV_KEYS.session(sessionId))
 }
 

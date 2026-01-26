@@ -2,7 +2,7 @@ import { Sandbox } from '@vercel/sandbox'
 import { createError, log } from 'evlog'
 import type { ActiveSandbox, FileContent, SearchAndReadResult, SearchResult, SandboxManagerConfig, SnapshotMetadata } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
-import { deleteSession, generateSessionId, getSession, setSession, touchSession } from './session'
+import { deleteSandboxSession, generateSessionId, getSandboxSession, setSandboxSession, touchSandboxSession } from './session'
 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000 // 30 minutes
 const SANDBOX_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -137,17 +137,17 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
 
   // If session ID provided, try to get existing sandbox
   if (sessionId) {
-    const session = await getSession(sessionId)
+    const session = await getSandboxSession(sessionId)
     if (session) {
       const sandbox = await getSandboxById(session.sandboxId)
       if (sandbox) {
         const reuseMs = Date.now() - startTime
         log.info('sandbox', `Reusing sandbox ${sandbox.sandboxId} for session ${sessionId} (${reuseMs}ms)`)
-        await touchSession(sessionId, config.sessionTtlMs)
+        await touchSandboxSession(sessionId, config.sessionTtlMs)
         return { sandbox, session, sessionId }
       }
       // Sandbox no longer available, clean up session
-      await deleteSession(sessionId)
+      await deleteSandboxSession(sessionId)
     }
   }
 
@@ -155,7 +155,7 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
   const sandbox = await createSandboxFromSnapshot(snapshotId)
 
   const newSessionId = sessionId || generateSessionId()
-  const session = await setSession(
+  const session = await setSandboxSession(
     newSessionId,
     {
       sandboxId: sandbox.sandboxId,

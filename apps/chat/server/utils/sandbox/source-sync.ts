@@ -20,14 +20,14 @@ export async function syncGitHubSource(
 
     if (source.readmeOnly) {
       const fileCount = await syncReadmeOnly(sandbox, source, targetDir)
-      return { sourceId: source.id, success: true, fileCount }
+      return { sourceId: source.id, label: source.label, success: true, fileCount }
     }
 
     const fileCount = await syncFullRepository(sandbox, source, targetDir)
-    return { sourceId: source.id, success: true, fileCount }
+    return { sourceId: source.id, label: source.label, success: true, fileCount }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    return { sourceId: source.id, success: false, fileCount: 0, error: errorMessage }
+    return { sourceId: source.id, label: source.label, success: false, fileCount: 0, error: errorMessage }
   }
 }
 
