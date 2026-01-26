@@ -91,7 +91,7 @@ const sourceIdentifier = computed(() => {
             </div>
             <UTooltip v-if="source.outputPath" text="Output folder in snapshot" :delay-open="200">
               <div class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted">
-                <UIcon name="i-lucide-folder-output" class="size-3 opacity-60" />
+                <UIcon name="i-lucide-package" class="size-3 opacity-60" />
                 {{ source.outputPath }}
               </div>
             </UTooltip>

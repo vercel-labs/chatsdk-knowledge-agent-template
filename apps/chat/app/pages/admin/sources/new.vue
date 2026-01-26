@@ -506,8 +506,8 @@ const hasValidSources = computed(() => sources.value.some(s => s.data.label))
                   </template>
 
                   <div class="flex items-center gap-2 text-xs text-muted">
-                    <UIcon name="i-lucide-folder-output" class="size-3.5" />
-                    <span>Output:</span>
+                    <UIcon name="i-lucide-package" class="size-3.5" />
+                    <span>Snapshot:</span>
                     <code class="text-highlighted font-mono">{{ getSnapshotPreview(source) }}</code>
                   </div>
                 </div>
