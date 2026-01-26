@@ -113,6 +113,8 @@ export default defineEventHandler(async (event) => {
     let toolCallCount = 0
     let totalInputTokens = 0
     let totalOutputTokens = 0
+    let stepStartTime = Date.now()
+    const stepDurations: number[] = []
 
     log.info('chat', `[${requestId}] Starting agent with ${model}`)
 
@@ -121,6 +123,8 @@ export default defineEventHandler(async (event) => {
       instructions: SYSTEM_PROMPT,
       tools: savoir.tools,
       onStepFinish: (stepResult) => {
+        const stepDurationMs = Date.now() - stepStartTime
+        stepDurations.push(stepDurationMs)
         stepCount++
 
         if (stepResult.usage) {
@@ -131,11 +135,17 @@ export default defineEventHandler(async (event) => {
         if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
           toolCallCount += stepResult.toolCalls.length
           const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
-          log.info('chat', `[${requestId}] Step ${stepCount}: ${tools}`)
+          log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
+        } else {
+          log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
         }
+
+        // Reset timer for next step
+        stepStartTime = Date.now()
       },
 
       onFinish: (result) => {
+        const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
         requestLog.set({
           finishReason: result.finishReason,
           totalInputTokens,
@@ -143,8 +153,10 @@ export default defineEventHandler(async (event) => {
           totalTokens: totalInputTokens + totalOutputTokens,
           stepCount,
           toolCallCount,
+          stepDurations,
+          totalAgentMs: totalDurationMs,
         })
-        log.info('chat', `[${requestId}] Finished: ${result.finishReason}`)
+        log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
       },
     })
 

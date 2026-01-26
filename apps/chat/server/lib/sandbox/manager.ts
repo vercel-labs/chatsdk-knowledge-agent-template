@@ -44,6 +44,7 @@ function getGitSourceOptions(repoUrl: string, branch: string, githubToken?: stri
 /** Creates and initializes sandbox from snapshot ID */
 async function createSandboxFromSnapshot(snapshotId: string): Promise<Sandbox> {
   log.info('sandbox', `Creating sandbox from snapshot: ${snapshotId}`)
+  const startTime = Date.now()
 
   const sandbox = await Sandbox.create({
     source: {
@@ -54,7 +55,8 @@ async function createSandboxFromSnapshot(snapshotId: string): Promise<Sandbox> {
     runtime: 'node24',
   })
 
-  log.info('sandbox', `Sandbox created: ${sandbox.sandboxId}`)
+  const durationMs = Date.now() - startTime
+  log.info('sandbox', `Sandbox created: ${sandbox.sandboxId} (${durationMs}ms)`)
   return sandbox
 }
 
@@ -131,6 +133,7 @@ async function getOrCreateSnapshot(): Promise<string> {
 /** Returns active sandbox for session, reusing existing or creating new. Auto-creates snapshot if needed */
 export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSandbox> {
   const config = getConfig()
+  const startTime = Date.now()
 
   // If session ID provided, try to get existing sandbox
   if (sessionId) {
@@ -138,7 +141,8 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     if (session) {
       const sandbox = await getSandboxById(session.sandboxId)
       if (sandbox) {
-        log.info('sandbox', `Reusing sandbox ${sandbox.sandboxId} for session ${sessionId}`)
+        const reuseMs = Date.now() - startTime
+        log.info('sandbox', `Reusing sandbox ${sandbox.sandboxId} for session ${sessionId} (${reuseMs}ms)`)
         await touchSession(sessionId, config.sessionTtlMs)
         return { sandbox, session, sessionId }
       }
@@ -161,6 +165,9 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     config.sessionTtlMs,
   )
 
+  const createMs = Date.now() - startTime
+  log.info('sandbox', `New sandbox created for session ${newSessionId} (${createMs}ms)`)
+
   return { sandbox, session, sessionId: newSessionId }
 }
 
@@ -173,6 +180,7 @@ export async function search(
   limit: number = 20,
 ): Promise<SearchResult[]> {
   log.info('sandbox', `Searching for: ${query}`)
+  const startTime = Date.now()
 
   // Use grep for searching (-r recursive, -n line numbers, -i case insensitive, -l list files)
   const result = await sandbox.runCommand({
@@ -193,6 +201,8 @@ export async function search(
     ],
     cwd: '/vercel/sandbox',
   })
+
+  const grepMs = Date.now() - startTime
 
   const stdout = await result.stdout()
   const stderr = await result.stderr()
@@ -216,7 +226,7 @@ export async function search(
     }
   }
 
-  log.info('sandbox', `Found ${results.length} matches`)
+  log.info('sandbox', `Found ${results.length} matches (grep: ${grepMs}ms)`)
   return results
 }
 
@@ -226,6 +236,7 @@ export async function read(
   paths: string[],
 ): Promise<FileContent[]> {
   log.info('sandbox', `Reading ${paths.length} files`)
+  const startTime = Date.now()
 
   const files: FileContent[] = []
 
@@ -247,7 +258,8 @@ export async function read(
     }
   }
 
-  log.info('sandbox', `Read ${files.length} files successfully`)
+  const readMs = Date.now() - startTime
+  log.info('sandbox', `Read ${files.length} files successfully (${readMs}ms)`)
   return files
 }
 

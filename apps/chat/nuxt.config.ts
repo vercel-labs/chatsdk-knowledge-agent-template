@@ -12,8 +12,6 @@ export default defineNuxtConfig({
   evlog: {
     env: {
       service: 'savoir',
-      environment: process.env.NODE_ENV ?? 'development',
-      commitHash: process.env.COMMIT_SHA,
       version: '0.1.0',
     },
   },

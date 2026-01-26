@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { useLogger } from 'evlog'
 import { getOrCreateSandbox, searchAndRead } from '../../lib/sandbox'
 
 const bodySchema = z.object({
@@ -17,13 +18,28 @@ const bodySchema = z.object({
  * - sessionId: string - Optional session ID for sandbox reuse
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const body = await readValidatedBody(event, bodySchema.parse)
 
+  requestLog.set({ query: body.query, limit: body.limit })
+
   // Get or create sandbox
+  const sandboxStart = Date.now()
   const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
+  const sandboxMs = Date.now() - sandboxStart
+
+  requestLog.set({ sandboxMs, sandboxId: sandbox.sandboxId, sessionId })
 
   // Search and read files
+  const searchStart = Date.now()
   const result = await searchAndRead(sandbox, body.query, body.limit)
+  const searchMs = Date.now() - searchStart
+
+  requestLog.set({
+    searchMs,
+    matchCount: result.matches.length,
+    fileCount: result.files.length,
+  })
 
   return {
     sessionId,
