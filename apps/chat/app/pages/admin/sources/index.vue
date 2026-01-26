@@ -26,7 +26,6 @@ const overlay = useOverlay()
 
 const { data: sources, refresh } = await useFetch('/api/sources')
 
-const showAddModal = ref(false)
 const editingSource = ref<SerializedSource | null>(null)
 const isSyncingAll = ref(false)
 
@@ -85,7 +84,6 @@ async function triggerSync(sourceId?: string) {
 
 function handleSaved() {
   refresh()
-  showAddModal.value = false
   editingSource.value = null
 }
 </script>
@@ -118,7 +116,7 @@ function handleSaved() {
               <UButton
                 icon="i-lucide-plus"
                 size="xs"
-                @click="showAddModal = true"
+                to="/admin/sources/new"
               >
                 Add
               </UButton>
@@ -145,7 +143,7 @@ function handleSaved() {
           <UButton
             icon="i-lucide-plus"
             size="sm"
-            @click="showAddModal = true"
+            to="/admin/sources/new"
           >
             Add Source
           </UButton>
@@ -178,7 +176,7 @@ function handleSaved() {
               v-else
               variant="ghost"
               class="w-full h-24 rounded-lg border border-dashed border-default hover:border-muted"
-              @click="showAddModal = true"
+              to="/admin/sources/new"
             >
               <span class="text-[13px] text-muted">Add a repository</span>
             </UButton>
@@ -210,7 +208,7 @@ function handleSaved() {
               v-else
               variant="ghost"
               class="w-full h-24 rounded-lg border border-dashed border-default hover:border-muted"
-              @click="showAddModal = true"
+              to="/admin/sources/new"
             >
               <span class="text-[13px] text-muted">Add a channel</span>
             </UButton>
@@ -219,9 +217,9 @@ function handleSaved() {
       </UContainer>
 
       <SourceModal
-        v-if="showAddModal || editingSource"
+        v-if="editingSource"
         :source="editingSource"
-        @close="showAddModal = false; editingSource = null"
+        @close="editingSource = null"
         @saved="handleSaved"
       />
     </template>
