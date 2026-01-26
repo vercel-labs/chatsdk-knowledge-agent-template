@@ -1,6 +1,8 @@
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 import type { SourceOcrItem } from '~~/shared/utils/source-ocr'
+import { IMAGE_OPTIMIZATION_CONFIG } from '~~/shared/utils/file'
+import { optimizeImage } from '~~/server/utils/image/optimize'
 
 const bodySchema = z.object({
   images: z.array(z.string()).optional().default([]),
@@ -116,6 +118,21 @@ function sanitizeSource(source: SourceOcrItem): SourceOcrItem | null {
 }
 
 async function extractFromImage(image: string) {
+  const { ocr: ocrConfig } = IMAGE_OPTIMIZATION_CONFIG
+  let optimizedImage: Buffer | string = image
+
+  try {
+    const result = await optimizeImage(image, {
+      maxWidth: ocrConfig.maxWidth,
+      maxHeight: ocrConfig.maxHeight,
+      quality: ocrConfig.quality,
+      format: ocrConfig.format,
+    })
+    optimizedImage = result.buffer
+  } catch {
+    optimizedImage = image
+  }
+
   const { output } = await generateText({
     model: 'google/gemini-3-flash',
     output: Output.object({ schema: sourceOcrSchema }),
@@ -124,7 +141,7 @@ async function extractFromImage(image: string) {
         role: 'user',
         content: [
           { type: 'text', text: systemPrompt },
-          { type: 'image', image },
+          { type: 'image', image: optimizedImage },
         ],
       },
     ],
