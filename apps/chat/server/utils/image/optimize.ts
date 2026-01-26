@@ -19,7 +19,7 @@ const MIME_TYPES = {
 } as const
 
 function parseBase64(input: string): { buffer: Buffer, format: string | null } {
-  const match = input.match(/^data:image\/(\w+);base64,(.+)$/)
+  const match = input.match(/^data:image\/([^;]+);base64,(.+)$/)
   if (match) {
     return { buffer: Buffer.from(match[2]!, 'base64'), format: match[1]! }
   }
@@ -33,10 +33,14 @@ function toSharpFormat(format: string): 'webp' | 'jpeg' | 'png' {
 }
 
 function applyCompression(pipeline: sharp.Sharp, format: 'webp' | 'jpeg' | 'png', quality: number) {
+  const q = Math.max(1, Math.min(quality, 100))
   switch (format) {
-    case 'webp': return pipeline.webp({ quality })
-    case 'png': return pipeline.png({ compressionLevel: 9, palette: true })
-    default: return pipeline.jpeg({ quality, mozjpeg: true })
+    case 'webp': return pipeline.webp({ quality: q })
+    case 'png': {
+      const compressionLevel = Math.round(((100 - q) / 100) * 9)
+      return pipeline.png({ quality: q, compressionLevel, palette: q < 90 })
+    }
+    default: return pipeline.jpeg({ quality: q, mozjpeg: true })
   }
 }
 

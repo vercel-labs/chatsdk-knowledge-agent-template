@@ -19,9 +19,9 @@ function isAllowedType(type: string, filename: string): boolean {
 }
 
 function generatePathname(username: string, chatId: string, filename: string): string {
-  const suffix = Math.random().toString(36).substring(2, 8)
+  const suffix = crypto.randomUUID().slice(0, 8)
   const ext = filename.match(/(\.[^.]+)$/)?.[1] || ''
-  const base = filename.replace(/\.[^.]+$/, '')
+  const base = filename.replace(/\.[^.]+$/, '') || 'file'
   return `${username}/${chatId}/${base}-${suffix}${ext}`
 }
 
@@ -31,15 +31,16 @@ async function processFile(file: FileData): Promise<FileData> {
   try {
     const config = IMAGE_OPTIMIZATION_CONFIG.storage
     const result = await optimizeImage(file.buffer, config)
-    const [, ext] = result.mimeType.split('/')
-    const base = file.filename.replace(/\.[^.]+$/, '')
+    const ext = result.mimeType.includes('/') ? result.mimeType.split('/')[1] : 'webp'
+    const base = file.filename.replace(/\.[^.]+$/, '') || 'image'
 
     return {
       buffer: result.buffer,
       type: result.mimeType,
       filename: `${base}.${ext}`,
     }
-  } catch {
+  } catch (error) {
+    console.error('Image optimization failed, using original file', { filename: file.filename, error })
     return file
   }
 }

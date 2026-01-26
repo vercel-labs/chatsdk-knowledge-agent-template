@@ -119,17 +119,13 @@ function sanitizeSource(source: SourceOcrItem): SourceOcrItem | null {
 
 async function extractFromImage(image: string) {
   const { ocr: ocrConfig } = IMAGE_OPTIMIZATION_CONFIG
-  let optimizedImage: Buffer | string = image
+  let optimizedImage: Buffer | string
 
   try {
-    const result = await optimizeImage(image, {
-      maxWidth: ocrConfig.maxWidth,
-      maxHeight: ocrConfig.maxHeight,
-      quality: ocrConfig.quality,
-      format: ocrConfig.format,
-    })
+    const result = await optimizeImage(image, ocrConfig)
     optimizedImage = result.buffer
-  } catch {
+  } catch (error) {
+    console.error('Image optimization for OCR failed, using original', { error })
     optimizedImage = image
   }
 
