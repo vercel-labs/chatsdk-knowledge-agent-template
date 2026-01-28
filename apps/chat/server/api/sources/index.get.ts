@@ -1,5 +1,7 @@
+import { kv } from '@nuxthub/kv'
 import { db, schema } from '@nuxthub/db'
 import { asc } from 'drizzle-orm'
+import { KV_KEYS } from '../../utils/sandbox/types'
 
 /**
  * GET /api/sources
@@ -8,13 +10,17 @@ import { asc } from 'drizzle-orm'
  * Response format matches SourcesResponse from @savoir/sdk
  */
 export default defineEventHandler(async () => {
-  const allSources = await db.select().from(schema.sources).orderBy(asc(schema.sources.label))
+  const [allSources, lastSyncAt] = await Promise.all([
+    db.select().from(schema.sources).orderBy(asc(schema.sources.label)),
+    kv.get<number>(KV_KEYS.LAST_SOURCE_SYNC),
+  ])
 
   const github = allSources.filter(s => s.type === 'github')
   const youtube = allSources.filter(s => s.type === 'youtube')
 
   return {
     total: allSources.length,
+    lastSyncAt,
     github: {
       count: github.length,
       sources: github,

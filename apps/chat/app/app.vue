@@ -3,6 +3,8 @@ const colorMode = useColorMode()
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
 
+useSnapshotSync()
+
 useHead({
   meta: [
     { charset: 'utf-8' },

@@ -4,6 +4,12 @@ const navigation = [
     label: 'Sources',
     icon: 'i-lucide-database',
     to: '/admin',
+    exact: true,
+  },
+  {
+    label: 'Sandbox',
+    icon: 'i-lucide-box',
+    to: '/admin/sandbox',
   },
 ]
 </script>

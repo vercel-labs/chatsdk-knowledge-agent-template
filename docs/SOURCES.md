@@ -147,6 +147,16 @@ curl -X POST http://localhost:3000/api/sync/nuxt \
   -H "Authorization: Bearer $SAVOIR_SECRET_KEY"
 ```
 
+### Sync Tracking
+
+The system tracks when sources were last synced:
+
+- `lastSyncAt` timestamp is stored in KV after each successful sync
+- `GET /api/sources` returns the `lastSyncAt` value
+- Admin UI (`/admin`) shows a reminder if the last sync was more than 7 days ago
+
+This helps ensure documentation stays up-to-date by providing visibility into sync freshness.
+
 ## Content Normalization
 
 All content is normalized to Markdown:
