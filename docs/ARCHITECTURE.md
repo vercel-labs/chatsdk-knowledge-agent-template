@@ -99,6 +99,9 @@ savoir/
 │       │   └── plugins/      # Nitro plugins
 │       │       └── logger.ts
 │       └── nuxt.config.ts
+├── shared/
+│   └── types/
+│       └── snapshot.ts       # SnapshotSyncStatus type
 ├── packages/
 │   ├── sdk/                  # @savoir/sdk
 │   │   └── src/
@@ -329,6 +332,34 @@ Sync a specific source.
 }
 ```
 
+### Snapshot Endpoints
+
+#### GET /api/snapshot/status
+
+Get current vs latest snapshot status. Returns whether the sandbox needs to sync to a newer snapshot. Admin only.
+
+**Response:**
+```json
+{
+  "currentSnapshotId": "snap_abc123",
+  "latestSnapshotId": "snap_def456",
+  "needsSync": true,
+  "latestCreatedAt": 1706400000000
+}
+```
+
+#### POST /api/snapshot/sync
+
+Sync sandbox to the latest Vercel snapshot. Admin only.
+
+**Response:**
+```json
+{
+  "status": "synced",
+  "snapshotId": "snap_def456"
+}
+```
+
 ### Sources Endpoints
 
 #### GET /api/sources
@@ -366,6 +397,12 @@ Used for caching and session management:
 
 // Active sandbox sessions
 `session:${sessionId}` -> { sandboxId: string, snapshotId: string, ... }
+
+// Snapshot status cache (1 min TTL)
+`snapshot:status-cache` -> { latestSnapshotId: string, latestCreatedAt: number, cachedAt: number }
+
+// Last source sync timestamp
+`sources:last-sync` -> number (timestamp)
 ```
 
 ### Snapshot Repository

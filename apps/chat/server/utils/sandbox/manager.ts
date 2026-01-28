@@ -230,7 +230,7 @@ export async function search(
   return results
 }
 
-/** Reads files at paths from sandbox and returns contents */
+/** Reads files at paths from sandbox and returns contents, in parallel for better performance */
 export async function read(
   sandbox: Sandbox,
   paths: string[],
@@ -238,9 +238,7 @@ export async function read(
   log.info('sandbox', `Reading ${paths.length} files`)
   const startTime = Date.now()
 
-  const files: FileContent[] = []
-
-  for (const path of paths) {
+  const files = await Promise.all(paths.map(async (path) => {
     try {
       const buffer = await sandbox.readFileToBuffer({
         path,
@@ -248,19 +246,23 @@ export async function read(
       })
 
       if (buffer) {
-        files.push({
+        return {
           path,
           content: buffer.toString('utf-8'),
-        })
+        }
       }
     } catch {
       log.error('sandbox', `Failed to read file: ${path}`)
     }
-  }
+    return null
+  }))
+
+  // Filter out any failed reads (nulls)
+  const filteredFiles = files.filter((f): f is FileContent => !!f)
 
   const readMs = Date.now() - startTime
-  log.info('sandbox', `Read ${files.length} files successfully (${readMs}ms)`)
-  return files
+  log.info('sandbox', `Read ${filteredFiles.length} files successfully (${readMs}ms)`)
+  return filteredFiles
 }
 
 /** Searches for query and returns matches with full file contents */

@@ -1,7 +1,9 @@
+import { kv } from '@nuxthub/kv'
 import { start } from 'workflow/api'
 import { z } from 'zod'
 import { syncDocumentation } from '../../workflows/sync-docs'
 import type { GitHubSource } from '../../workflows/sync-docs'
+import { KV_KEYS } from '../../utils/sandbox/types'
 
 const bodySchema = z
   .object({
@@ -64,6 +66,9 @@ export default defineEventHandler(async (event) => {
   }
 
   await start(syncDocumentation, [syncConfig, sources])
+
+  // Track last sync time
+  await kv.set(KV_KEYS.LAST_SOURCE_SYNC, Date.now())
 
   return {
     status: 'started',
