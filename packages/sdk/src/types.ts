@@ -18,7 +18,33 @@ export interface SavoirConfig {
    * When provided, the same sandbox will be reused for multiple requests
    */
   sessionId?: string
+
+  /**
+   * Optional callback when a tool call is made
+   * Called with tool call info when input is available
+   */
+  onToolCall?: ToolCallCallback
 }
+
+/**
+ * Tool call state
+ */
+export type ToolCallState = 'loading' | 'done'
+
+/**
+ * Tool call information passed to onToolCall callback
+ */
+export interface ToolCallInfo {
+  toolCallId: string
+  toolName: string
+  args: Record<string, unknown>
+  state: ToolCallState
+}
+
+/**
+ * Callback type for tool call notifications
+ */
+export type ToolCallCallback = (info: ToolCallInfo) => void
 
 /**
  * Search result from the Savoir API

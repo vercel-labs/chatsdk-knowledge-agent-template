@@ -104,11 +104,6 @@ export default defineEventHandler(async (event) => {
 
     const { savoir: savoirConfig } = useRuntimeConfig()
 
-    const savoir = createSavoir({
-      apiUrl: getRequestURL(event).origin,
-      apiKey: savoirConfig.apiKey || undefined,
-    })
-
     let stepCount = 0
     let toolCallCount = 0
     let totalInputTokens = 0
@@ -116,51 +111,77 @@ export default defineEventHandler(async (event) => {
     let stepStartTime = Date.now()
     const stepDurations: number[] = []
 
-    log.info('chat', `[${requestId}] Starting agent with ${model}`)
+    // Writer reference to be used by onToolCall callback
+    let streamWriter: any = null
 
-    const agent = new ToolLoopAgent({
-      model,
-      instructions: SYSTEM_PROMPT,
-      tools: savoir.tools,
-      onStepFinish: (stepResult) => {
-        const stepDurationMs = Date.now() - stepStartTime
-        stepDurations.push(stepDurationMs)
-        stepCount++
+    const savoir = createSavoir({
+      apiUrl: getRequestURL(event).origin,
+      apiKey: savoirConfig.apiKey || undefined,
+      onToolCall: (info) => {
+        log.info('chat', `[${requestId}] Tool call [${info.state}]: ${info.toolName} ${JSON.stringify(info.args)}`)
 
-        if (stepResult.usage) {
-          totalInputTokens += stepResult.usage.inputTokens ?? 0
-          totalOutputTokens += stepResult.usage.outputTokens ?? 0
+        if (streamWriter) {
+          streamWriter.write({
+            type: 'data-tool-call',
+            id: info.toolCallId,
+            data: {
+              toolCallId: info.toolCallId,
+              toolName: info.toolName,
+              args: info.args,
+              state: info.state,
+            },
+          })
         }
-
-        if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
-          toolCallCount += stepResult.toolCalls.length
-          const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
-          log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
-        } else {
-          log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
-        }
-
-        // Reset timer for next step
-        stepStartTime = Date.now()
-      },
-      onFinish: (result) => {
-        const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
-        requestLog.set({
-          finishReason: result.finishReason,
-          totalInputTokens,
-          totalOutputTokens,
-          totalTokens: totalInputTokens + totalOutputTokens,
-          stepCount,
-          toolCallCount,
-          stepDurations,
-          totalAgentMs: totalDurationMs,
-        })
-        log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
       },
     })
 
+    log.info('chat', `[${requestId}] Starting agent with ${model}`)
+
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
+        streamWriter = writer
+
+        const agent = new ToolLoopAgent({
+          model,
+          instructions: SYSTEM_PROMPT,
+          tools: savoir.tools,
+          onStepFinish: (stepResult) => {
+            const stepDurationMs = Date.now() - stepStartTime
+            stepDurations.push(stepDurationMs)
+            stepCount++
+
+            if (stepResult.usage) {
+              totalInputTokens += stepResult.usage.inputTokens ?? 0
+              totalOutputTokens += stepResult.usage.outputTokens ?? 0
+            }
+
+            if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
+              toolCallCount += stepResult.toolCalls.length
+              const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
+              log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
+            } else {
+              log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
+            }
+
+            // Reset timer for next step
+            stepStartTime = Date.now()
+          },
+          onFinish: (result) => {
+            const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
+            requestLog.set({
+              finishReason: result.finishReason,
+              totalInputTokens,
+              totalOutputTokens,
+              totalTokens: totalInputTokens + totalOutputTokens,
+              stepCount,
+              toolCallCount,
+              stepDurations,
+              totalAgentMs: totalDurationMs,
+            })
+            log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
+          },
+        })
+
         if (!chat.title && messages[0]) {
           generateTitle({
             firstMessage: messages[0],

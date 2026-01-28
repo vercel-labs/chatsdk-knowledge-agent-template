@@ -5,7 +5,7 @@ interface ToolCall {
   toolCallId: string
   toolName: string
   args: Record<string, unknown>
-  state?: string
+  state: 'loading' | 'done'
 }
 
 const props = defineProps<{
@@ -24,7 +24,7 @@ const messages = [
   'Almost there',
 ]
 
-const finishedMessage = 'Search complete'
+const finishedMessage = 'Search done'
 
 const currentIndex = ref(0)
 const targetText = computed(() => {
@@ -52,11 +52,9 @@ function scrambleText(from: string, to: string) {
 
       if (i < charProgress - 2) {
         result += to[i] || ''
-      }
-      else if (i < charProgress) {
+      } else if (i < charProgress) {
         result += chars[Math.floor(Math.random() * chars.length)]
-      }
-      else {
+      } else {
         result += from[i] || ''
       }
     }
@@ -65,8 +63,7 @@ function scrambleText(from: string, to: string) {
 
     if (frame < totalFrames) {
       requestAnimationFrame(animate)
-    }
-    else {
+    } else {
       displayedText.value = to
     }
   }
@@ -90,13 +87,22 @@ watch(() => props.isLoading, (isLoading) => {
   }
 })
 
-function getToolLabel(toolName: string, args: Record<string, unknown>) {
+function getToolLabel(tool: ToolCall) {
+  const { toolName, args, state } = tool
+  const isDone = state === 'done'
+
   if (toolName === 'search_and_read') {
-    return `Searching "${args?.query || '...'}"`
+    return isDone
+      ? `Searched "${args?.query || '...'}"`
+      : `Searching "${args?.query || '...'}"`
   }
 
   if (toolName === 'read') {
-    return `Reading ${args?.path || '...'}`
+    const paths = args?.paths as string[] | undefined
+    const path = paths?.[0] || '...'
+    return isDone
+      ? `Read ${path}`
+      : `Reading ${path}`
   }
 
   return toolName
@@ -117,17 +123,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 mb-4">
     <!-- Main loader with matrix and text -->
-    <div class="flex items-center text-xs text-muted overflow-hidden">
+    <div class="flex items-center text-sm text-muted overflow-hidden">
       <motion.div
         v-if="isLoading"
         :initial="{ opacity: 1, width: 'auto' }"
         :exit="{ opacity: 0, width: 0 }"
         :transition="{ duration: 0.2 }"
-        class="shrink-0 mr-2"
+        class="shrink-0 mr-2.5"
       >
-        <ChatMatrix />
+        <ChatMatrix :size="4" :dot-size="3" :gap="3" />
       </motion.div>
       <motion.span
         :animate="{ x: 0 }"
@@ -141,20 +147,20 @@ onUnmounted(() => {
     <!-- Tool calls displayed below -->
     <div
       v-if="toolCalls?.length"
-      class="flex flex-col gap-1"
-      :class="isLoading ? 'pl-[22px]' : 'pl-0'"
+      class="flex flex-col gap-1.5"
+      :class="isLoading ? 'pl-[31px]' : 'pl-0'"
     >
       <motion.div
         v-for="tool in toolCalls"
-        :key="`${tool.toolCallId}-${JSON.stringify(tool.args)}`"
+        :key="tool.toolCallId"
         :initial="{ opacity: 0, x: -4 }"
         :animate="{ opacity: 1, x: 0 }"
         :transition="{ duration: 0.15 }"
-        class="flex items-center gap-1.5"
+        class="flex items-center gap-2"
       >
-        <span class="size-1 rounded-full bg-current opacity-40" />
-        <span class="text-[11px] text-dimmed truncate max-w-[200px]">
-          {{ getToolLabel(tool.toolName, tool.args) }}
+        <span class="size-1.5 rounded-full bg-current opacity-40" />
+        <span class="text-xs text-dimmed truncate max-w-[300px]">
+          {{ getToolLabel(tool) }}
         </span>
       </motion.div>
     </div>

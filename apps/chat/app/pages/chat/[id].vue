@@ -109,19 +109,16 @@ interface ToolCallInfo {
   toolCallId: string
   toolName: string
   args: Record<string, unknown>
-  state: string
+  state: 'loading' | 'done'
 }
 
 function getMessageToolCalls(message: UIMessage): ToolCallInfo[] {
   if (!message?.parts) return []
-  return (message.parts as Array<{ type: string, toolCallId?: string, toolName?: string, input?: Record<string, unknown>, state?: string }>)
-    .filter(p => p.type === 'dynamic-tool')
-    .map(p => ({
-      toolCallId: p.toolCallId || '',
-      toolName: p.toolName || '',
-      args: p.input || {},
-      state: p.state || ''
-    }))
+  // Extract individual tool call data parts (reconciled by ID)
+  return (message.parts as Array<{ type: string, data?: ToolCallInfo }>)
+    .filter(p => p.type === 'data-tool-call')
+    .map(p => p.data!)
+    .filter(Boolean)
 }
 
 onMounted(() => {
@@ -163,7 +160,7 @@ onMounted(() => {
               :tool-calls="getMessageToolCalls(message)"
               :is-loading="false"
             />
-            <template v-for="(part, index) in message.parts.filter(p => p.type !== 'data-sources' && p.type !== 'dynamic-tool')" :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`">
+            <template v-for="(part, index) in message.parts.filter(p => p.type !== 'data-sources' && p.type !== 'data-tool-call')" :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`">
               <Reasoning
                 v-if="part.type === 'reasoning'"
                 :text="part.text"
