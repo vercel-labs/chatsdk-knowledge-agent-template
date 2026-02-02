@@ -1,6 +1,7 @@
 import { createError } from 'evlog'
 import type {
   SavoirConfig,
+  ShellBatchResponse,
   ShellResponse,
   SnapshotResponse,
   SourcesResponse,
@@ -145,6 +146,16 @@ export class SavoirClient {
   async bash(command: string): Promise<ShellResponse> {
     return await this.post<ShellResponse>('/api/sandbox/shell', {
       command,
+    })
+  }
+
+  /**
+   * Run multiple bash commands in sequence (batch mode)
+   * More efficient than multiple single calls as sandbox is reused
+   */
+  async bashBatch(commands: string[]): Promise<ShellBatchResponse> {
+    return await this.post<ShellBatchResponse>('/api/sandbox/shell', {
+      commands,
     })
   }
 

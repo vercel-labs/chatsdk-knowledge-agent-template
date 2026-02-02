@@ -1,1 +1,1 @@
-export { createBashTool } from './shell'
+export { createBashTool, createBashBatchTool } from './shell'

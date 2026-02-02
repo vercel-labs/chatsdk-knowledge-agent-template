@@ -86,13 +86,31 @@ export interface ReadResponse {
 }
 
 /**
- * Response from the shell endpoint
+ * Response from the shell endpoint (single command)
  */
 export interface ShellResponse {
   sessionId: string
   stdout: string
   stderr: string
   exitCode: number
+}
+
+/**
+ * Single command result in batch response
+ */
+export interface ShellCommandResult {
+  command: string
+  stdout: string
+  stderr: string
+  exitCode: number
+}
+
+/**
+ * Response from the shell endpoint (batch commands)
+ */
+export interface ShellBatchResponse {
+  sessionId: string
+  results: ShellCommandResult[]
 }
 
 /**

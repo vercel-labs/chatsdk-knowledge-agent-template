@@ -3,11 +3,14 @@ import { useLogger } from 'evlog'
 import { getOrCreateSandbox } from '../../utils/sandbox/manager'
 
 const bodySchema = z.object({
-  command: z.string({ error: 'command is required' }).min(1, 'command cannot be empty').max(2000),
+  command: z.string().min(1).max(2000).optional(),
+  commands: z.array(z.string().min(1).max(2000)).max(10).optional(),
   sessionId: z.string().optional(),
-})
+}).refine(
+  data => (data.command && !data.commands) || (!data.command && data.commands),
+  { message: 'Provide either "command" or "commands", not both' },
+)
 
-// Commands that could be dangerous
 const BLOCKED_PATTERNS = [
   /\brm\s+-rf?\b/i,
   /\brmdir\b/i,
@@ -21,76 +24,90 @@ const BLOCKED_PATTERNS = [
   /\bnc\b/i,
   /\bssh\b/i,
   /\bgit\b/i,
-  />\s*\//, // redirect to absolute path
+  />\s*\//,
   /\bdd\b/i,
   /\bkill\b/i,
   /\bpkill\b/i,
 ]
 
-/**
- * POST /api/sandbox/shell
- * Run a shell command in the sandbox.
- *
- * Body:
- * - command: string - Shell command to execute
- * - sessionId: string - Optional session ID for sandbox reuse
- */
+const MAX_OUTPUT = 50000
+
+function validateCommand(command: string): void {
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(command)) {
+      throw createError({
+        statusCode: 400,
+        message: `Command contains blocked pattern: ${command.slice(0, 50)}`,
+      })
+    }
+  }
+}
+
+function truncateOutput(output: string): string {
+  if (output.length > MAX_OUTPUT) {
+    return `${output.slice(0, MAX_OUTPUT)}\n... (truncated, ${output.length} total chars)`
+  }
+  return output
+}
+
+interface CommandResult {
+  command: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  execMs: number
+}
+
 export default defineEventHandler(async (event) => {
   const requestLog = useLogger(event)
   const body = await readValidatedBody(event, bodySchema.parse)
 
-  // Check for blocked patterns
-  for (const pattern of BLOCKED_PATTERNS) {
-    if (pattern.test(body.command)) {
-      throw createError({
-        statusCode: 400,
-        message: 'Command contains blocked pattern',
-      })
-    }
+  const commands = body.commands || [body.command!]
+
+  for (const cmd of commands) {
+    validateCommand(cmd)
   }
 
-  requestLog.set({ command: body.command.slice(0, 100) })
+  const isBatch = commands.length > 1
+  requestLog.set({ commandCount: commands.length, isBatch })
 
-  // Get or create sandbox
   const sandboxStart = Date.now()
   const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
-  const sandboxMs = Date.now() - sandboxStart
+  requestLog.set({ sandboxMs: Date.now() - sandboxStart, sandboxId: sandbox.sandboxId, sessionId })
 
-  requestLog.set({ sandboxMs, sandboxId: sandbox.sandboxId, sessionId })
+  const results: CommandResult[] = []
 
-  // Execute command
-  const execStart = Date.now()
-  const result = await sandbox.runCommand({
-    cmd: 'bash',
-    args: ['-c', body.command],
-    cwd: '/vercel/sandbox',
-  })
+  for (const command of commands) {
+    const execStart = Date.now()
+    const result = await sandbox.runCommand({
+      cmd: 'bash',
+      args: ['-c', command],
+      cwd: '/vercel/sandbox',
+    })
 
-  const stdout = await result.stdout()
-  const stderr = await result.stderr()
-  const { exitCode } = result
-  const execMs = Date.now() - execStart
+    results.push({
+      command,
+      stdout: truncateOutput(await result.stdout()),
+      stderr: truncateOutput(await result.stderr()),
+      exitCode: result.exitCode,
+      execMs: Date.now() - execStart,
+    })
+  }
 
-  // Limit output size to prevent token explosion
-  const MAX_OUTPUT = 50000 // ~50KB
-  const truncatedStdout = stdout.length > MAX_OUTPUT
-    ? `${stdout.slice(0, MAX_OUTPUT)}\n... (truncated, ${stdout.length} total chars)`
-    : stdout
-  const truncatedStderr = stderr.length > MAX_OUTPUT
-    ? `${stderr.slice(0, MAX_OUTPUT)}\n... (truncated, ${stderr.length} total chars)`
-    : stderr
+  requestLog.set({ totalExecMs: results.reduce((sum, r) => sum + r.execMs, 0), commandsExecuted: results.length })
 
-  requestLog.set({
-    execMs,
-    exitCode,
-    stdoutLen: stdout.length,
-    stderrLen: stderr.length,
-  })
+  if (!isBatch) {
+    const r = results[0]!
+    return { sessionId, stdout: r.stdout, stderr: r.stderr, exitCode: r.exitCode }
+  }
 
   return {
     sessionId,
-    stdout: truncatedStdout,
-    stderr: truncatedStderr,
-    exitCode,
+    results: results.map(r => ({
+      command: r.command,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      exitCode: r.exitCode,
+    })),
   }
 })

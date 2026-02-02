@@ -1,8 +1,8 @@
 import { SavoirClient } from './client'
-import { createBashTool } from './tools'
-import type { SavoirConfig, ToolCallCallback } from './types'
+import { createBashBatchTool, createBashTool } from './tools'
+import type { SavoirConfig } from './types'
 
-export type { SavoirConfig, ShellResponse, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState } from './types'
+export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 
@@ -19,8 +19,10 @@ export interface Savoir {
    * AI SDK tools
    */
   tools: {
-    /** Execute bash commands in the sandbox */
+    /** Execute a single bash command in the sandbox */
     bash: ReturnType<typeof createBashTool>
+    /** Execute multiple bash commands in one request (more efficient) */
+    bash_batch: ReturnType<typeof createBashBatchTool>
   }
 
   /**
@@ -66,6 +68,7 @@ export function createSavoir(config: SavoirConfig): Savoir {
     client,
     tools: {
       bash: createBashTool(client, onToolCall),
+      bash_batch: createBashBatchTool(client, onToolCall),
     },
     getSessionId: () => client.getSessionId(),
     setSessionId: (sessionId: string) => client.setSessionId(sessionId),
