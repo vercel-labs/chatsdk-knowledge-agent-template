@@ -1,8 +1,8 @@
 import { SavoirClient } from './client'
-import { createReadTool, createSearchAndReadTool } from './tools'
+import { createBashTool } from './tools'
 import type { SavoirConfig, ToolCallCallback } from './types'
 
-export type { SavoirConfig, SearchResult, FileContent, SearchAndReadResponse, ReadResponse, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState } from './types'
+export type { SavoirConfig, ShellResponse, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 
@@ -19,8 +19,8 @@ export interface Savoir {
    * AI SDK tools
    */
   tools: {
-    search_and_read: ReturnType<typeof createSearchAndReadTool>
-    read: ReturnType<typeof createReadTool>
+    /** Execute bash commands in the sandbox */
+    bash: ReturnType<typeof createBashTool>
   }
 
   /**
@@ -65,8 +65,7 @@ export function createSavoir(config: SavoirConfig): Savoir {
   return {
     client,
     tools: {
-      search_and_read: createSearchAndReadTool(client, onToolCall),
-      read: createReadTool(client, onToolCall),
+      bash: createBashTool(client, onToolCall),
     },
     getSessionId: () => client.getSessionId(),
     setSessionId: (sessionId: string) => client.setSessionId(sessionId),

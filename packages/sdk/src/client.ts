@@ -1,8 +1,7 @@
 import { createError } from 'evlog'
 import type {
-  ReadResponse,
   SavoirConfig,
-  SearchAndReadResponse,
+  ShellResponse,
   SnapshotResponse,
   SourcesResponse,
   SyncOptions,
@@ -141,24 +140,11 @@ export class SavoirClient {
   }
 
   /**
-   * Search for content and return matching files
+   * Run a bash command in the sandbox
    */
-  async searchAndRead(
-    query: string,
-    limit: number = 20,
-  ): Promise<SearchAndReadResponse> {
-    return await this.post<SearchAndReadResponse>('/api/sandbox/search-and-read', {
-      query,
-      limit,
-    })
-  }
-
-  /**
-   * Read specific files by path
-   */
-  async read(paths: string[]): Promise<ReadResponse> {
-    return await this.post<ReadResponse>('/api/sandbox/read', {
-      paths,
+  async bash(command: string): Promise<ShellResponse> {
+    return await this.post<ShellResponse>('/api/sandbox/shell', {
+      command,
     })
   }
 

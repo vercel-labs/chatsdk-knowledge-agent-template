@@ -57,10 +57,15 @@ export interface SearchResult {
 
 /**
  * File content from the Savoir API
+ * When from search-and-read, contains context snippets around matches
  */
 export interface FileContent {
   path: string
   content: string
+  /** Number of matches in this file (for context snippets) */
+  matchCount?: number
+  /** Total lines in the file (for context snippets) */
+  totalLines?: number
 }
 
 /**
@@ -78,6 +83,16 @@ export interface SearchAndReadResponse {
 export interface ReadResponse {
   sessionId: string
   files: FileContent[]
+}
+
+/**
+ * Response from the shell endpoint
+ */
+export interface ShellResponse {
+  sessionId: string
+  stdout: string
+  stderr: string
+  exitCode: number
 }
 
 /**

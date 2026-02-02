@@ -1,2 +1,1 @@
-export { createSearchAndReadTool } from './search-and-read'
-export { createReadTool } from './read'
+export { createBashTool } from './shell'

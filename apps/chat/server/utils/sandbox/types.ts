@@ -31,11 +31,15 @@ export interface SearchResult {
 }
 
 /**
- * File content with path
+ * File content with path and optional metadata
  */
 export interface FileContent {
   path: string
   content: string
+  /** Number of matches in this file (for context snippets) */
+  matchCount?: number
+  /** Total lines in the file (for context snippets) */
+  totalLines?: number
 }
 
 /**

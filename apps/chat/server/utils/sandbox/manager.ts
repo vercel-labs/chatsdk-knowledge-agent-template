@@ -265,7 +265,14 @@ export async function read(
   return filteredFiles
 }
 
-/** Searches for query and returns matches with full file contents */
+/**
+ * Searches for query and returns matches with context snippets.
+ *
+ * Optimizations:
+ * 1. Occurrence-based ranking - files with more matches are more relevant
+ * 2. Limited file reads - only top 3 most relevant files
+ * 3. Context snippets - only lines around matches, not full files
+ */
 export async function searchAndRead(
   sandbox: Sandbox,
   query: string,
@@ -274,11 +281,116 @@ export async function searchAndRead(
   // Search for matches
   const matches = await search(sandbox, query, limit)
 
-  // Get unique file paths
-  const uniquePaths = [...new Set(matches.map(m => m.path))]
+  if (matches.length === 0) {
+    return { matches: [], files: [] }
+  }
 
-  // Read the unique files
-  const files = await read(sandbox, uniquePaths)
+  // Count occurrences per file and rank by relevance
+  const fileOccurrences = new Map<string, number>()
+  for (const match of matches) {
+    fileOccurrences.set(match.path, (fileOccurrences.get(match.path) || 0) + 1)
+  }
+
+  // Sort files by occurrence count (most relevant first)
+  const rankedFiles = [...fileOccurrences.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([path]) => path)
+
+  // Only read top 3 most relevant files (to avoid context explosion)
+  const topFiles = rankedFiles.slice(0, 3)
+
+  log.info('sandbox', `Ranked ${rankedFiles.length} files, reading top ${topFiles.length}`)
+
+  // Read files with context snippets instead of full content
+  const files = await readWithContext(sandbox, topFiles, matches)
 
   return { matches, files }
+}
+
+/**
+ * Read files but only include lines around matches (context snippets).
+ * This prevents context explosion from large files.
+ */
+async function readWithContext(
+  sandbox: Sandbox,
+  paths: string[],
+  matches: SearchResult[],
+  contextLines: number = 10,
+): Promise<FileContent[]> {
+  const startTime = Date.now()
+
+  const files = await Promise.all(paths.map(async (path) => {
+    try {
+      const buffer = await sandbox.readFileToBuffer({
+        path,
+        cwd: '/vercel/sandbox',
+      })
+
+      if (!buffer) {
+        return null
+      }
+
+      const fullContent = buffer.toString('utf-8')
+      const lines = fullContent.split('\n')
+
+      // Get line numbers with matches in this file
+      const matchLines = matches
+        .filter(m => m.path === path)
+        .map(m => m.lineNumber)
+
+      // Build a set of lines to include (match lines + context)
+      const linesToInclude = new Set<number>()
+      for (const lineNum of matchLines) {
+        for (let i = Math.max(1, lineNum - contextLines); i <= Math.min(lines.length, lineNum + contextLines); i++) {
+          linesToInclude.add(i)
+        }
+      }
+
+      // Build content with only relevant lines
+      // Group consecutive lines into snippets
+      const sortedLines = [...linesToInclude].sort((a, b) => a - b)
+      const snippets: string[] = []
+      let currentSnippet: string[] = []
+      let lastLine = -1
+
+      for (const lineNum of sortedLines) {
+        if (lastLine !== -1 && lineNum > lastLine + 1) {
+          // Gap in lines - save current snippet and start new one
+          if (currentSnippet.length > 0) {
+            snippets.push(currentSnippet.join('\n'))
+            currentSnippet = []
+          }
+          snippets.push('...')
+        }
+
+        const lineContent = lines[lineNum - 1] // 0-indexed
+        if (lineContent !== undefined) {
+          currentSnippet.push(`${lineNum}: ${lineContent}`)
+        }
+        lastLine = lineNum
+      }
+
+      // Don't forget the last snippet
+      if (currentSnippet.length > 0) {
+        snippets.push(currentSnippet.join('\n'))
+      }
+
+      const contextContent = snippets.join('\n')
+
+      return {
+        path,
+        content: contextContent,
+        matchCount: matchLines.length,
+        totalLines: lines.length,
+      }
+    } catch {
+      return null
+    }
+  }))
+
+  const filteredFiles: FileContent[] = files.filter((f) => f !== null)
+  const readMs = Date.now() - startTime
+
+  log.info('sandbox', `Read ${filteredFiles.length} files with context (${readMs}ms)`)
+  return filteredFiles
 }
