@@ -25,18 +25,18 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "ai": "^6.0.50",
-    "evlog": "^1.0.1",
+    "ai": "^6.0.67",
+    "evlog": "^1.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.2.0",
     "eslint": "^9.39.2",
     "tsdown": "^0.20.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "ai": ">=6.0.50"
+    "ai": ">=6.0.67"
   },
   "peerDependenciesMeta": {
     "ai": {
