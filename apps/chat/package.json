@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.32",
-    "@ai-sdk/vue": "^3.0.67",
+    "@ai-sdk/vue": "^3.0.68",
     "@iconify-json/logos": "^1.2.10",
     "@iconify-json/lucide": "^1.2.87",
     "@iconify-json/simple-icons": "^1.2.69",
@@ -31,7 +31,7 @@
     "@vercel/blob": "^2.0.1",
     "@vercel/functions": "^3.4.0",
     "@vercel/sandbox": "^1.4.1",
-    "ai": "^6.0.67",
+    "ai": "^6.0.68",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
     "evlog": "^1.1.0",
