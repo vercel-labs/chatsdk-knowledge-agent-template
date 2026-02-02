@@ -25,7 +25,7 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "ai": "^6.0.67",
+    "ai": "^6.0.68",
     "evlog": "^1.1.0",
     "zod": "^4.3.6"
   },
@@ -36,7 +36,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "ai": ">=6.0.67"
+    "ai": ">=6.0.68"
   },
   "peerDependenciesMeta": {
     "ai": {
