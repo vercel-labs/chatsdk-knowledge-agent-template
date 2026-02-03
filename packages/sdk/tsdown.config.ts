@@ -8,4 +8,5 @@ export default defineConfig({
   },
   clean: true,
   hash: false,
+  external: ['ai', 'zod'],
 })

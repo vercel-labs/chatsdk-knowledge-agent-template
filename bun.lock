@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@savoir/monorepo",
@@ -53,15 +52,16 @@
       "name": "@savoir/github-bot",
       "version": "0.0.1",
       "dependencies": {
-        "@ai-sdk/gateway": "^3.0.29",
+        "@ai-sdk/gateway": "^3.0.32",
         "@savoir/sdk": "workspace:*",
-        "ai": "^6.0.62",
+        "ai": "^6.0.68",
         "chat": "^4.7.1",
         "mdast-util-from-markdown": "^2.0.2",
         "mdast-util-gfm": "^3.1.0",
         "mdast-util-to-markdown": "^2.1.2",
         "micromark-extension-gfm": "^3.0.0",
         "nuxt": "^4.3.0",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@nuxthub/core": "^0.10.5",

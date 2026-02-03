@@ -1,4 +1,4 @@
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, ToolLoopAgent, type UIMessage } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, stepCountIs, ToolLoopAgent, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { and, eq } from 'drizzle-orm'

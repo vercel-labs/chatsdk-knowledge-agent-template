@@ -41,7 +41,7 @@ Once configured, I'll be able to search the documentation and help answer your q
     const agent = new ToolLoopAgent({
       model: 'google/gemini-3-flash',
       instructions: buildSystemPrompt(context),
-      tools: { bash: savoir.tools.bash } as any,
+      tools: savoir.tools,
       onStepFinish: ({ usage, toolCalls }) => {
         stepCount++
         totalInputTokens += usage.inputTokens || 0
@@ -70,8 +70,7 @@ Once configured, I'll be able to search the documentation and help answer your q
     }
 
     return result.text
-  }
-  catch (error) {
+  } catch (error) {
     const durationMs = Date.now() - startTime
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     log.error('github-bot', `Agent failed after ${durationMs}ms: ${errorMessage}`)
