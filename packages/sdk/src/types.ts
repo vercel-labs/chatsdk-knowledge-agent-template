@@ -29,7 +29,32 @@ export interface SavoirConfig {
 /**
  * Tool call state
  */
-export type ToolCallState = 'loading' | 'done'
+export type ToolCallState = 'loading' | 'done' | 'error'
+
+/**
+ * Result of a single command execution
+ */
+export interface CommandResult {
+  command: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  success: boolean
+}
+
+/**
+ * Tool execution result (available when state is 'done' or 'error')
+ */
+export interface ToolExecutionResult {
+  /** Results for each command (single item for bash, multiple for bash_batch) */
+  commands: CommandResult[]
+  /** Whether all commands succeeded */
+  success: boolean
+  /** Execution duration in milliseconds */
+  durationMs: number
+  /** Error message if state is 'error' */
+  error?: string
+}
 
 /**
  * Tool call information passed to onToolCall callback
@@ -39,6 +64,8 @@ export interface ToolCallInfo {
   toolName: string
   args: Record<string, unknown>
   state: ToolCallState
+  /** Execution result (only available when state is 'done' or 'error') */
+  result?: ToolExecutionResult
 }
 
 /**

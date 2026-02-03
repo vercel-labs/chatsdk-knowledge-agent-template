@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTimeoutFn } from '@vueuse/core'
+
 interface SourceData {
   id: string
   type: 'github' | 'youtube'
@@ -25,12 +27,14 @@ const emit = defineEmits<{
 
 const isSyncing = ref(false)
 
+const { start: resetSyncState } = useTimeoutFn(() => {
+  isSyncing.value = false
+}, 2000, { immediate: false })
+
 function handleSync() {
   isSyncing.value = true
   emit('sync')
-  setTimeout(() => {
-    isSyncing.value = false
-  }, 2000)
+  resetSyncState()
 }
 
 const sourceUrl = computed(() => {

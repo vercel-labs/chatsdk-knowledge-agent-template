@@ -96,20 +96,27 @@ function copy(e: MouseEvent, message: UIMessage) {
   }, 2000)
 }
 
-const lastMessage = computed(() => chat.messages.at(-1))
-const showThinking = computed(() => {
-  if (chat.status !== 'streaming') return false
-  const msg = lastMessage.value
-  if (msg?.role !== 'assistant') return false
-  const parts = msg.parts as Array<{ type: string }> | undefined
-  return !parts?.some(p => p.type === 'text')
-})
+interface CommandResult {
+  command: string
+  stdout: string
+  stderr: string
+  exitCode: number
+  success: boolean
+}
+
+interface ToolExecutionResult {
+  commands: CommandResult[]
+  success: boolean
+  durationMs: number
+  error?: string
+}
 
 interface ToolCallInfo {
   toolCallId: string
   toolName: string
   args: Record<string, unknown>
-  state: 'loading' | 'done'
+  state: 'loading' | 'done' | 'error'
+  result?: ToolExecutionResult
 }
 
 function getMessageToolCalls(message: UIMessage): ToolCallInfo[] {

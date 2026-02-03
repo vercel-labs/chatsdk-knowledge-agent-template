@@ -2,7 +2,7 @@ import { SavoirClient } from './client'
 import { createBashBatchTool, createBashTool } from './tools'
 import type { SavoirConfig } from './types'
 
-export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState } from './types'
+export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState, ToolExecutionResult, CommandResult } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 

@@ -5,49 +5,52 @@ import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
 import { generateTitle } from '../../utils/chat/generate-title'
+import { routeQuestion, buildSystemPromptWithComplexity } from '../../utils/router/route-question'
 
-const SYSTEM_PROMPT = `You are an AI assistant specialized in the Nuxt/Nitro ecosystem.
+const SYSTEM_PROMPT = `You are an AI assistant that answers questions based on the available sources.
 
-## CRITICAL: Documentation First
+## CRITICAL: Sources First
 
-Your knowledge may be outdated. ONLY answer based on what you find in the documentation.
-- If you can't find information in the docs, say "I couldn't find this in the documentation"
-- NEVER make up information or guess - only state what you found in docs
-- NEVER mention package versions unless you verified them in the docs
+Your knowledge may be outdated. ONLY answer based on what you find in the sources.
+- If you can't find information, say "I couldn't find this in the available sources"
+- NEVER make up information or guess - only state what you found
+- Always cite the source file when quoting content
 
-## Tools
+## Search Strategy (IMPORTANT for speed)
 
-You have access to documentation search tools:
+1. **Explore first** - Start by discovering the available sources:
+   \`\`\`bash
+   ls /docs  # See what sources are available
+   \`\`\`
 
-- **search_and_read**: Search AND read files in one step (PREFERRED - faster and more efficient)
-- **read**: Read specific files by path (use when you already know the exact file path)
+2. **Target specific directories** - Don't search everything at once:
+   \`\`\`bash
+   ls /docs/[source]/  # Explore the structure
+   grep -r "keyword" /docs/[source] --include="*.md" -l | head -10
+   \`\`\`
 
-## How to Search Effectively
-
-1. **Use ONE simple keyword**: "composables" ✓, "vue composables usage" ✗
-2. **Always prefer search_and_read** - it's faster and returns content directly
-3. **Search by concept**: "middleware", "plugins", "routing", "state", "data-fetching"
-4. **Search by package/module name**: "unstorage", "ofetch", "nitro", "h3", "unhead"
+3. **Use simple keywords**: one word is better than a phrase
 
 ## Workflow
 
 1. User asks a question
-2. Call **search_and_read** with a relevant keyword
-3. Read the results and find the answer
-4. If not found, try different keywords or broader terms
-5. Answer based ONLY on what you found in the documentation
+2. Explore available sources with \`ls\`
+3. Identify which source(s) are relevant
+4. Search within those specific directories
+5. Read the relevant files
+6. Answer based ONLY on what you found
 
 ## Response Style
 
 - Be concise and helpful
-- Include relevant code examples from the docs
+- Include relevant code examples when available
 - Use markdown formatting
-- Cite the source file when quoting documentation
+- Cite the source file path
 `
 
 defineRouteMeta({
   openAPI: {
-    description: 'Chat with AI about Nuxt documentation.',
+    description: 'Chat with AI about the available sources.',
     tags: ['ai'],
   },
 })
@@ -118,7 +121,10 @@ export default defineEventHandler(async (event) => {
       apiUrl: getRequestURL(event).origin,
       apiKey: savoirConfig.apiKey || undefined,
       onToolCall: (info) => {
-        log.info('chat', `[${requestId}] Tool call [${info.state}]: ${info.toolName} ${JSON.stringify(info.args)}`)
+        const resultSummary = info.result
+          ? ` [${info.result.success ? 'OK' : 'FAIL'}] (${info.result.durationMs}ms)`
+          : ''
+        log.info('chat', `[${requestId}] Tool call [${info.state}]: ${info.toolName}${resultSummary}`)
 
         if (streamWriter) {
           streamWriter.write({
@@ -129,13 +135,16 @@ export default defineEventHandler(async (event) => {
               toolName: info.toolName,
               args: info.args,
               state: info.state,
+              result: info.result,
             },
           })
         }
       },
     })
 
-    log.info('chat', `[${requestId}] Starting agent with ${model}`)
+    const agentConfig = await routeQuestion(messages, requestId)
+
+    log.info('chat', `[${requestId}] Starting agent with ${model} (routed: ${agentConfig.complexity}, ${agentConfig.maxSteps} steps)`)
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -143,8 +152,9 @@ export default defineEventHandler(async (event) => {
 
         const agent = new ToolLoopAgent({
           model,
-          instructions: SYSTEM_PROMPT,
+          instructions: buildSystemPromptWithComplexity(SYSTEM_PROMPT, agentConfig),
           tools: savoir.tools,
+          stopWhen: stepCountIs(agentConfig.maxSteps),
           onStepFinish: (stepResult) => {
             const stepDurationMs = Date.now() - stepStartTime
             stepDurations.push(stepDurationMs)
@@ -177,6 +187,9 @@ export default defineEventHandler(async (event) => {
               toolCallCount,
               stepDurations,
               totalAgentMs: totalDurationMs,
+              routerComplexity: agentConfig.complexity,
+              routerMaxSteps: agentConfig.maxSteps,
+              routerReasoning: agentConfig.reasoning,
             })
             log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
           },

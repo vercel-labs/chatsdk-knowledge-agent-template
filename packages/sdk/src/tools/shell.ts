@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import type { SavoirClient } from '../client'
-import type { ToolCallCallback } from '../types'
+import type { ToolCallCallback, ToolExecutionResult, CommandResult } from '../types'
 
 /**
  * Create the bash tool for AI SDK - runs a single command in the sandbox
@@ -22,19 +22,57 @@ Use standard Unix commands to explore and read files.`,
       })
     },
     execute: async ({ command }, { toolCallId }) => {
-      const result = await client.bash(command)
+      const startTime = Date.now()
 
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash',
-        args: { command },
-        state: 'done',
-      })
+      try {
+        const apiResult = await client.bash(command)
+        const durationMs = Date.now() - startTime
 
-      return {
-        stdout: result.stdout,
-        stderr: result.stderr,
-        exitCode: result.exitCode,
+        const commandResult: CommandResult = {
+          command,
+          stdout: apiResult.stdout,
+          stderr: apiResult.stderr,
+          exitCode: apiResult.exitCode,
+          success: apiResult.exitCode === 0,
+        }
+
+        const executionResult: ToolExecutionResult = {
+          commands: [commandResult],
+          success: commandResult.success,
+          durationMs,
+        }
+
+        onToolCall?.({
+          toolCallId,
+          toolName: 'bash',
+          args: { command },
+          state: 'done',
+          result: executionResult,
+        })
+
+        return {
+          stdout: apiResult.stdout,
+          stderr: apiResult.stderr,
+          exitCode: apiResult.exitCode,
+        }
+      } catch (error) {
+        const durationMs = Date.now() - startTime
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+        onToolCall?.({
+          toolCallId,
+          toolName: 'bash',
+          args: { command },
+          state: 'error',
+          result: {
+            commands: [{ command, stdout: '', stderr: errorMessage, exitCode: 1, success: false }],
+            success: false,
+            durationMs,
+            error: errorMessage,
+          },
+        })
+
+        throw error
       }
     },
   })
@@ -61,22 +99,60 @@ Maximum 10 commands per batch.`,
       })
     },
     execute: async ({ commands }, { toolCallId }) => {
-      const result = await client.bashBatch(commands)
+      const startTime = Date.now()
 
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash_batch',
-        args: { commands },
-        state: 'done',
-      })
+      try {
+        const apiResult = await client.bashBatch(commands)
+        const durationMs = Date.now() - startTime
 
-      return {
-        results: result.results.map(r => ({
+        const commandResults: CommandResult[] = apiResult.results.map(r => ({
           command: r.command,
           stdout: r.stdout,
           stderr: r.stderr,
           exitCode: r.exitCode,
-        })),
+          success: r.exitCode === 0,
+        }))
+
+        const executionResult: ToolExecutionResult = {
+          commands: commandResults,
+          success: commandResults.every(r => r.success),
+          durationMs,
+        }
+
+        onToolCall?.({
+          toolCallId,
+          toolName: 'bash_batch',
+          args: { commands },
+          state: 'done',
+          result: executionResult,
+        })
+
+        return {
+          results: apiResult.results.map(r => ({
+            command: r.command,
+            stdout: r.stdout,
+            stderr: r.stderr,
+            exitCode: r.exitCode,
+          })),
+        }
+      } catch (error) {
+        const durationMs = Date.now() - startTime
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+        onToolCall?.({
+          toolCallId,
+          toolName: 'bash_batch',
+          args: { commands },
+          state: 'error',
+          result: {
+            commands: commands.map(cmd => ({ command: cmd, stdout: '', stderr: '', exitCode: 1, success: false })),
+            success: false,
+            durationMs,
+            error: errorMessage,
+          },
+        })
+
+        throw error
       }
     },
   })

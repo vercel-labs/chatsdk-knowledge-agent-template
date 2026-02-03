@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { model, models, formatModelName } = useModels()
 
-// Map providers to icons (some don't have simple-icons)
 const providerIcons: Record<string, string> = {
   openai: 'i-simple-icons-openai',
   anthropic: 'i-simple-icons-anthropic',

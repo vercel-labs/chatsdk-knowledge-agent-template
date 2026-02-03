@@ -1,7 +1,83 @@
-import { ToolLoopAgent } from 'ai'
+import { createGateway } from '@ai-sdk/gateway'
+import { generateText, Output, stepCountIs, ToolLoopAgent } from 'ai'
 import { log } from 'evlog'
 import { createSavoir } from '@savoir/sdk'
 import type { IssueContext } from './types'
+import { type AgentConfig, agentConfigSchema, getDefaultConfig } from './router-schema'
+
+const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
+
+const ROUTER_SYSTEM_PROMPT = `You are a question classifier for a documentation assistant bot.
+Analyze the user's question and determine the appropriate configuration for the agent.
+
+## Classification Guidelines
+
+**trivial** (maxSteps: 3, model: gemini-2.5-flash-lite)
+- Simple greetings: "Hello", "Thanks", "Hi there"
+- Acknowledgments without questions
+
+**simple** (maxSteps: 6, model: gemini-2.5-flash-lite)
+- Single concept lookups: "What is useAsyncData?", "How to use useFetch?"
+- Direct API questions with clear answers
+
+**moderate** (maxSteps: 12, model: gemini-3-flash)
+- Comparisons: "Difference between useFetch and useAsyncData?"
+- Integration questions: "How to use Nuxt with TypeScript?"
+- Questions requiring multiple file searches
+
+**complex** (maxSteps: 20, model: gemini-3-flash or claude-opus-4.5)
+- Debugging scenarios: "My middleware isn't working with auth"
+- Architecture questions: "How to structure a multi-package monorepo?"
+- Deep analysis requiring extensive documentation review
+
+Use claude-opus-4.5 only for the most complex cases requiring deep reasoning.`
+
+function buildRouterInput(question: string, context?: IssueContext): string {
+  const parts: string[] = []
+
+  if (context) {
+    parts.push(`Repository: ${context.owner}/${context.repo}`)
+    parts.push(`Issue #${context.number}: ${context.title}`)
+    if (context.body) {
+      parts.push(`Issue body: ${context.body.slice(0, 500)}`)
+    }
+    if (context.labels.length) {
+      parts.push(`Labels: ${context.labels.join(', ')}`)
+    }
+  }
+
+  parts.push(`Question: ${question}`)
+
+  return parts.join('\n')
+}
+
+async function routeQuestion(question: string, context?: IssueContext): Promise<AgentConfig> {
+  const config = useRuntimeConfig()
+  const gateway = createGateway({ apiKey: config.savoir.apiKey })
+
+  try {
+    const { output } = await generateText({
+      model: gateway(ROUTER_MODEL),
+      output: Output.object({ schema: agentConfigSchema }),
+      messages: [
+        { role: 'system', content: ROUTER_SYSTEM_PROMPT },
+        { role: 'user', content: buildRouterInput(question, context) },
+      ],
+    })
+
+    if (!output) {
+      log.warn('github-bot', 'Router returned no output, using default config')
+      return getDefaultConfig()
+    }
+
+    log.info('github-bot', `Router decision: ${output.complexity} (${output.model}, ${output.maxSteps} steps) - ${output.reasoning}`)
+    return output
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    log.error('github-bot', `Router failed: ${errorMessage}, using default config`)
+    return getDefaultConfig()
+  }
+}
 
 export async function generateAIResponse(
   question: string,
@@ -26,7 +102,9 @@ Once configured, I'll be able to search the documentation and help answer your q
   let toolCallCount = 0
 
   try {
-    log.info('github-bot', `Starting agent for issue #${context?.number || 'unknown'}`)
+    const agentConfig = await routeQuestion(question, context)
+
+    log.info('github-bot', `Starting agent for issue #${context?.number || 'unknown'} with ${agentConfig.complexity} complexity`)
 
     const savoir = createSavoir({
       apiUrl: config.savoir.apiUrl,
@@ -39,9 +117,10 @@ Once configured, I'll be able to search the documentation and help answer your q
     })
 
     const agent = new ToolLoopAgent({
-      model: 'google/gemini-3-flash',
-      instructions: buildSystemPrompt(context),
+      model: agentConfig.model,
+      instructions: buildSystemPrompt(context, agentConfig),
       tools: savoir.tools,
+      stopWhen: stepCountIs(agentConfig.maxSteps),
       onStepFinish: ({ usage, toolCalls }) => {
         stepCount++
         totalInputTokens += usage.inputTokens || 0
@@ -91,7 +170,7 @@ Please try again later or open a discussion if this persists.`
   }
 }
 
-function buildSystemPrompt(context?: IssueContext): string {
+function buildSystemPrompt(context?: IssueContext, agentConfig?: AgentConfig): string {
   const basePrompt = `You are a documentation assistant with bash access to a sandbox containing docs (markdown, JSON, YAML).
 
 ## Speed is Important
@@ -121,13 +200,23 @@ ls docs/ && grep -rl "keyword" docs/ --include="*.md" | head -10
 - Include code examples
 - Use markdown`
 
-  if (context) {
-    return `${basePrompt}
+  let prompt = basePrompt
 
-Issue #${context.number}: "${context.title}" in ${context.owner}/${context.repo}`
+  if (agentConfig) {
+    const complexityHints: Record<AgentConfig['complexity'], string> = {
+      trivial: 'This is a simple greeting or acknowledgment. Respond briefly without searching.',
+      simple: 'This is a straightforward question. One or two searches should suffice.',
+      moderate: 'This requires some research. Take time to find relevant documentation.',
+      complex: 'This is a complex question. Thoroughly search the documentation and provide a detailed answer.',
+    }
+    prompt += `\n\n## Task Complexity: ${agentConfig.complexity}\n${complexityHints[agentConfig.complexity]}`
   }
 
-  return basePrompt
+  if (context) {
+    prompt += `\n\nIssue #${context.number}: "${context.title}" in ${context.owner}/${context.repo}`
+  }
+
+  return prompt
 }
 
 function buildUserMessage(question: string, context?: IssueContext): string {
