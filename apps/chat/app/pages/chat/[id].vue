@@ -86,7 +86,7 @@ function handleSubmit(e: Event) {
 
 const copied = ref(false)
 
-function copy(e: MouseEvent, message: UIMessage) {
+function copy(_e: MouseEvent, message: UIMessage) {
   clipboard.copy(getTextFromMessage(message))
 
   copied.value = true
