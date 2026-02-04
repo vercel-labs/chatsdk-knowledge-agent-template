@@ -134,6 +134,7 @@ export default defineEventHandler(async (event) => {
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.role === 'user' && messages.length > 1) {
       await db.insert(schema.messages).values({
+        id: lastMessage.id,
         chatId: id as string,
         role: 'user',
         parts: lastMessage.parts,
@@ -190,6 +191,9 @@ export default defineEventHandler(async (event) => {
     const dynamicSystemPrompt = buildDynamicSystemPrompt(agentConfigData)
 
     log.info('chat', `[${requestId}] Starting agent with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfigData.maxStepsMultiplier}x)`)
+
+    // Track overall request timing for stats
+    const requestStartTime = Date.now()
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -256,10 +260,20 @@ export default defineEventHandler(async (event) => {
       },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()
+        const totalDurationMs = Date.now() - requestStartTime
+
         await db.insert(schema.messages).values(responseMessages.map((message: UIMessage) => ({
+          id: message.id, // Preserve the ID from the streaming response
           chatId: chat.id,
           role: message.role as 'user' | 'assistant',
           parts: message.parts,
+          // Stats fields for assistant messages
+          ...(message.role === 'assistant' && {
+            model: effectiveModel,
+            inputTokens: totalInputTokens,
+            outputTokens: totalOutputTokens,
+            durationMs: totalDurationMs,
+          }),
         })))
         const dbDurationMs = Date.now() - dbStartTime
 
@@ -267,6 +281,7 @@ export default defineEventHandler(async (event) => {
           outcome: 'success',
           responseMessageCount: responseMessages.length,
           dbInsertMs: dbDurationMs,
+          totalDurationMs,
         })
       },
     })

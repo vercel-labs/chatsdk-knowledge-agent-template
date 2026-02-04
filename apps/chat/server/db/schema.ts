@@ -11,7 +11,7 @@ export const users = sqliteTable('users', {
   name: text('name').notNull(),
   avatar: text('avatar').notNull(),
   username: text('username').notNull(),
-  provider: text('provider').notNull(), // 'github'
+  provider: text('provider').notNull(),
   providerId: text('provider_id').notNull(),
   role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
   ...timestamps
@@ -46,6 +46,13 @@ export const messages = sqliteTable('messages', {
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
   parts: text('parts', { mode: 'json' }),
+  feedback: text('feedback', { enum: ['positive', 'negative'] }),
+  // Stats fields (for assistant messages only)
+  model: text('model'),
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  durationMs: integer('duration_ms'),
+  source: text('source', { enum: ['web', 'api'] }).default('web'),
   ...timestamps
 }, table => [index('messages_chat_id_idx').on(table.chatId)])
 
@@ -88,3 +95,34 @@ export const agentConfig = sqliteTable('agent_config', {
   ...timestamps,
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 })
+
+export const apiUsage = sqliteTable('api_usage', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  source: text('source').notNull(), // 'github-bot', 'sdk', 'discord-bot', etc.
+  sourceId: text('source_id'), // Optional: issue number, PR number, etc.
+  model: text('model'),
+  inputTokens: integer('input_tokens'),
+  outputTokens: integer('output_tokens'),
+  durationMs: integer('duration_ms'),
+  metadata: text('metadata', { mode: 'json' }), // Additional context (repo, user, etc.)
+  ...timestamps
+}, table => [
+  index('api_usage_source_idx').on(table.source),
+  index('api_usage_created_at_idx').on(table.createdAt)
+])
+
+export const usageStats = sqliteTable('usage_stats', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  date: text('date').notNull(), // Format: YYYY-MM-DD
+  userId: text('user_id'), // null = global stats
+  source: text('source').notNull().default('web'), // 'web', 'github-bot', 'sdk', etc.
+  model: text('model').notNull(),
+  messageCount: integer('message_count').notNull().default(0),
+  totalInputTokens: integer('total_input_tokens').notNull().default(0),
+  totalOutputTokens: integer('total_output_tokens').notNull().default(0),
+  totalDurationMs: integer('total_duration_ms').notNull().default(0),
+  ...timestamps,
+}, table => [
+  index('usage_stats_date_idx').on(table.date),
+  uniqueIndex('usage_stats_date_user_source_model_idx').on(table.date, table.userId, table.source, table.model),
+])

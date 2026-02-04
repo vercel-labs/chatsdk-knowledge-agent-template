@@ -18,13 +18,10 @@ export function generateTitle(options: GenerateTitleOptions): void {
   const { firstMessage, chatId, requestId, writer } = options
 
   generateText({
-    model: 'google/gemini-3-flash',
-    system: `You are a title generator for a chat:
-      - Generate a short title based on the first user's message
-      - The title should be less than 30 characters long
-      - The title should be a summary of the user's message
-      - Do not use quotes (' or ") or colons (:) or any other punctuation
-      - Do not use markdown, just plain text`,
+    model: 'google/gemini-2.5-flash-lite',
+    system: `Generate a short chat title (max 30 chars) from the user's message.
+Rules: no quotes, no colons, no punctuation, plain text only.
+If the message is a simple greeting (hi, hey, hello, etc.), respond with a generic title like "New conversation" or "Quick chat".`,
     prompt: JSON.stringify(firstMessage),
   }).then(async ({ text: title }) => {
     writer.write({

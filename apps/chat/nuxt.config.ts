@@ -41,6 +41,20 @@ export default defineNuxtConfig({
     viewTransition: true
   },
 
+  icon: {
+    customCollections: [
+      {
+        prefix: 'custom',
+        dir: './app/assets/icons/custom',
+      },
+    ],
+    clientBundle: {
+      scan: true,
+      includeCustomCollections: true,
+    },
+    provider: 'iconify',
+  },
+
   compatibilityDate: 'latest',
 
   nitro: {

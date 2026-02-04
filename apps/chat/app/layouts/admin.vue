@@ -16,6 +16,11 @@ const navigation = [
     icon: 'i-lucide-box',
     to: '/admin/sandbox',
   },
+  {
+    label: 'Statistics',
+    icon: 'i-lucide-bar-chart-3',
+    to: '/admin/stats',
+  },
 ]
 </script>
 

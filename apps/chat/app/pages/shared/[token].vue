@@ -39,7 +39,7 @@ if (error.value) {
 }
 
 useHead({
-  title: data.value?.title || 'Shared Chat'
+  title: data.value?.title || 'Shared Chat | Savoir'
 })
 
 definePageMeta({
@@ -56,7 +56,7 @@ definePageMeta({
             <div class="flex items-center gap-3">
               <NuxtLink to="/" class="flex items-end gap-0.5">
                 <Logo class="h-8 w-auto shrink-0" />
-                <span class="text-xl font-bold text-highlighted">Chat</span>
+                <span class="text-xl font-bold text-highlighted">Savoir</span>
               </NuxtLink>
             </div>
           </template>

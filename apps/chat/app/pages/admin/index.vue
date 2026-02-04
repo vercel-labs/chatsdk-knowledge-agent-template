@@ -285,7 +285,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
           color="neutral"
           variant="ghost"
           class="w-full h-14 border border-dashed border-default hover:border-muted"
-          to="/admin/new"
+          to="/admin/new?type=github"
           icon="i-lucide-plus"
         >
           Add a GitHub repository
@@ -336,7 +336,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
           color="neutral"
           variant="ghost"
           class="w-full h-14 border border-dashed border-default hover:border-muted"
-          to="/admin/new"
+          to="/admin/new?type=youtube"
           icon="i-lucide-plus"
         >
           Add a YouTube channel

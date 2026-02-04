@@ -96,6 +96,63 @@ function copy(_e: MouseEvent, message: UIMessage) {
   }, 2000)
 }
 
+type FeedbackType = 'positive' | 'negative' | null
+const feedbackMap = ref<Record<string, FeedbackType>>({})
+
+if (data.value?.messages) {
+  for (const msg of data.value.messages) {
+    const msgWithFeedback = msg as typeof msg & { feedback?: FeedbackType }
+    if (msg.role === 'assistant' && msgWithFeedback.feedback) {
+      feedbackMap.value[msg.id] = msgWithFeedback.feedback
+    }
+  }
+}
+
+async function toggleFeedback(_e: MouseEvent, message: UIMessage, type: 'positive' | 'negative') {
+  const currentFeedback = feedbackMap.value[message.id] ?? null
+  const newFeedback = currentFeedback === type ? null : type
+
+  feedbackMap.value[message.id] = newFeedback
+
+  try {
+    await $fetch(`/api/messages/${message.id}/feedback`, {
+      method: 'PATCH',
+      body: { feedback: newFeedback }
+    })
+  } catch {
+    feedbackMap.value[message.id] = currentFeedback
+    toast.add({
+      description: 'Failed to save feedback',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  }
+}
+
+function getAssistantActions(message: UIMessage) {
+  const feedback = feedbackMap.value[message.id]
+  return [
+    {
+      label: 'Like',
+      icon: 'i-lucide-thumbs-up',
+      color: feedback === 'positive' ? 'primary' : 'neutral',
+      onClick: (e: MouseEvent) => toggleFeedback(e, message, 'positive')
+    },
+    {
+      label: 'Dislike',
+      icon: 'i-lucide-thumbs-down',
+      color: feedback === 'negative' ? 'error' : 'neutral',
+      onClick: (e: MouseEvent) => toggleFeedback(e, message, 'negative')
+    },
+    {
+      label: 'Copy',
+      icon: copied.value ? 'i-lucide-copy-check' : 'i-lucide-copy',
+      color: 'neutral',
+      onClick: copy
+    }
+  ]
+}
+
 interface CommandResult {
   command: string
   stdout: string
@@ -133,6 +190,12 @@ onMounted(() => {
     chat.regenerate()
   }
 })
+
+watch(() => chat.status, (newStatus, oldStatus) => {
+  if (oldStatus === 'streaming' && newStatus === 'ready') {
+    refreshNuxtData('user-stats')
+  }
+})
 </script>
 
 <template>
@@ -148,12 +211,26 @@ onMounted(() => {
           should-auto-scroll
           :messages="chat.messages"
           :status="chat.status"
-          :assistant="chat.status !== 'streaming' ? { actions: [{ label: 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] } : { actions: [] }"
           :spacing-offset="160"
           class="lg:pt-(--ui-header-height) pb-4 sm:pb-6"
         >
           <template #indicator>
             <ChatLoading :is-loading="true" />
+          </template>
+
+          <template #actions="{ message }">
+            <template v-if="message.role === 'assistant' && chat.status !== 'streaming'">
+              <UButton
+                v-for="action in getAssistantActions(message)"
+                :key="action.label"
+                variant="ghost"
+                :color="action.color as any"
+                size="xs"
+                :icon="action.icon"
+                :aria-label="action.label"
+                @click="(e: MouseEvent) => action.onClick(e, message)"
+              />
+            </template>
           </template>
 
           <template #content="{ message }">

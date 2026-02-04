@@ -55,17 +55,11 @@
         "@ai-sdk/gateway": "^3.0.32",
         "@savoir/sdk": "workspace:*",
         "ai": "^6.0.68",
-        "chat": "^4.7.1",
-        "mdast-util-from-markdown": "^2.0.2",
-        "mdast-util-gfm": "^3.1.0",
-        "mdast-util-to-markdown": "^2.1.2",
-        "micromark-extension-gfm": "^3.0.0",
         "nuxt": "^4.3.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
         "@nuxthub/core": "^0.10.5",
-        "@types/mdast": "^4.0.4",
         "typescript": "^5.9.3",
       },
     },
@@ -1385,8 +1379,6 @@
     "character-entities-legacy": ["character-entities-legacy@3.0.0", "", {}, "sha512-RpPp0asT/6ufRm//AJVwpViZbGM/MkjQFxJccQRHmISF/22NBtsHqAWmL+/pmkPWoIUJdWyeVleTl1wydHATVQ=="],
 
     "character-reference-invalid": ["character-reference-invalid@2.0.1", "", {}, "sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw=="],
-
-    "chat": ["chat@4.7.1", "", { "dependencies": { "@workflow/serde": "4.0.1-beta.1", "mdast-util-to-string": "^4.0.0", "remark-gfm": "^4.0.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "unified": "^11.0.5" } }, "sha512-y9QCeY4b7e4Emap0MjZtohZieQA47dhe9c4wUBtAI5HSTTn6Y9N4tEckVm04pHosSthqRZTjBEToM/wSCTzpLw=="],
 
     "chokidar": ["chokidar@5.0.0", "", { "dependencies": { "readdirp": "^5.0.0" } }, "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw=="],
 

@@ -1,4 +1,3 @@
-import { createError } from 'evlog'
 import type {
   AgentConfig,
   SavoirConfig,
@@ -21,11 +20,10 @@ export class SavoirClient {
 
   constructor(config: SavoirConfig) {
     if (!config.apiUrl) {
-      throw createError({
-        message: 'Missing apiUrl in Savoir configuration',
-        why: 'The Savoir SDK requires an API URL to connect to',
-        fix: 'Set SAVOIR_API_URL environment variable or pass apiUrl to createSavoir()',
-      })
+      throw new Error(
+        'Missing apiUrl in Savoir configuration. ' +
+        'Set SAVOIR_API_URL environment variable or pass apiUrl to createSavoir()',
+      )
     }
 
     this.apiUrl = config.apiUrl.replace(/\/$/, '')

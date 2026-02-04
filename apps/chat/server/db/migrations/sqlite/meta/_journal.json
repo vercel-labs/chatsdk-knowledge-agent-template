@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1769440810870,
-      "tag": "0000_steady_magdalene",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1770128425579,
-      "tag": "0001_certain_paibok",
+      "when": 1770290453735,
+      "tag": "0000_simple_marvel_boy",
       "breakpoints": true
     }
   ]

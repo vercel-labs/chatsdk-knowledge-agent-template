@@ -123,7 +123,7 @@ watch(() => props.isLoading, (isLoading) => {
         :transition="{ duration: 0.2 }"
         class="shrink-0 mr-2.5"
       >
-        <ChatMatrix :size="4" :dot-size="3" :gap="3" />
+        <ChatMatrix :size="5" :dot-size="1.5" :gap="1.5" />
       </motion.div>
       <motion.span
         :animate="{ x: 0 }"
@@ -137,7 +137,7 @@ watch(() => props.isLoading, (isLoading) => {
     <div
       v-if="toolCalls?.length"
       class="flex flex-col gap-0.5"
-      :class="isLoading ? 'pl-[31px]' : 'pl-0'"
+      :class="isLoading ? 'pl-[28px]' : 'pl-0'"
     >
       <ToolCallItem
         v-for="tool in toolCalls"

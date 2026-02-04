@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { GitHubSource, SourcesResponse, YouTubeSource } from '@savoir/sdk'
 
 defineProps<{
   collapsed?: boolean
@@ -10,63 +9,9 @@ const colorMode = useColorMode()
 const appConfig = useAppConfig()
 const { user, clear } = useUserSession()
 const { isAdmin } = useAdmin()
-const toast = useToast()
 
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
-
-const { data: sources } = useLazyFetch<SourcesResponse>('/api/sources')
-
-async function triggerSync() {
-  try {
-    await $fetch('/api/sync', { method: 'POST' })
-    toast.add({
-      title: 'Sync started',
-      description: 'Documentation sync workflow has been triggered.',
-      color: 'success',
-    })
-  } catch (error) {
-    toast.add({
-      title: 'Sync failed',
-      description: error instanceof Error ? error.message : 'Unknown error',
-      color: 'error',
-    })
-  }
-}
-
-async function triggerSyncSource(sourceId: string, label: string) {
-  try {
-    await $fetch(`/api/sync/${sourceId}`, { method: 'POST' })
-    toast.add({
-      title: 'Sync started',
-      description: `Sync workflow for "${label}" has been triggered.`,
-      color: 'success',
-    })
-  } catch (error) {
-    toast.add({
-      title: 'Sync failed',
-      description: error instanceof Error ? error.message : 'Unknown error',
-      color: 'error',
-    })
-  }
-}
-
-async function triggerSnapshot() {
-  try {
-    await $fetch('/api/sandbox/snapshot', { method: 'POST' })
-    toast.add({
-      title: 'Snapshot started',
-      description: 'Snapshot creation workflow has been triggered.',
-      color: 'success',
-    })
-  } catch (error) {
-    toast.add({
-      title: 'Snapshot failed',
-      description: error instanceof Error ? error.message : 'Unknown error',
-      color: 'error',
-    })
-  }
-}
 
 const items = computed<DropdownMenuItem[][]>(() => {
   const baseItems: DropdownMenuItem[][] = [
@@ -156,53 +101,6 @@ const items = computed<DropdownMenuItem[][]>(() => {
           }
         ]
       }
-    ], [
-      {
-        label: 'Templates',
-        icon: 'i-lucide-layout-template',
-        children: [
-          {
-            label: 'Starter',
-            to: 'https://starter-template.nuxt.dev/'
-          }, {
-            label: 'Landing',
-            to: 'https://landing-template.nuxt.dev/'
-          }, {
-            label: 'Docs',
-            to: 'https://docs-template.nuxt.dev/'
-          }, {
-            label: 'SaaS',
-            to: 'https://saas-template.nuxt.dev/'
-          }, {
-            label: 'Dashboard',
-            to: 'https://dashboard-template.nuxt.dev/'
-          }, {
-            label: 'Chat',
-            to: 'https://chat-template.nuxt.dev/',
-            color: 'primary',
-            checked: true,
-            type: 'checkbox'
-          }, {
-            label: 'Portfolio',
-            to: 'https://portfolio-template.nuxt.dev/'
-          }, {
-            label: 'Changelog',
-            to: 'https://changelog-template.nuxt.dev/'
-          }
-        ]
-      }
-    ], [
-      {
-        label: 'Documentation',
-        icon: 'i-lucide-book-open',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank'
-      }, {
-        label: 'GitHub repository',
-        icon: 'i-simple-icons-github',
-        to: 'https://github.com/nuxt-ui-templates/chat',
-        target: '_blank'
-      }
     ]
   ]
 
@@ -211,39 +109,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
       {
         label: 'Admin',
         icon: 'i-lucide-settings',
-        children: [
-          {
-            label: 'Sources',
-            icon: 'i-lucide-database',
-            to: '/admin',
-          },
-          {
-            label: 'Sync all',
-            icon: 'i-lucide-refresh-cw',
-            onSelect: triggerSync,
-          },
-          {
-            label: 'Sync source',
-            icon: 'i-lucide-git-branch',
-            children: sources.value ? [
-              ...sources.value.github.sources.map((source: GitHubSource) => ({
-                label: source.label,
-                icon: 'i-simple-icons-github',
-                onSelect: () => triggerSyncSource(source.id, source.label),
-              })),
-              ...sources.value.youtube.sources.map((source: YouTubeSource) => ({
-                label: source.label,
-                icon: 'i-simple-icons-youtube',
-                onSelect: () => triggerSyncSource(source.id, source.label),
-              })),
-            ] : [{ label: 'Loading...', disabled: true }],
-          },
-          {
-            label: 'Create snapshot',
-            icon: 'i-lucide-camera',
-            onSelect: triggerSnapshot,
-          },
-        ],
+        to: '/admin',
       },
     ])
   }

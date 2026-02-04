@@ -30,14 +30,44 @@ const CONFIG_EXTENSIONS = ['.ts', '.js', '.json', '.yml', '.yaml', '.toml']
 const CONFIG_ACCEPT = CONFIG_EXTENSIONS.join(',')
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
+
+// Get type from query param (defaults to 'github')
+const initialType = (route.query.type === 'youtube' ? 'youtube' : 'github') as 'github' | 'youtube'
 
 const isSubmitting = ref(false)
 const isExtracting = ref(false)
 const isDragging = ref(false)
+const showQuickImport = ref(false)
 const pendingFiles = ref<PendingFile[]>([])
-const sources = ref<ExtractedSource[]>([])
+const sources = ref<ExtractedSource[]>([
+  {
+    id: crypto.randomUUID(),
+    data: {
+      type: initialType,
+      label: '',
+      repo: '',
+      branch: 'main',
+      contentPath: '',
+      outputPath: '',
+      basePath: initialType === 'youtube' ? '/youtube' : '/docs',
+      readmeOnly: false,
+      channelId: '',
+      handle: '',
+      maxVideos: 50,
+    },
+    confidence: 1,
+  }
+])
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// Auto-expand Quick Import when files are dragged
+watch(pendingFiles, (files) => {
+  if (files.length > 0 && !showQuickImport.value) {
+    showQuickImport.value = true
+  }
+})
 
 function createSourceData(item?: SourceOcrItem) {
   return {
@@ -204,7 +234,10 @@ function handleFileSelect(event: Event) {
 }
 
 function removeSource(id: string) {
-  sources.value = sources.value.filter(s => s.id !== id)
+  // Keep at least one source
+  if (sources.value.length > 1) {
+    sources.value = sources.value.filter(s => s.id !== id)
+  }
 }
 
 function addManualSource() {
@@ -298,11 +331,12 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
         Add Sources
       </h1>
       <p class="text-sm text-muted">
-        Sources provide context to the AI. Add GitHub docs or YouTube channels to make the assistant knowledgeable about specific tools and frameworks.
+        Sources provide context to the AI. Connect your GitHub docs or YouTube channels.
       </p>
     </header>
 
-    <section class="mb-8">
+    <!-- Expandable Quick Import Section -->
+    <section v-if="showQuickImport" class="mb-8">
       <p class="text-xs text-muted mb-3">
         Quick import
       </p>
@@ -394,17 +428,17 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </div>
     </section>
 
-    <section v-if="sources.length > 0" class="mb-8">
+    <section class="mb-2">
       <div class="flex items-center justify-between mb-3">
         <p class="text-xs text-muted">
-          Sources
+          Your sources
         </p>
         <button
           class="text-xs text-muted hover:text-highlighted transition-colors flex items-center gap-1"
           @click="addManualSource"
         >
           <UIcon name="i-lucide-plus" class="size-3" aria-hidden="true" />
-          Add manually
+          Add source
         </button>
       </div>
 
@@ -497,31 +531,18 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </div>
     </section>
 
-    <div
-      v-if="sources.length === 0 && pendingFiles.length === 0"
-      class="text-center py-10"
-    >
-      <p class="text-sm text-muted mb-1">
-        No files uploaded yet
-      </p>
-      <p class="text-xs text-muted mb-4">
-        Or skip the import and configure sources manually
-      </p>
-      <UButton
-        icon="i-lucide-plus"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        @click="addManualSource"
+    <!-- Power users notice above separator -->
+    <div class="mb-2 text-center">
+      <button
+        class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"
+        @click="showQuickImport = !showQuickImport"
       >
-        Add manually
-      </UButton>
+        <UIcon name="i-lucide-sparkles" class="size-3" />
+        <span>{{ showQuickImport ? 'Hide quick import' : 'Power users: upload config files or screenshots' }}</span>
+      </button>
     </div>
 
-    <div
-      v-if="sources.length > 0"
-      class="flex items-center justify-end gap-2 pt-4 border-t border-default"
-    >
+    <div class="flex items-center justify-end gap-2 pt-4 border-t border-default">
       <UButton
         color="neutral"
         variant="ghost"

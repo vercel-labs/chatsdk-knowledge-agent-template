@@ -106,9 +106,9 @@ defineShortcuts({
       class="bg-elevated/50"
     >
       <template #header="{ collapsed }">
-        <NuxtLink to="/" class="flex items-end gap-0.5">
-          <Logo class="h-8 w-auto shrink-0" />
-          <span v-if="!collapsed" class="text-xl font-bold text-highlighted">Chat</span>
+        <NuxtLink to="/" class="flex items-center gap-0.5" :class="{ 'mx-auto': collapsed }">
+          <UIcon name="custom:savoir" class="size-6" />
+          <span v-if="!collapsed" class="text-xl font-semibold text-highlighted">Savoir</span>
         </NuxtLink>
 
         <div v-if="!collapsed" class="flex items-center gap-1.5 ms-auto">
@@ -166,16 +166,19 @@ defineShortcuts({
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu v-if="loggedIn" :collapsed />
-        <UButton
-          v-else
-          :label="collapsed ? '' : 'Login with GitHub'"
-          icon="i-simple-icons-github"
-          color="neutral"
-          variant="ghost"
-          class="w-full"
-          @click="openInPopup('/auth/github')"
-        />
+        <div class="flex flex-col gap-2 w-full">
+          <UserStats v-if="loggedIn" :collapsed />
+          <UserMenu v-if="loggedIn" :collapsed />
+          <UButton
+            v-else
+            :label="collapsed ? '' : 'Login with GitHub'"
+            icon="i-simple-icons-github"
+            color="neutral"
+            variant="ghost"
+            class="w-full"
+            @click="openInPopup('/auth/github')"
+          />
+        </div>
       </template>
     </UDashboardSidebar>
 

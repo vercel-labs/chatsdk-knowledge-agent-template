@@ -1,7 +1,26 @@
 {
   "name": "@savoir/sdk",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.1",
   "description": "SDK for Savoir documentation AI with AI SDK compatible tools",
+  "license": "MIT",
+  "author": "Hugo Richard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hugorichard/savoir.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/hugorichard/savoir/tree/main/packages/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/hugorichard/savoir/issues"
+  },
+  "keywords": [
+    "savoir",
+    "ai",
+    "ai-sdk",
+    "documentation",
+    "rag",
+    "sandbox"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -14,7 +33,8 @@
   "types": "./dist/index.d.mts",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",
@@ -26,7 +46,6 @@
   },
   "dependencies": {
     "ai": "^6.0.68",
-    "evlog": "^1.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -42,5 +61,8 @@
     "ai": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
