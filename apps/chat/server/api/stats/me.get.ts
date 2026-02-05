@@ -50,16 +50,16 @@ export default defineEventHandler(async (event) => {
   // For multiple chats, we need to filter in JS since drizzle doesn't have a nice IN helper
   const filteredMessages = chatIds.length > 1
     ? await db
-        .select({
-          chatId: schema.messages.chatId,
-          model: schema.messages.model,
-          inputTokens: schema.messages.inputTokens,
-          outputTokens: schema.messages.outputTokens,
-          durationMs: schema.messages.durationMs,
-        })
-        .from(schema.messages)
-        .where(isNotNull(schema.messages.model))
-        .then(msgs => msgs.filter(m => chatIds.includes(m.chatId)))
+      .select({
+        chatId: schema.messages.chatId,
+        model: schema.messages.model,
+        inputTokens: schema.messages.inputTokens,
+        outputTokens: schema.messages.outputTokens,
+        durationMs: schema.messages.durationMs,
+      })
+      .from(schema.messages)
+      .where(isNotNull(schema.messages.model))
+      .then(msgs => msgs.filter(m => chatIds.includes(m.chatId)))
     : messagesWithStats
 
   // Calculate totals

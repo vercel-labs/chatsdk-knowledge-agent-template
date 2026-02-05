@@ -53,7 +53,7 @@ const targetText = computed(() => {
 })
 
 let frame = 0
-let totalFrames = 15
+const totalFrames = 15
 let fromText = ''
 let toText = ''
 

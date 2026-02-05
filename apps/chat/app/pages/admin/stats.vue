@@ -124,16 +124,14 @@ async function triggerCompute() {
       icon: 'i-lucide-check',
     })
     setTimeout(() => refresh(), 2000)
-  }
-  catch (error) {
+  } catch (error) {
     toast.add({
       title: 'Error',
       description: error instanceof Error ? error.message : 'Failed to compute stats',
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })
-  }
-  finally {
+  } finally {
     isComputing.value = false
   }
 }

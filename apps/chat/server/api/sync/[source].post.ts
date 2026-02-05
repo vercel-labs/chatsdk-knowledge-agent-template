@@ -1,5 +1,7 @@
 import { start } from 'workflow/api'
 import { z } from 'zod'
+import { eq } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
 import { syncDocumentation } from '../../workflows/sync-docs'
 import type { Source } from '../../workflows/sync-docs'
 
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   const dbSource = await db.query.sources.findFirst({
-    where: (sources, { eq }) => eq(sources.id, sourceId),
+    where: eq(schema.sources.id, sourceId),
   })
 
   if (!dbSource) {
@@ -40,8 +42,7 @@ export default defineEventHandler(async (event) => {
       outputPath: dbSource.outputPath || dbSource.id,
       readmeOnly: dbSource.readmeOnly ?? false,
     }
-  }
-  else {
+  } else {
     // YouTube source
     source = {
       id: dbSource.id,

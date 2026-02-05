@@ -322,9 +322,7 @@ async function saveAll() {
 }
 
 const typeOptions = computed(() => {
-  const options = [
-    { label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },
-  ]
+  const options = [{ label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },]
 
   if (youtubeEnabled.value) {
     options.push({ label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' })

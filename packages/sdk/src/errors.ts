@@ -1,6 +1,7 @@
 import type { ApiErrorResponse } from './types'
 
 export class SavoirError extends Error {
+
   readonly statusCode: number
   readonly error?: string
 
@@ -22,9 +23,11 @@ export class SavoirError extends Error {
   isServerError(): boolean {
     return this.statusCode >= 500
   }
+
 }
 
 export class NetworkError extends Error {
+
   readonly cause?: Error
 
   constructor(message: string, cause?: Error) {
@@ -32,4 +35,5 @@ export class NetworkError extends Error {
     this.name = 'NetworkError'
     this.cause = cause
   }
+
 }

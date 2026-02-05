@@ -1,6 +1,7 @@
 import { kv } from '@nuxthub/kv'
 import { start } from 'workflow/api'
 import { z } from 'zod'
+import { db } from '@nuxthub/db'
 import { syncDocumentation } from '../../workflows/sync-docs'
 import type { Source } from '../../workflows/sync-docs'
 import { KV_KEYS } from '../../utils/sandbox/types'
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   const dbSources = await db.query.sources.findMany()
 
-  let sources: Source[] = dbSources.map((s) => {
+  let sources: Source[] = dbSources.map((s): Source => {
     if (s.type === 'github') {
       return {
         id: s.id,
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
         readmeOnly: s.readmeOnly ?? false,
       }
     }
-    
+
     // YouTube source
     return {
       id: s.id,
