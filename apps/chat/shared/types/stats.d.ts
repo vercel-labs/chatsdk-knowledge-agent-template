@@ -44,6 +44,39 @@ export interface SourceStats {
 }
 
 /**
+ * Top user statistics
+ */
+export interface TopUserStats {
+  userId: string
+  name: string
+  email: string
+  avatar: string
+  messageCount: number
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  totalDurationMs: number
+}
+
+/**
+ * Daily totals for trend charts
+ */
+export interface DailyTotals {
+  date: string
+  messages: number
+  tokens: number
+}
+
+/**
+ * Trend comparison (current vs previous period)
+ */
+export interface TrendStats {
+  messages: number | null
+  tokens: number | null
+  activeUsers: number | null
+}
+
+/**
  * Global stats response (admin)
  */
 export interface GlobalStatsResponse {
@@ -58,16 +91,21 @@ export interface GlobalStatsResponse {
     outputTokens: number
     totalTokens: number
     avgDurationMs: number
+    activeUsers: number
   }
+  trends: TrendStats
   feedback: FeedbackStats
   byModel: Array<{
     model: string
     messageCount: number
     inputTokens: number
     outputTokens: number
+    avgDurationMs: number
     positive: number
     negative: number
   }>
   bySource: SourceStats[]
+  topUsers: TopUserStats[]
   daily: DailyStats[]
+  dailyTotals: DailyTotals[]
 }

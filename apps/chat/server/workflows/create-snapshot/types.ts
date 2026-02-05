@@ -10,7 +10,6 @@ export interface SnapshotConfig {
 
 export interface SnapshotResult {
   success: boolean
-  snapshotId?: string
-  sourceRepo?: string
-  error?: string
+  snapshotId: string
+  sourceRepo: string
 }

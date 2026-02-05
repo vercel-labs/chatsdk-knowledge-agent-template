@@ -1,21 +1,34 @@
 /**
  * Sync Documentation Workflow
  *
- * Syncs documentation from GitHub sources into a Vercel Sandbox,
+ * Syncs documentation from GitHub/YouTube sources into a Vercel Sandbox,
  * pushes changes to git, then takes a snapshot for instant startup.
+ *
+ * This workflow is composed of granular steps for better retry semantics
+ * and observability:
+ * 1. Create sandbox from git repository
+ * 2. Sync each source (parallel execution)
+ * 3. Push changes to git
+ * 4. Take snapshot
  */
 
 import { FatalError } from 'workflow'
 import { log } from 'evlog'
-import type { GitHubSource, SyncConfig, SyncResult } from './types'
-import { stepSyncAll } from './steps'
+import type { Source, SyncConfig, SyncResult, SyncSourceResult } from './types'
+import {
+  stepCreateSandbox,
+  stepSyncSource,
+  stepPushChanges,
+  stepTakeSnapshot,
+} from './steps'
 
 export async function syncDocumentation(
   config: SyncConfig,
-  sources: GitHubSource[],
+  sources: Source[],
 ): Promise<SyncResult> {
   'use workflow'
 
+  // Validate configuration
   if (!config.snapshotRepo) {
     throw new FatalError('NUXT_GITHUB_SNAPSHOT_REPO is not configured')
   }
@@ -24,10 +37,51 @@ export async function syncDocumentation(
     throw new FatalError('No sources provided')
   }
 
-  const { snapshotId, results, totalFiles } = await stepSyncAll(config, sources)
+  // Filter out YouTube sources if API key is not configured
+  const filteredSources = sources.filter((s) => {
+    if (s.type === 'youtube' && !config.youtubeApiKey) {
+      log.warn('sync', `Skipping YouTube source "${s.label}" - NUXT_YOUTUBE_API_KEY not configured`)
+      return false
+    }
+    return true
+  })
 
-  const successCount = results.filter(r => r.success).length
-  const failCount = results.filter(r => !r.success).length
+  if (filteredSources.length === 0) {
+    throw new FatalError('No sources to sync after filtering')
+  }
+
+  // Step 1: Create sandbox
+  const { sandboxId } = await stepCreateSandbox(config)
+
+  // Step 2: Sync all sources in parallel
+  // Each source is its own step for granular retry and observability
+  const results = await Promise.all(
+    filteredSources.map(source =>
+      stepSyncSource(sandboxId, source, {
+        githubToken: config.githubToken,
+        youtubeApiKey: config.youtubeApiKey,
+      }),
+    ),
+  )
+
+  // Step 3: Push changes to git
+  await stepPushChanges(
+    sandboxId,
+    {
+      snapshotRepo: config.snapshotRepo,
+      snapshotBranch: config.snapshotBranch,
+      githubToken: config.githubToken,
+    },
+    results,
+  )
+
+  // Step 4: Take snapshot
+  const { snapshotId } = await stepTakeSnapshot(sandboxId)
+
+  // Compute summary
+  const successCount = results.filter((r: SyncSourceResult) => r.success).length
+  const failCount = results.filter((r: SyncSourceResult) => !r.success).length
+  const totalFiles = results.reduce((sum: number, r: SyncSourceResult) => sum + (r.fileCount || 0), 0)
 
   const status = failCount === 0 ? '✓' : '✗'
   log.info('sync', `${status} Done: ${successCount}/${sources.length} sources, ${totalFiles} files`)

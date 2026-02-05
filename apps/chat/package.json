@@ -20,6 +20,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.32",
     "@ai-sdk/vue": "^3.0.68",
+    "@googleapis/youtube": "^31.0.0",
     "@iconify-json/logos": "^1.2.10",
     "@iconify-json/lucide": "^1.2.87",
     "@iconify-json/simple-icons": "^1.2.69",
@@ -42,7 +43,7 @@
     "pathe": "^2.0.3",
     "sharp": "^0.34.5",
     "shiki-stream": "^0.1.4",
-    "workflow": "4.0.1-beta.50",
+    "workflow": "4.1.0-beta.52",
     "zod": "^4.3.6"
   },
   "devDependencies": {

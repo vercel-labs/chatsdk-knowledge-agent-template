@@ -1,7 +1,7 @@
 import { start } from 'workflow/api'
 import { z } from 'zod'
 import { syncDocumentation } from '../../workflows/sync-docs'
-import type { GitHubSource } from '../../workflows/sync-docs'
+import type { Source } from '../../workflows/sync-docs'
 
 const paramsSchema = z.object({
   source: z.string().min(1),
@@ -17,33 +17,47 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
 
   const dbSource = await db.query.sources.findFirst({
-    where: (sources, { eq, and }) => and(
-      eq(sources.id, sourceId),
-      eq(sources.type, 'github'),
-    ),
+    where: (sources, { eq }) => eq(sources.id, sourceId),
   })
 
   if (!dbSource) {
     throw createError({
       statusCode: 404,
-      message: `GitHub source not found: ${sourceId}`,
+      message: `Source not found: ${sourceId}`,
     })
   }
 
-  const source: GitHubSource = {
-    id: dbSource.id,
-    type: 'github',
-    label: dbSource.label,
-    basePath: dbSource.basePath || '/docs',
-    repo: dbSource.repo || '',
-    branch: dbSource.branch || 'main',
-    contentPath: dbSource.contentPath || '',
-    outputPath: dbSource.outputPath || dbSource.id,
-    readmeOnly: dbSource.readmeOnly ?? false,
+  let source: Source
+  if (dbSource.type === 'github') {
+    source = {
+      id: dbSource.id,
+      type: 'github',
+      label: dbSource.label,
+      basePath: dbSource.basePath || '/docs',
+      repo: dbSource.repo || '',
+      branch: dbSource.branch || 'main',
+      contentPath: dbSource.contentPath || '',
+      outputPath: dbSource.outputPath || dbSource.id,
+      readmeOnly: dbSource.readmeOnly ?? false,
+    }
+  }
+  else {
+    // YouTube source
+    source = {
+      id: dbSource.id,
+      type: 'youtube',
+      label: dbSource.label,
+      basePath: dbSource.basePath || '/docs',
+      channelId: dbSource.channelId || '',
+      handle: dbSource.handle || '',
+      maxVideos: dbSource.maxVideos || 50,
+      outputPath: dbSource.outputPath || dbSource.id,
+    }
   }
 
   const syncConfig = {
     githubToken: config.github.token,
+    youtubeApiKey: config.youtube?.apiKey,
     snapshotRepo: config.github.snapshotRepo,
     snapshotBranch: config.github.snapshotBranch,
   }

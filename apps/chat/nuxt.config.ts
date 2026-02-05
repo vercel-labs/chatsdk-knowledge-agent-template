@@ -86,6 +86,10 @@ export default defineNuxtConfig({
       appPrivateKey: '',
       webhookSecret: '',
     },
+    // YouTube config
+    youtube: {
+      apiKey: '',
+    },
     public: {
       github: {
         botTrigger: '@nuxt-agent',

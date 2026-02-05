@@ -203,6 +203,17 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
         >
           Add Source
         </UButton>
+        <UButton
+          v-if="sources?.snapshotRepoUrl"
+          icon="i-lucide-external-link"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          :to="sources.snapshotRepoUrl"
+          target="_blank"
+        >
+          View Repository
+        </UButton>
         <span v-if="lastSyncAgo && !needsSync" class="text-xs text-muted ml-2">
           Last synced {{ lastSyncAgo }}
         </span>
@@ -292,7 +303,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
         </UButton>
       </section>
 
-      <section>
+      <section v-if="sources?.youtubeEnabled">
         <div class="flex items-center justify-between mb-3">
           <p class="text-xs text-muted">
             YouTube Channels
@@ -332,7 +343,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
           </div>
         </template>
         <UButton
-          v-else
+          v-else-if="sources?.youtubeEnabled"
           color="neutral"
           variant="ghost"
           class="w-full h-14 border border-dashed border-default hover:border-muted"

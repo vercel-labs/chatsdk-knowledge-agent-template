@@ -13,27 +13,19 @@ import { stepCreateAndSnapshot } from './steps'
 export async function createSnapshot(config: SnapshotConfig): Promise<SnapshotResult> {
   'use workflow'
 
+  // Validation errors should not retry
   if (!config.snapshotRepo) {
     throw new FatalError('NUXT_GITHUB_SNAPSHOT_REPO is not configured')
   }
 
-  try {
-    const { snapshotId } = await stepCreateAndSnapshot(config)
+  // Let the step execute - errors will propagate and trigger retries
+  const { snapshotId } = await stepCreateAndSnapshot(config)
 
-    log.info('snapshot', `✓ Workflow completed: ${snapshotId}`)
+  log.info('snapshot', `✓ Workflow completed: ${snapshotId}`)
 
-    return {
-      success: true,
-      snapshotId,
-      sourceRepo: config.snapshotRepo,
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    log.error('snapshot', `✗ Workflow failed: ${errorMessage}`)
-
-    return {
-      success: false,
-      error: errorMessage,
-    }
+  return {
+    success: true,
+    snapshotId,
+    sourceRepo: config.snapshotRepo,
   }
 }

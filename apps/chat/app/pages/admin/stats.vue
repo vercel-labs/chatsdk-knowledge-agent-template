@@ -23,6 +23,12 @@ function formatNumber(num: number): string {
   return num.toLocaleString()
 }
 
+function formatCompactNumber(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`
+  return num.toString()
+}
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
@@ -49,6 +55,27 @@ function getModelSatisfaction(model: { positive: number, negative: number }): nu
   return Math.round((model.positive / total) * 100)
 }
 
+// Trend formatting
+function formatTrend(trend: number | null): string {
+  if (trend === null) return '—'
+  const sign = trend >= 0 ? '+' : ''
+  return `${sign}${trend}%`
+}
+
+function getTrendColor(trend: number | null): string {
+  if (trend === null) return 'text-muted'
+  if (trend > 0) return 'text-success'
+  if (trend < 0) return 'text-error'
+  return 'text-muted'
+}
+
+function getTrendIcon(trend: number | null): string {
+  if (trend === null) return 'i-lucide-minus'
+  if (trend > 0) return 'i-lucide-trending-up'
+  if (trend < 0) return 'i-lucide-trending-down'
+  return 'i-lucide-minus'
+}
+
 const chartData = computed(() => {
   if (!stats.value?.daily) return []
 
@@ -68,7 +95,7 @@ const chartData = computed(() => {
       input: tokens.input,
       output: tokens.output,
     }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
 })
 
 // Get evenly spaced date labels for the x-axis (5 labels max)
@@ -97,21 +124,23 @@ async function triggerCompute() {
       icon: 'i-lucide-check',
     })
     setTimeout(() => refresh(), 2000)
-  } catch (error) {
+  }
+  catch (error) {
     toast.add({
       title: 'Error',
       description: error instanceof Error ? error.message : 'Failed to compute stats',
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })
-  } finally {
+  }
+  finally {
     isComputing.value = false
   }
 }
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-4xl">
+  <div class="px-6 lg:px-10 py-8 max-w-5xl">
     <header class="mb-6">
       <div class="flex items-center justify-between gap-4">
         <div>
@@ -175,47 +204,65 @@ async function triggerCompute() {
         class="transition-opacity duration-200"
         :class="isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'"
       >
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <div class="rounded-lg border border-default bg-elevated/50 p-3">
-            <p class="text-[11px] text-muted mb-0.5">
+        <!-- KPI Cards with Trends -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
               Messages
             </p>
-            <p class="text-xl font-semibold text-highlighted tabular-nums">
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatNumber(stats.totals.messages) }}
             </p>
+            <p v-if="stats.trends?.messages !== undefined" class="text-[11px] flex items-center gap-1 mt-1" :class="getTrendColor(stats.trends.messages)">
+              <UIcon :name="getTrendIcon(stats.trends.messages)" class="size-3.5" />
+              {{ formatTrend(stats.trends.messages) }} vs prev
+            </p>
           </div>
-          <div class="rounded-lg border border-default bg-elevated/50 p-3">
-            <p class="text-[11px] text-muted mb-0.5">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
               Total Tokens
             </p>
-            <p class="text-xl font-semibold text-highlighted tabular-nums">
-              {{ formatNumber(stats.totals.totalTokens) }}
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ formatCompactNumber(stats.totals.totalTokens) }}
             </p>
-            <p class="text-[10px] text-muted">
-              {{ formatNumber(stats.totals.inputTokens) }} in / {{ formatNumber(stats.totals.outputTokens) }} out
+            <p v-if="stats.trends?.tokens !== undefined" class="text-[11px] flex items-center gap-1 mt-1" :class="getTrendColor(stats.trends.tokens)">
+              <UIcon :name="getTrendIcon(stats.trends.tokens)" class="size-3.5" />
+              {{ formatTrend(stats.trends.tokens) }} vs prev
             </p>
           </div>
-          <div class="rounded-lg border border-default bg-elevated/50 p-3">
-            <p class="text-[11px] text-muted mb-0.5">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
+              Active Users
+            </p>
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
+              {{ stats.totals.activeUsers ?? 0 }}
+            </p>
+            <p v-if="stats.trends?.activeUsers !== undefined" class="text-[11px] flex items-center gap-1 mt-1" :class="getTrendColor(stats.trends.activeUsers)">
+              <UIcon :name="getTrendIcon(stats.trends.activeUsers)" class="size-3.5" />
+              {{ formatTrend(stats.trends.activeUsers) }} vs prev
+            </p>
+          </div>
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
               Avg Response
             </p>
-            <p class="text-xl font-semibold text-highlighted tabular-nums">
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ formatDuration(stats.totals.avgDurationMs) }}
             </p>
           </div>
-          <div class="rounded-lg border border-default bg-elevated/50 p-3">
-            <p class="text-[11px] text-muted mb-0.5">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
               Models
             </p>
-            <p class="text-xl font-semibold text-highlighted tabular-nums">
+            <p class="text-2xl font-semibold text-highlighted tabular-nums">
               {{ stats.byModel.length }}
             </p>
           </div>
-          <div class="rounded-lg border border-default bg-elevated/50 p-3">
-            <p class="text-[11px] text-muted mb-0.5">
+          <div class="rounded-lg border border-default bg-elevated/50 p-4">
+            <p class="text-xs text-muted mb-1">
               Satisfaction
             </p>
-            <p class="text-xl font-semibold tabular-nums" :class="getScoreColor(stats.feedback.score)">
+            <p class="text-2xl font-semibold tabular-nums" :class="getScoreColor(stats.feedback.score)">
               <template v-if="stats.feedback.score !== null">
                 {{ stats.feedback.score }}%
               </template>
@@ -223,18 +270,19 @@ async function triggerCompute() {
                 <span class="text-muted">—</span>
               </template>
             </p>
-            <p v-if="stats.feedback.total > 0" class="text-[10px] text-muted">
-              {{ stats.feedback.positive }} <UIcon name="i-lucide-thumbs-up" class="size-2.5 inline" /> · {{ stats.feedback.negative }} <UIcon name="i-lucide-thumbs-down" class="size-2.5 inline" />
+            <p v-if="stats.feedback.total > 0" class="text-[11px] text-muted mt-1">
+              {{ stats.feedback.positive }} <UIcon name="i-lucide-thumbs-up" class="size-3 inline" /> · {{ stats.feedback.negative }} <UIcon name="i-lucide-thumbs-down" class="size-3 inline" />
             </p>
           </div>
         </div>
 
-        <section class="mb-8">
+        <!-- Token Usage Chart -->
+        <section class="mb-10">
           <h2 class="text-sm font-medium text-highlighted mb-3">
-            Token Usage
+            Token Usage Over Time
           </h2>
-          <div v-if="chartData.length > 0" class="rounded-lg border border-default bg-elevated/50 p-4">
-            <div class="h-40 flex items-end gap-0.5">
+          <div v-if="chartData.length > 0" class="rounded-lg border border-default bg-elevated/50 p-4 overflow-hidden">
+            <div class="h-40 flex items-end gap-0.5 px-4">
               <div
                 v-for="(day, index) in chartData"
                 :key="index"
@@ -257,7 +305,7 @@ async function triggerCompute() {
                 </UTooltip>
               </div>
             </div>
-            <div class="relative h-4 mt-2">
+            <div class="relative h-4 mt-2 mx-4">
               <span
                 v-for="label in chartDateLabels"
                 :key="label.index"
@@ -267,7 +315,7 @@ async function triggerCompute() {
                 {{ label.label }}
               </span>
             </div>
-            <div class="flex items-center justify-center gap-4 mt-2 pt-2 border-t border-default text-[10px] text-muted">
+            <div class="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-default text-[10px] text-muted">
               <span class="flex items-center gap-1">
                 <span class="inline-block size-2 rounded bg-primary/40" />
                 Input
@@ -285,54 +333,110 @@ async function triggerCompute() {
           </div>
         </section>
 
-        <section v-if="stats.bySource && stats.bySource.length > 1" class="mb-8">
-          <h2 class="text-sm font-medium text-highlighted mb-3">
-            By Source
-          </h2>
-          <div class="rounded-lg border border-default overflow-hidden">
-            <table class="w-full text-sm">
-              <thead class="bg-elevated/50">
-                <tr class="border-b border-default text-xs text-muted">
-                  <th class="text-left font-medium px-4 py-2.5">
-                    Source
-                  </th>
-                  <th class="text-right font-medium px-3 py-2.5">
-                    Requests
-                  </th>
-                  <th class="text-right font-medium px-3 py-2.5">
-                    Tokens
-                  </th>
-                  <th class="text-right font-medium px-4 py-2.5">
-                    Avg Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-default">
-                <tr v-for="source in stats.bySource" :key="source.source" class="hover:bg-elevated/30">
-                  <td class="px-4 py-2.5">
-                    <div class="flex items-center gap-2">
-                      <UIcon
-                        :name="source.source === 'web' ? 'i-lucide-globe' : source.source === 'github-bot' ? 'i-simple-icons-github' : 'i-lucide-code'"
-                        class="size-4 text-muted"
-                      />
-                      <span class="text-highlighted capitalize">{{ source.source.replace('-', ' ') }}</span>
-                    </div>
-                  </td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5">
-                    {{ formatNumber(source.requests) }}
-                  </td>
-                  <td class="text-right text-muted tabular-nums px-3 py-2.5">
-                    {{ formatNumber(source.totalTokens) }}
-                  </td>
-                  <td class="text-right text-muted tabular-nums px-4 py-2.5">
-                    {{ formatDuration(source.avgDurationMs) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <!-- Two column layout for tables -->
+        <div class="grid md:grid-cols-2 gap-8 mb-8 items-start">
+          <!-- Top Users -->
+          <section>
+            <h2 class="text-sm font-medium text-highlighted mb-3">
+              Top Users
+            </h2>
+            <div v-if="stats.topUsers && stats.topUsers.length > 0" class="rounded-lg border border-default overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-elevated/50">
+                  <tr class="border-b border-default text-xs text-muted">
+                    <th class="text-left font-medium px-4 py-2.5">
+                      User
+                    </th>
+                    <th class="text-right font-medium px-3 py-2.5">
+                      Msgs
+                    </th>
+                    <th class="text-right font-medium px-4 py-2.5">
+                      Tokens
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-default">
+                  <tr v-for="user in stats.topUsers.slice(0, 5)" :key="user.userId" class="hover:bg-elevated/30">
+                    <td class="px-4 py-2">
+                      <div class="flex items-center gap-2">
+                        <img
+                          v-if="user.avatar"
+                          :src="user.avatar"
+                          :alt="user.name"
+                          class="size-6 rounded-full"
+                        >
+                        <div v-else class="size-6 rounded-full bg-muted/20 flex items-center justify-center">
+                          <UIcon name="i-lucide-user" class="size-3 text-muted" />
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-highlighted truncate text-xs">
+                            {{ user.name }}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                      {{ formatNumber(user.messageCount) }}
+                    </td>
+                    <td class="text-right text-muted tabular-nums px-4 py-2.5 text-xs">
+                      {{ formatCompactNumber(user.totalTokens) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="rounded-lg border border-dashed border-default p-6 text-center">
+              <p class="text-sm text-muted">
+                No user data yet
+              </p>
+            </div>
+          </section>
 
+          <!-- By Source -->
+          <section v-if="stats.bySource && stats.bySource.length > 0">
+            <h2 class="text-sm font-medium text-highlighted mb-3">
+              By Source
+            </h2>
+            <div class="rounded-lg border border-default overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-elevated/50">
+                  <tr class="border-b border-default text-xs text-muted">
+                    <th class="text-left font-medium px-4 py-2.5">
+                      Source
+                    </th>
+                    <th class="text-right font-medium px-3 py-2.5">
+                      Requests
+                    </th>
+                    <th class="text-right font-medium px-4 py-2.5">
+                      Tokens
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-default">
+                  <tr v-for="source in stats.bySource" :key="source.source" class="hover:bg-elevated/30">
+                    <td class="px-4 py-2.5">
+                      <div class="flex items-center gap-2">
+                        <UIcon
+                          :name="source.source === 'web' ? 'i-lucide-globe' : source.source === 'github-bot' ? 'i-simple-icons-github' : 'i-lucide-code'"
+                          class="size-4 text-muted"
+                        />
+                        <span class="text-highlighted capitalize text-xs">{{ source.source.replace('-', ' ') }}</span>
+                      </div>
+                    </td>
+                    <td class="text-right text-muted tabular-nums px-3 py-2.5 text-xs">
+                      {{ formatNumber(source.requests) }}
+                    </td>
+                    <td class="text-right text-muted tabular-nums px-4 py-2.5 text-xs">
+                      {{ formatCompactNumber(source.totalTokens) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- By Model (full width) -->
         <section>
           <h2 class="text-sm font-medium text-highlighted mb-3">
             By Model
@@ -345,13 +449,16 @@ async function triggerCompute() {
                     Model
                   </th>
                   <th class="text-right font-medium px-3 py-2.5">
-                    Msgs
+                    Messages
                   </th>
                   <th class="text-right font-medium px-3 py-2.5">
                     Tokens
                   </th>
+                  <th class="text-right font-medium px-3 py-2.5">
+                    Avg Response
+                  </th>
                   <th class="text-right font-medium px-4 py-2.5">
-                    <UIcon name="i-lucide-thumbs-up" class="size-3.5" />
+                    Satisfaction
                   </th>
                 </tr>
               </thead>
@@ -359,13 +466,16 @@ async function triggerCompute() {
                 <tr v-for="model in stats.byModel" :key="model.model" class="hover:bg-elevated/30">
                   <td class="px-4 py-2.5">
                     <span class="text-highlighted">{{ formatModelName(model.model) }}</span>
-                    <span class="text-xs text-muted block truncate max-w-48">{{ model.model }}</span>
+                    <span class="text-xs text-muted block truncate max-w-64">{{ model.model }}</span>
                   </td>
                   <td class="text-right text-muted tabular-nums px-3 py-2.5">
                     {{ formatNumber(model.messageCount) }}
                   </td>
                   <td class="text-right text-muted tabular-nums px-3 py-2.5">
-                    {{ formatNumber(model.inputTokens + model.outputTokens) }}
+                    {{ formatCompactNumber(model.inputTokens + model.outputTokens) }}
+                  </td>
+                  <td class="text-right text-muted tabular-nums px-3 py-2.5">
+                    {{ formatDuration(model.avgDurationMs) }}
                   </td>
                   <td class="text-right tabular-nums px-4 py-2.5" :class="getScoreColor(getModelSatisfaction(model))">
                     <template v-if="getModelSatisfaction(model) !== null">

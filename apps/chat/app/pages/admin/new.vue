@@ -33,8 +33,14 @@ const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 
+// Fetch sources to check if YouTube is enabled
+const { data: sourcesData } = await useFetch('/api/sources')
+const youtubeEnabled = computed(() => sourcesData.value?.youtubeEnabled ?? false)
+
 // Get type from query param (defaults to 'github')
-const initialType = (route.query.type === 'youtube' ? 'youtube' : 'github') as 'github' | 'youtube'
+// If YouTube is requested but not enabled, fallback to GitHub
+const requestedType = route.query.type === 'youtube' ? 'youtube' : 'github'
+const initialType = (requestedType === 'youtube' && !youtubeEnabled.value ? 'github' : requestedType) as 'github' | 'youtube'
 
 const isSubmitting = ref(false)
 const isExtracting = ref(false)
@@ -315,10 +321,17 @@ async function saveAll() {
   }
 }
 
-const typeOptions = [
-  { label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },
-  { label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' },
-]
+const typeOptions = computed(() => {
+  const options = [
+    { label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },
+  ]
+
+  if (youtubeEnabled.value) {
+    options.push({ label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' })
+  }
+
+  return options
+})
 
 const hasValidSources = computed(() => sources.value.some(s => s.data.label))
 const validSourcesCount = computed(() => sources.value.filter(s => s.data.label).length)
@@ -331,7 +344,7 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
         Add Sources
       </h1>
       <p class="text-sm text-muted">
-        Sources provide context to the AI. Connect your GitHub docs or YouTube channels.
+        Sources provide context to the AI. Connect your GitHub docs{{ youtubeEnabled ? ' or YouTube channels' : '' }}.
       </p>
     </header>
 

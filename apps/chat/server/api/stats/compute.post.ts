@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { start } from 'workflow/api'
 import { computeStats } from '../../workflows/compute-stats'
 
 /**
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     return yesterday.toISOString().split('T')[0]!
   })()
 
-  await computeStats({ date: targetDate })
+  await start(computeStats, [{ date: targetDate }])
 
   return {
     status: 'started',

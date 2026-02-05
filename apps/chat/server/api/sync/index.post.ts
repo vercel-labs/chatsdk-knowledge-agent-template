@@ -2,7 +2,7 @@ import { kv } from '@nuxthub/kv'
 import { start } from 'workflow/api'
 import { z } from 'zod'
 import { syncDocumentation } from '../../workflows/sync-docs'
-import type { GitHubSource } from '../../workflows/sync-docs'
+import type { Source } from '../../workflows/sync-docs'
 import { KV_KEYS } from '../../utils/sandbox/types'
 
 const bodySchema = z
@@ -25,19 +25,33 @@ export default defineEventHandler(async (event) => {
 
   const dbSources = await db.query.sources.findMany()
 
-  let sources: GitHubSource[] = dbSources
-    .filter(s => s.type === 'github')
-    .map(s => ({
+  let sources: Source[] = dbSources.map((s) => {
+    if (s.type === 'github') {
+      return {
+        id: s.id,
+        type: 'github' as const,
+        label: s.label,
+        basePath: s.basePath || '/docs',
+        repo: s.repo || '',
+        branch: s.branch || 'main',
+        contentPath: s.contentPath || '',
+        outputPath: s.outputPath || s.id,
+        readmeOnly: s.readmeOnly ?? false,
+      }
+    }
+    
+    // YouTube source
+    return {
       id: s.id,
-      type: 'github' as const,
+      type: 'youtube' as const,
       label: s.label,
       basePath: s.basePath || '/docs',
-      repo: s.repo || '',
-      branch: s.branch || 'main',
-      contentPath: s.contentPath || '',
+      channelId: s.channelId || '',
+      handle: s.handle || '',
+      maxVideos: s.maxVideos || 50,
       outputPath: s.outputPath || s.id,
-      readmeOnly: s.readmeOnly ?? false,
-    }))
+    }
+  })
 
   if (body?.sourceFilter) {
     sources = sources.filter(s => s.id === body.sourceFilter)
@@ -52,12 +66,13 @@ export default defineEventHandler(async (event) => {
   if (sources.length === 0) {
     throw createError({
       statusCode: 400,
-      message: 'No GitHub sources to sync',
+      message: 'No sources to sync',
     })
   }
 
   const syncConfig = {
     githubToken: config.github.token,
+    youtubeApiKey: config.youtube?.apiKey,
     snapshotRepo: config.github.snapshotRepo,
     snapshotBranch: config.github.snapshotBranch,
   }
