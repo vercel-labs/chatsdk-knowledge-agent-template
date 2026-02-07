@@ -14,7 +14,7 @@
     "@ai-sdk/gateway": "^3.0.32",
     "@savoir/sdk": "workspace:*",
     "ai": "^6.0.68",
-    "nuxt": "^4.3.0",
+    "nuxt": "^4.3.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
