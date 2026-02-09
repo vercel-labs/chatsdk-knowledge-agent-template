@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   $development: {
     vite: {
       server: {
-        allowedHosts: true // Allow ngrok and other tunnels
+        allowedHosts: true, // Allow ngrok and other tunnels
       }
     },
   },
@@ -27,6 +27,12 @@ export default defineNuxtConfig({
       appId: '',
       appPrivateKey: '',
       replyToNewIssues: false,
+    },
+    discord: {
+      botToken: '',
+      publicKey: '',
+      applicationId: '',
+      mentionRoleIds: '',
     },
     savoir: {
       apiUrl: 'http://localhost:3000',

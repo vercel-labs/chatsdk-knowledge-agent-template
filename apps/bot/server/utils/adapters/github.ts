@@ -477,4 +477,5 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       previousComments,
     }
   }
+
 }
