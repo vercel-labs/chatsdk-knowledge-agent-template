@@ -152,10 +152,8 @@ export default defineEventHandler(async (event) => {
     let stepStartTime = Date.now()
     const stepDurations: number[] = []
 
-    // Writer reference to be used by onToolCall callback
     let streamWriter: any = null
 
-    // Try to reuse an active sandbox session (shared across all chats)
     const existingSessionId = await kv.get<string>(KV_KEYS.ACTIVE_SANDBOX_SESSION)
     if (existingSessionId) {
       log.info('chat', `[${requestId}] Found active sandbox session ${existingSessionId}`)
@@ -187,7 +185,6 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    // Get both router config and admin-defined agent config
     const [routerConfig, agentConfigData] = await Promise.all([
       routeQuestion(messages, requestId),
       getAgentConfig(),
@@ -201,7 +198,6 @@ export default defineEventHandler(async (event) => {
 
     log.info('chat', `[${requestId}] Starting agent with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfigData.maxStepsMultiplier}x)`)
 
-    // Track overall request timing for stats
     const requestStartTime = Date.now()
 
     const stream = createUIMessageStream({
@@ -231,7 +227,6 @@ export default defineEventHandler(async (event) => {
               log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
             }
 
-            // Reset timer for next step
             stepStartTime = Date.now()
           },
           onFinish: (result) => {
@@ -272,11 +267,10 @@ export default defineEventHandler(async (event) => {
         const totalDurationMs = Date.now() - requestStartTime
 
         await db.insert(schema.messages).values(responseMessages.map((message: UIMessage) => ({
-          id: message.id, // Preserve the ID from the streaming response
+          id: message.id,
           chatId: chat.id,
           role: message.role as 'user' | 'assistant',
           parts: message.parts,
-          // Stats fields for assistant messages
           ...(message.role === 'assistant' && {
             model: effectiveModel,
             inputTokens: totalInputTokens,
@@ -286,7 +280,6 @@ export default defineEventHandler(async (event) => {
         })))
         const dbDurationMs = Date.now() - dbStartTime
 
-        // Persist sandbox session for reuse across all chats
         const currentSessionId = savoir.getSessionId()
         if (currentSessionId) {
           await kv.set(KV_KEYS.ACTIVE_SANDBOX_SESSION, currentSessionId)

@@ -19,7 +19,6 @@ const cachedConfig = useState<AgentConfig | null>('admin-agent-config', () => nu
 
 const { data: config, refresh, status } = useLazyFetch<AgentConfig>('/api/agent-config')
 
-// Restore cached data for instant navigation, fetch updates silently in background
 if (!config.value && cachedConfig.value) {
   config.value = cachedConfig.value
 }
@@ -160,7 +159,6 @@ async function resetConfig() {
       </p>
     </header>
 
-    <!-- Skeleton loading state -->
     <div v-if="status === 'pending' && !config" class="space-y-8">
       <div v-for="i in 3" :key="i">
         <USkeleton class="h-3 w-20 mb-3" />
@@ -177,7 +175,6 @@ async function resetConfig() {
     </div>
 
     <form v-else class="space-y-8" @submit.prevent="saveConfig">
-      <!-- General -->
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           General
@@ -234,7 +231,6 @@ async function resetConfig() {
         </div>
       </section>
 
-      <!-- Tuning -->
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           Tuning
@@ -271,7 +267,6 @@ async function resetConfig() {
         </div>
       </section>
 
-      <!-- Instructions -->
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           Instructions
@@ -306,7 +301,6 @@ async function resetConfig() {
         </div>
       </section>
 
-      <!-- Actions -->
       <div class="flex items-center gap-3">
         <UButton
           type="submit"

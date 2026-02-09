@@ -27,7 +27,6 @@ const overlay = useOverlay()
 
 const { data: sources, refresh, status } = useLazyFetch('/api/sources')
 
-// Persist data across navigations via useState, fetch updates silently in background
 const cachedSources = useState('admin-sources', () => sources.value)
 if (!sources.value && cachedSources.value) {
   sources.value = cachedSources.value
@@ -95,7 +94,6 @@ async function deleteSource(source: SerializedSource) {
 
   if (!confirmed) return
 
-  // Optimistic update: remove from list immediately
   const previousData = sources.value
   if (sources.value) {
     sources.value = {
@@ -121,7 +119,6 @@ async function deleteSource(source: SerializedSource) {
       icon: 'i-lucide-check',
     })
   } catch (error: unknown) {
-    // Rollback on error
     sources.value = previousData
     toast.add({
       title: 'Error',
@@ -176,7 +173,6 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
       </p>
     </header>
 
-    <!-- Skeleton loading state -->
     <div v-if="status === 'pending' && !sources" class="space-y-4">
       <div class="flex items-center gap-2 mb-6">
         <USkeleton class="h-7 w-20 rounded-md" />

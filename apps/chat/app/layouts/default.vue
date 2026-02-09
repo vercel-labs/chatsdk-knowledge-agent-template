@@ -27,8 +27,6 @@ const shareModal = overlay.create(LazyModalShare, {
 
 const { data: chats, refresh: refreshChats } = await useFetch<Chat[]>('/api/chats', {
   key: 'chats',
-  getCachedData: (key, nuxtApp) =>
-    nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
   transform: data => data.map(chat => ({
     id: chat.id,
     label: chat.title || 'Untitled',

@@ -125,7 +125,6 @@ async function save() {
 
     <template #body>
       <div class="flex flex-col gap-5 p-5">
-        <!-- Section 1: Basic Info -->
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-highlighted">Type</label>
@@ -145,7 +144,6 @@ async function save() {
           </div>
         </div>
 
-        <!-- Section 2: Snapshot Location -->
         <div class="p-4 bg-muted/30 rounded-lg border border-default">
           <div class="flex items-start gap-3 mb-3">
             <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -185,9 +183,7 @@ async function save() {
           </div>
         </div>
 
-        <!-- Section 3: Source-specific fields -->
         <div class="flex flex-col gap-4">
-          <!-- GitHub Fields -->
           <template v-if="form.type === 'github'">
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
@@ -244,7 +240,6 @@ async function save() {
             </div>
           </template>
 
-          <!-- YouTube Fields -->
           <template v-if="form.type === 'youtube'">
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">

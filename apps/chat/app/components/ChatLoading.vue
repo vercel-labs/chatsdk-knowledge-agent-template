@@ -1,29 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import { useIntervalFn, useRafFn } from '@vueuse/core'
-
-interface CommandResult {
-  command: string
-  stdout: string
-  stderr: string
-  exitCode: number
-  success: boolean
-}
-
-interface ToolExecutionResult {
-  commands: CommandResult[]
-  success: boolean
-  durationMs: number
-  error?: string
-}
-
-interface ToolCall {
-  toolCallId: string
-  toolName: string
-  args: Record<string, unknown>
-  state: 'loading' | 'done' | 'error'
-  result?: ToolExecutionResult
-}
+import type { ToolCall } from '#shared/types/tool-call'
 
 const props = defineProps<{
   text?: string

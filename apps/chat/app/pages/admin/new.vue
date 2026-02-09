@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SourceOcrItem } from '~/shared/utils/source-ocr'
+import type { SourceOcrItem } from '#shared/utils/source-ocr'
 
 interface PendingFile {
   id: string
@@ -33,12 +33,9 @@ const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 
-// Fetch sources to check if YouTube is enabled (non-blocking, only used for a boolean flag)
 const { data: sourcesData } = useLazyFetch('/api/sources')
 const youtubeEnabled = computed(() => sourcesData.value?.youtubeEnabled ?? false)
 
-// Get type from query param (defaults to 'github')
-// If YouTube is requested but not enabled, fallback to GitHub
 const requestedType = route.query.type === 'youtube' ? 'youtube' : 'github'
 const initialType = (requestedType === 'youtube' && !youtubeEnabled.value ? 'github' : requestedType) as 'github' | 'youtube'
 
@@ -68,7 +65,6 @@ const sources = ref<ExtractedSource[]>([
 ])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// Auto-expand Quick Import when files are dragged
 watch(pendingFiles, (files) => {
   if (files.length > 0 && !showQuickImport.value) {
     showQuickImport.value = true
@@ -244,7 +240,6 @@ function handleFileSelect(event: Event) {
 }
 
 function removeSource(id: string) {
-  // Keep at least one source
   if (sources.value.length > 1) {
     sources.value = sources.value.filter(s => s.id !== id)
   }
@@ -304,7 +299,12 @@ async function saveAll() {
       })
       created++
     } catch (error) {
-      console.error('Failed to create source:', error)
+      toast.add({
+        title: 'Failed to create source',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+      })
     }
   }
 
@@ -350,7 +350,6 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </p>
     </header>
 
-    <!-- Expandable Quick Import Section -->
     <section v-if="showQuickImport" class="mb-8">
       <p class="text-[10px] text-muted mb-3 font-pixel tracking-wide uppercase">
         Quick import
@@ -546,7 +545,6 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </div>
     </section>
 
-    <!-- Power users notice above separator -->
     <div class="mb-2 text-center">
       <button
         class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"

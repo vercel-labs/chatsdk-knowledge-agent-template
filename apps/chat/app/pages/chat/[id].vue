@@ -5,6 +5,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
+import type { ToolCall } from '#shared/types/tool-call'
 import ProseStreamPre from '../../components/prose/PreStream.vue'
 
 const components = {
@@ -157,33 +158,9 @@ function getAssistantActions(message: UIMessage) {
   ]
 }
 
-interface CommandResult {
-  command: string
-  stdout: string
-  stderr: string
-  exitCode: number
-  success: boolean
-}
-
-interface ToolExecutionResult {
-  commands: CommandResult[]
-  success: boolean
-  durationMs: number
-  error?: string
-}
-
-interface ToolCallInfo {
-  toolCallId: string
-  toolName: string
-  args: Record<string, unknown>
-  state: 'loading' | 'done' | 'error'
-  result?: ToolExecutionResult
-}
-
-function getMessageToolCalls(message: UIMessage): ToolCallInfo[] {
+function getMessageToolCalls(message: UIMessage): ToolCall[] {
   if (!message?.parts) return []
-  // Extract individual tool call data parts (reconciled by ID)
-  return (message.parts as Array<{ type: string, data?: ToolCallInfo }>)
+  return (message.parts as Array<{ type: string, data?: ToolCall }>)
     .filter(p => p.type === 'data-tool-call')
     .map(p => p.data!)
     .filter(Boolean)

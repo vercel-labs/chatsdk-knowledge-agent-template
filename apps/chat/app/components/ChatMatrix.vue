@@ -17,9 +17,6 @@ const totalDots = computed(() => props.size * props.size)
 const activeDots = shallowRef<Set<number>>(new Set())
 
 const patterns = [
-  // Spiral pattern from outside to center
-  [[0], [1], [2], [3], [4], [9], [14], [19], [24], [23], [22], [21], [20], [15], [10], [5], [6], [7], [8], [13], [18], [17], [16], [11], [12]],
-
   // Vertical waves
   [[0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24]],
 
@@ -28,9 +25,6 @@ const patterns = [
 
   // Horizontal waves
   [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24]],
-
-  // Corners
-  [[0], [4], [24], [20], [12]],
 
   // Cross pattern
   [[2, 10, 11, 12, 13, 14, 22], [6, 7, 8, 16, 17, 18], [0, 1, 3, 4, 5, 9, 15, 19, 20, 21, 23, 24]],
@@ -41,14 +35,20 @@ const patterns = [
   // Random clusters
   [[6, 7, 8, 11, 12, 13, 16, 17, 18], [1, 3, 5, 9, 10, 14, 15, 19, 21, 23], [0, 2, 4, 20, 22, 24]],
 
+  // Rows converging
+  [[0, 1, 2, 3, 4, 20, 21, 22, 23, 24], [5, 6, 7, 8, 9, 15, 16, 17, 18, 19], [10, 11, 12, 13, 14]],
+
+  // Quadrants then cross
+  [[0, 1, 5, 6], [3, 4, 8, 9], [15, 16, 20, 21], [18, 19, 23, 24], [2, 7, 10, 11, 12, 13, 14, 17, 22]],
+
+  // Corners inward
+  [[0, 4, 20, 24], [1, 3, 5, 9, 15, 19, 21, 23], [2, 6, 8, 10, 14, 16, 18, 22], [7, 11, 12, 13, 17]],
+
   // Checkerboard
   [
     [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24],
     [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
   ],
-
-  // Rain drops (columns falling one by one)
-  [[0], [5], [10], [15], [20], [1], [6], [11], [16], [21], [2], [7], [12], [17], [22], [3], [8], [13], [18], [23], [4], [9], [14], [19], [24]],
 
   // Square outline inwards
   [
@@ -113,10 +113,10 @@ const gridStyle = computed(() => ({
   height: `${props.size * props.dotSize + (props.size - 1) * props.gap}px`,
 }))
 
-const dotStyle = computed(() => ({
-  width: `${props.dotSize}px`,
-  height: `${props.dotSize}px`,
-}))
+const dotStyle = computed(() => {
+  const size = `${props.dotSize}px`
+  return { width: size, height: size }
+})
 
 useIntervalFn(nextStep, 120, { immediateCallback: true })
 </script>
