@@ -5,6 +5,10 @@ export interface SavoirConfig {
   apiKey?: string
   /** Reuse an existing sandbox session instead of creating a new one. */
   sessionId?: string
+  /** Usage source identifier (e.g. 'github-bot'). Defaults to 'sdk'. */
+  source?: string
+  /** Optional tracking ID (e.g. 'issue-123'). Can be overridden per reportUsage() call. */
+  sourceId?: string
   /** Callback fired on tool execution (loading/done/error states). */
   onToolCall?: ToolCallCallback
 }
@@ -163,6 +167,23 @@ export interface SyncSourceResponse {
     push: boolean
     sourceFilter: string
   }
+}
+
+/** Duck-typed AI SDK generate result — works with GenerateTextResult/StreamTextResult without importing ai. */
+export interface GenerateResult {
+  totalUsage: { inputTokens?: number, outputTokens?: number }
+  response: { modelId?: string }
+}
+
+export interface ReportUsageOptions {
+  /** Override the sourceId set in config. */
+  sourceId?: string
+  /** Start time (Date.now()) to compute durationMs automatically. */
+  startTime?: number
+  /** Explicit duration in ms (takes precedence over startTime). */
+  durationMs?: number
+  /** Extra metadata to attach to the usage record. */
+  metadata?: Record<string, unknown>
 }
 
 /** Admin-defined settings that customize agent behavior (fetched from /api/agent-config/public). */

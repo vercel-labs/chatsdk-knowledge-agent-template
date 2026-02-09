@@ -1,5 +1,7 @@
 import type {
   AgentConfig,
+  GenerateResult,
+  ReportUsageOptions,
   SavoirConfig,
   ShellBatchResponse,
   ShellResponse,
@@ -16,6 +18,8 @@ export class SavoirClient {
 
   private readonly apiUrl: string
   private readonly apiKey?: string
+  private readonly source?: string
+  private readonly sourceId?: string
   private sessionId?: string
 
   constructor(config: SavoirConfig) {
@@ -29,6 +33,8 @@ export class SavoirClient {
     this.apiUrl = config.apiUrl.replace(/\/$/, '')
     this.apiKey = config.apiKey
     this.sessionId = config.sessionId
+    this.source = config.source
+    this.sourceId = config.sourceId
   }
 
   getSessionId(): string | undefined {
@@ -164,6 +170,20 @@ export class SavoirClient {
 
   async getAgentConfig(): Promise<AgentConfig> {
     return await this.get<AgentConfig>('/api/agent-config/public')
+  }
+
+  async reportUsage(result: GenerateResult, options?: ReportUsageOptions): Promise<void> {
+    const durationMs = options?.durationMs ?? (options?.startTime ? Date.now() - options.startTime : undefined)
+
+    await this.post('/api/stats/usage', {
+      source: this.source || 'sdk',
+      sourceId: options?.sourceId ?? this.sourceId,
+      model: result.response.modelId,
+      inputTokens: result.totalUsage.inputTokens,
+      outputTokens: result.totalUsage.outputTokens,
+      durationMs,
+      metadata: options?.metadata,
+    })
   }
 
 }

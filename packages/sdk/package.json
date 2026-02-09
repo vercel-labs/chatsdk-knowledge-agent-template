@@ -1,6 +1,6 @@
 {
   "name": "@savoir/sdk",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "SDK for Savoir documentation AI with AI SDK compatible tools",
   "license": "MIT",
   "author": "Hugo Richard",

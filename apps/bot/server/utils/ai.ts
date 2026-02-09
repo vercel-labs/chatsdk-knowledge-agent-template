@@ -96,15 +96,13 @@ Once configured, I'll be able to search the documentation and help answer your q
   }
 
   const startTime = Date.now()
-  let stepCount = 0
-  let totalInputTokens = 0
-  let totalOutputTokens = 0
-  let toolCallCount = 0
 
   try {
     const savoir = createSavoir({
       apiUrl: config.savoir.apiUrl,
       apiKey: config.savoir.apiKey || undefined,
+      source: context?.platform ? `${context.platform}-bot` : 'bot',
+      sourceId: context?.number ? `issue-${context.number}` : undefined,
       onToolCall: (info) => {
         if (info.state === 'loading') {
           log.info('bot', `bash: ${JSON.stringify(info.args).slice(0, 150)}`)
@@ -132,12 +130,6 @@ Once configured, I'll be able to search the documentation and help answer your q
       instructions: buildSystemPrompt(context, routerConfig, savoirConfig),
       tools: savoir.tools,
       stopWhen: stepCountIs(effectiveMaxSteps),
-      onStepFinish: ({ usage, toolCalls }) => {
-        stepCount++
-        totalInputTokens += usage.inputTokens || 0
-        totalOutputTokens += usage.outputTokens || 0
-        toolCallCount += toolCalls?.length || 0
-      },
     })
 
     const result = await agent.generate({
@@ -145,8 +137,14 @@ Once configured, I'll be able to search the documentation and help answer your q
     })
 
     const durationMs = Date.now() - startTime
-    log.info('bot', `Response generated (${durationMs}ms, ${stepCount} steps, ${toolCallCount} commands)`)
-    log.info('bot', `Tokens: ${totalInputTokens} in / ${totalOutputTokens} out`)
+    const { totalUsage } = result
+    log.info('bot', `Response generated (${durationMs}ms, ${result.steps.length} steps)`)
+    log.info('bot', `Tokens: ${totalUsage.inputTokens ?? 0} in / ${totalUsage.outputTokens ?? 0} out`)
+
+    savoir.reportUsage(result, {
+      startTime,
+      metadata: context ? { source: context.source } : undefined,
+    }).catch(() => {})
 
     if (!result.text) {
       return `I searched the documentation but couldn't generate a helpful response for:

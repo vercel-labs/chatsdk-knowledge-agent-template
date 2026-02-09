@@ -17,6 +17,7 @@ function createBot(): Chat {
     privateKey: config.github.appPrivateKey,
     webhookSecret: config.github.webhookSecret,
     userName: botUserName,
+    replyToNewIssues: config.github.replyToNewIssues as boolean,
   })
 
   const bot = new Chat({

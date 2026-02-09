@@ -1,8 +1,8 @@
 import { SavoirClient } from './client'
 import { createBashBatchTool, createBashTool } from './tools'
-import type { AgentConfig, SavoirConfig } from './types'
+import type { AgentConfig, GenerateResult, ReportUsageOptions, SavoirConfig } from './types'
 
-export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState, ToolExecutionResult, CommandResult, AgentConfig } from './types'
+export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState, ToolExecutionResult, CommandResult, AgentConfig, GenerateResult, ReportUsageOptions } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 
@@ -19,6 +19,8 @@ export interface Savoir {
   setSessionId: (sessionId: string) => void
   /** Fetch admin-defined agent customization settings */
   getAgentConfig: () => Promise<AgentConfig>
+  /** Report usage from an AI SDK generate result. Extracts totalUsage and modelId automatically. */
+  reportUsage: (result: GenerateResult, options?: ReportUsageOptions) => Promise<void>
 }
 
 /**
@@ -58,5 +60,6 @@ export function createSavoir(config: SavoirConfig): Savoir {
     getSessionId: () => client.getSessionId(),
     setSessionId: (sessionId: string) => client.setSessionId(sessionId),
     getAgentConfig: () => client.getAgentConfig(),
+    reportUsage: (result, options) => client.reportUsage(result, options),
   }
 }

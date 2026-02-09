@@ -15,6 +15,8 @@ export interface GitHubAdapterConfig {
   privateKey: string
   webhookSecret: string
   userName: string
+  /** If true, the bot replies to all new issues even without a mention. Default: false. */
+  replyToNewIssues?: boolean
 }
 
 interface GitHubComment {
@@ -72,6 +74,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   private webhookSecret: string
   private appId: string
   private privateKey: string
+  private replyToNewIssues: boolean
   private chat: ChatInstance | null = null
   private octokitCache = new Map<string, { octokit: Octokit, expiresAt: number }>()
 
@@ -80,6 +83,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     this.webhookSecret = config.webhookSecret
     this.appId = config.appId
     this.privateKey = config.privateKey
+    this.replyToNewIssues = config.replyToNewIssues ?? false
   }
 
   async initialize(chat: ChatInstance): Promise<void> {
@@ -179,13 +183,19 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
+      const issueText = `${payload.issue.title}\n\n${payload.issue.body || ''}`
+      const hasMention = issueText.includes(`@${this.userName}`)
+
+      if (!this.replyToNewIssues && !hasMention) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 })
+      }
+
       const threadId = this.encodeThreadId({
         owner: payload.repository.owner.login,
         repo: payload.repository.name,
         issueNumber: payload.issue.number,
       })
 
-      const issueText = `${payload.issue.title}\n\n${payload.issue.body || ''}`
       const message = this.parseMessage({
         type: 'issue_comment',
         id: payload.issue.id,
@@ -194,7 +204,6 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
         created_at: payload.issue.created_at,
       })
 
-      // Mark as mention since new issues should always be processed
       message.isMention = true
 
       this.chat!.processMessage(this, threadId, message, options)

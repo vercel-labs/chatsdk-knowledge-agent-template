@@ -33,6 +33,7 @@ export default defineNuxtConfig({
       webhookSecret: '',
       appId: '',
       appPrivateKey: '',
+      replyToNewIssues: false,
     },
     savoir: {
       apiUrl: 'http://localhost:3000',
