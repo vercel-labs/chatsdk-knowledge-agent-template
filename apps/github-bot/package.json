@@ -11,14 +11,14 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.32",
+    "@ai-sdk/gateway": "^3.0.39",
     "@savoir/sdk": "workspace:*",
-    "ai": "^6.0.68",
+    "ai": "^6.0.77",
     "nuxt": "^4.3.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@nuxthub/core": "^0.10.5",
+    "@nuxthub/core": "^0.10.6",
     "typescript": "^5.9.3"
   }
 }
