@@ -34,7 +34,7 @@
   "devDependencies": {
     "@hrcd/eslint-config": "^3.0.3",
     "automd": "^0.4.3",
-    "turbo": "^2.8.1"
+    "turbo": "^2.8.3"
   },
   "packageManager": "bun@1.2.22"
 }

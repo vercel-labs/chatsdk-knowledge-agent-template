@@ -45,17 +45,17 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "ai": "^6.0.68",
+    "ai": "^6.0.77",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
+    "@types/node": "^25.2.2",
     "eslint": "^9.39.2",
-    "tsdown": "^0.20.1",
+    "tsdown": "^0.20.3",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "ai": ">=6.0.68"
+    "ai": ">=6.0.77"
   },
   "peerDependenciesMeta": {
     "ai": {
