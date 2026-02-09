@@ -11,7 +11,9 @@ const selectedSources = ref<string[]>([])
 const selectedModels = ref<string[]>([])
 const chartMetric = ref<'tokens' | 'messages'>('tokens')
 
-const { data: stats, refresh, status } = await useFetch<GlobalStatsResponse>('/api/stats', {
+const cachedStats = useState<GlobalStatsResponse | null>('admin-stats', () => null)
+
+const { data: stats, refresh, status } = useLazyFetch<GlobalStatsResponse>('/api/stats', {
   query: computed(() => ({
     days: selectedPeriod.value,
     sources: selectedSources.value.length > 0 ? selectedSources.value.join(',') : undefined,
@@ -19,6 +21,12 @@ const { data: stats, refresh, status } = await useFetch<GlobalStatsResponse>('/a
   })),
   watch: [selectedPeriod, selectedSources, selectedModels],
 })
+
+// Restore cached data for instant navigation, fetch updates silently in background
+if (!stats.value && cachedStats.value) {
+  stats.value = cachedStats.value
+}
+watch(stats, (v) => { if (v) cachedStats.value = v })
 
 // Track if we're refreshing (vs initial load) to avoid flickering
 const isRefreshing = computed(() => status.value === 'pending' && stats.value !== null)
@@ -193,11 +201,11 @@ function getModelCost(modelId: string): number | null {
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-5xl">
+  <div class="px-6 py-8 max-w-5xl mx-auto w-full">
     <header class="mb-6">
       <div class="flex items-center justify-between gap-4">
         <div>
-          <h1 class="text-lg font-medium text-highlighted mb-1">
+          <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
             Usage Statistics
           </h1>
           <p class="text-sm text-muted max-w-lg">
@@ -235,8 +243,20 @@ function getModelCost(modelId: string): number | null {
       </div>
     </header>
 
-    <div v-if="status === 'pending' && !stats" class="flex items-center justify-center py-16">
-      <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
+    <!-- Skeleton loading state -->
+    <div v-if="status === 'pending' && !stats">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div v-for="i in 6" :key="i" class="rounded-lg border border-default bg-elevated/50 p-4">
+          <USkeleton class="h-3 w-16 mb-2" />
+          <USkeleton class="h-7 w-12 mb-1" />
+          <USkeleton class="h-3 w-10" />
+        </div>
+      </div>
+      <USkeleton class="h-48 w-full rounded-lg mb-8" />
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <USkeleton class="h-56 w-full rounded-lg" />
+        <USkeleton class="h-56 w-full rounded-lg" />
+      </div>
     </div>
 
     <template v-else-if="stats">
@@ -428,7 +448,7 @@ function getModelCost(modelId: string): number | null {
 
         <!-- Peak Hours -->
         <section v-if="peakHoursData.some(h => h.messageCount > 0)" class="mb-10">
-          <h2 class="text-sm font-medium text-highlighted mb-3">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
             Peak Hours (UTC)
           </h2>
           <div class="rounded-lg border border-default bg-elevated/50 p-4 overflow-hidden">
@@ -461,7 +481,7 @@ function getModelCost(modelId: string): number | null {
         <div class="grid md:grid-cols-2 gap-8 mb-8 items-start">
           <!-- Top Users -->
           <section>
-            <h2 class="text-sm font-medium text-highlighted mb-3">
+            <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
               Top Users
             </h2>
             <div v-if="stats.topUsers && stats.topUsers.length > 0" class="rounded-lg border border-default overflow-hidden">
@@ -518,7 +538,7 @@ function getModelCost(modelId: string): number | null {
 
           <!-- By Source -->
           <section v-if="stats.bySource && stats.bySource.length > 0">
-            <h2 class="text-sm font-medium text-highlighted mb-3">
+            <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
               By Source
             </h2>
             <div class="rounded-lg border border-default overflow-hidden">
@@ -562,7 +582,7 @@ function getModelCost(modelId: string): number | null {
 
         <!-- By Model (full width) -->
         <section>
-          <h2 class="text-sm font-medium text-highlighted mb-3">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
             By Model
           </h2>
           <div v-if="stats.byModel.length > 0" class="rounded-lg border border-default overflow-hidden">

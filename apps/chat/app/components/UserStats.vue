@@ -5,6 +5,8 @@ defineProps<{
 
 const { data: stats } = await useLazyFetch<UserStats>('/api/stats/me', {
   key: 'user-stats',
+  getCachedData: (key, nuxtApp) =>
+    nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
 })
 
 function formatNumber(num: number): string {
@@ -22,7 +24,7 @@ function formatNumber(num: number): string {
       </div>
     </UTooltip>
 
-    <div v-else class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted">
+    <div v-else class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-muted font-mono">
       <UIcon name="i-lucide-activity" class="size-3 shrink-0" />
       <span class="tabular-nums"><span class="text-highlighted">{{ formatNumber(stats.totalMessages) }}</span> msg</span>
       <span class="opacity-40">·</span>

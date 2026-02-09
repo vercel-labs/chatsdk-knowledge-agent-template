@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const totalDots = computed(() => props.size * props.size)
-const activeDots = ref<Set<number>>(new Set())
+const activeDots = shallowRef<Set<number>>(new Set())
 
 const patterns = [
   // Spiral pattern from outside to center

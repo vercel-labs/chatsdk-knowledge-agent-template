@@ -15,7 +15,15 @@ interface AgentConfig {
   isActive: boolean
 }
 
-const { data: config, refresh, status } = await useFetch<AgentConfig>('/api/agent-config')
+const cachedConfig = useState<AgentConfig | null>('admin-agent-config', () => null)
+
+const { data: config, refresh, status } = useLazyFetch<AgentConfig>('/api/agent-config')
+
+// Restore cached data for instant navigation, fetch updates silently in background
+if (!config.value && cachedConfig.value) {
+  config.value = cachedConfig.value
+}
+watch(config, (v) => { if (v) cachedConfig.value = v })
 
 const form = ref<{
   additionalPrompt: string
@@ -105,7 +113,7 @@ async function saveConfig() {
       title: 'Configuration saved',
       icon: 'i-lucide-check',
     })
-    refresh()
+    await refresh()
   } catch (error: unknown) {
     toast.add({
       title: 'Error',
@@ -127,7 +135,7 @@ async function resetConfig() {
       description: 'Settings have been restored to defaults',
       icon: 'i-lucide-check',
     })
-    refresh()
+    await refresh()
   } catch (error: unknown) {
     toast.add({
       title: 'Error',
@@ -142,9 +150,9 @@ async function resetConfig() {
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-3xl">
+  <div class="px-6 py-8 max-w-2xl mx-auto w-full">
     <header class="mb-8">
-      <h1 class="text-lg font-medium text-highlighted mb-1">
+      <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
         Assistant Settings
       </h1>
       <p class="text-sm text-muted max-w-lg">
@@ -152,180 +160,154 @@ async function resetConfig() {
       </p>
     </header>
 
-    <div v-if="status === 'pending'" class="flex items-center justify-center py-16">
-      <UIcon name="i-lucide-loader-2" class="size-5 animate-spin text-muted" />
+    <!-- Skeleton loading state -->
+    <div v-if="status === 'pending' && !config" class="space-y-8">
+      <div v-for="i in 3" :key="i">
+        <USkeleton class="h-3 w-20 mb-3" />
+        <div class="rounded-lg border border-default divide-y divide-default">
+          <div v-for="j in 2" :key="j" class="flex items-center justify-between px-4 py-3.5">
+            <div>
+              <USkeleton class="h-4 w-28 mb-1" />
+              <USkeleton class="h-3 w-48" />
+            </div>
+            <USkeleton class="h-8 w-36 rounded-md" />
+          </div>
+        </div>
+      </div>
     </div>
 
     <form v-else class="space-y-8" @submit.prevent="saveConfig">
-      <!-- Custom Instructions -->
+      <!-- General -->
       <section>
-        <label class="block text-sm font-medium text-highlighted mb-2">
-          Custom Instructions
-        </label>
-        <p class="text-xs text-muted mb-3">
-          Add rules or guidelines for how the assistant should behave.
-        </p>
-        <UTextarea
-          v-model="form.additionalPrompt"
-          placeholder="Example: Always be friendly and patient. When showing code, include comments explaining what it does..."
-          :rows="4"
-          autoresize
-          class="w-full"
-        />
-      </section>
-
-      <!-- Tone -->
-      <section>
-        <label class="block text-sm font-medium text-highlighted mb-2">
-          Tone
-        </label>
-        <p class="text-xs text-muted mb-3">
-          Choose how the assistant communicates.
-        </p>
-        <div class="grid grid-cols-2 gap-3">
-          <label
-            v-for="option in responseStyleOptions"
-            :key="option.value"
-            class="relative flex items-start p-3 rounded-lg border transition-colors cursor-pointer"
-            :class="form.responseStyle === option.value ? 'border-primary bg-primary/5' : 'border-default hover:border-muted'"
-          >
-            <input
-              v-model="form.responseStyle"
-              type="radio"
-              name="responseStyle"
-              :value="option.value"
-              class="sr-only"
-            >
+        <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
+          General
+        </h2>
+        <div class="rounded-lg border border-default divide-y divide-default">
+          <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <span class="text-sm font-medium text-highlighted">{{ option.label }}</span>
-              <p class="text-xs text-muted mt-0.5">{{ option.description }}</p>
+              <p class="text-sm text-highlighted">Language</p>
+              <p class="text-xs text-muted">The language the assistant will respond in</p>
             </div>
-          </label>
+            <USelect
+              v-model="form.language"
+              :items="languageOptions"
+              value-key="value"
+              class="w-40"
+            />
+          </div>
+          <div class="flex items-center justify-between gap-4 px-4 py-3">
+            <div>
+              <p class="text-sm text-highlighted">Intelligence</p>
+              <p class="text-xs text-muted">Choose between speed and quality</p>
+            </div>
+            <USelect
+              v-model="form.defaultModel"
+              :items="modelOptions"
+              value-key="value"
+              class="w-48"
+            />
+          </div>
+          <div class="flex items-center justify-between gap-4 px-4 py-3">
+            <div>
+              <p class="text-sm text-highlighted">Tone</p>
+              <p class="text-xs text-muted">How the assistant communicates</p>
+            </div>
+            <USelect
+              v-model="form.responseStyle"
+              :items="responseStyleOptions"
+              value-key="value"
+              class="w-40"
+            />
+          </div>
+          <div class="flex items-center justify-between gap-4 px-4 py-3">
+            <div>
+              <p class="text-sm text-highlighted">Source references</p>
+              <p class="text-xs text-muted">How sources are shown in responses</p>
+            </div>
+            <USelect
+              v-model="form.citationFormat"
+              :items="citationFormatOptions"
+              value-key="value"
+              class="w-36"
+            />
+          </div>
         </div>
       </section>
 
-      <!-- Language & Intelligence Row -->
-      <div class="grid grid-cols-2 gap-6">
-        <section>
-          <label class="block text-sm font-medium text-highlighted mb-2">
-            Language
-          </label>
-          <p class="text-xs text-muted mb-3">
-            The language the assistant will respond in.
-          </p>
-          <USelect
-            v-model="form.language"
-            :items="languageOptions"
-            value-key="value"
-            class="w-full"
-          />
-        </section>
-
-        <section>
-          <label class="block text-sm font-medium text-highlighted mb-2">
-            Intelligence
-          </label>
-          <p class="text-xs text-muted mb-3">
-            Choose between speed and quality.
-          </p>
-          <USelect
-            v-model="form.defaultModel"
-            :items="modelOptions"
-            value-key="value"
-            class="w-full"
-          />
-        </section>
-      </div>
-
-      <!-- Creativity & Search Depth Row -->
-      <div class="grid grid-cols-2 gap-6">
-        <section>
-          <label class="block text-sm font-medium text-highlighted mb-2">
-            Creativity
-          </label>
-          <p class="text-xs text-muted mb-3">
-            How creative vs predictable the responses should be.
-          </p>
-          <USlider
-            v-model="form.temperature"
-            :min="0"
-            :max="2"
-            :step="0.1"
-            class="w-full"
-          />
-          <div class="flex justify-between text-xs text-muted mt-1">
-            <span>Predictable</span>
-            <span>Creative</span>
-          </div>
-        </section>
-
-        <section>
-          <label class="block text-sm font-medium text-highlighted mb-2">
-            Search Depth
-          </label>
-          <p class="text-xs text-muted mb-3">
-            How thoroughly the assistant searches for information.
-          </p>
-          <USlider
-            v-model="form.maxStepsMultiplier"
-            :min="0.5"
-            :max="3"
-            :step="0.1"
-            class="w-full"
-          />
-          <div class="flex justify-between text-xs text-muted mt-1">
-            <span>Quick</span>
-            <span>Thorough</span>
-          </div>
-        </section>
-      </div>
-
-      <!-- Search Preferences -->
+      <!-- Tuning -->
       <section>
-        <label class="block text-sm font-medium text-highlighted mb-2">
-          Search Preferences
-        </label>
-        <p class="text-xs text-muted mb-3">
-          Guide how the assistant finds and prioritizes information.
-        </p>
-        <UTextarea
-          v-model="form.searchInstructions"
-          placeholder="Example: Focus on official documentation first. Check for the latest version information..."
-          :rows="3"
-          autoresize
-          class="w-full"
-        />
+        <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
+          Tuning
+        </h2>
+        <div class="rounded-lg border border-default divide-y divide-default">
+          <div class="px-4 py-3">
+            <p class="text-sm text-highlighted mb-3">Creativity</p>
+            <USlider
+              v-model="form.temperature"
+              :min="0"
+              :max="2"
+              :step="0.1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-muted mt-1.5">
+              <span>Predictable</span>
+              <span>Creative</span>
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-sm text-highlighted mb-3">Search depth</p>
+            <USlider
+              v-model="form.maxStepsMultiplier"
+              :min="0.5"
+              :max="3"
+              :step="0.1"
+              class="w-full"
+            />
+            <div class="flex justify-between text-xs text-muted mt-1.5">
+              <span>Quick</span>
+              <span>Thorough</span>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <!-- Source References -->
+      <!-- Instructions -->
       <section>
-        <label class="block text-sm font-medium text-highlighted mb-2">
-          Source References
-        </label>
-        <p class="text-xs text-muted mb-3">
-          How the assistant shows where it found the information.
-        </p>
-        <div class="flex gap-3">
-          <label
-            v-for="option in citationFormatOptions"
-            :key="option.value"
-            class="relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors cursor-pointer"
-            :class="form.citationFormat === option.value ? 'border-primary bg-primary/5' : 'border-default hover:border-muted'"
-          >
-            <input
-              v-model="form.citationFormat"
-              type="radio"
-              name="citationFormat"
-              :value="option.value"
-              class="sr-only"
-            >
-            <span class="text-sm font-medium text-highlighted">{{ option.label }}</span>
-          </label>
+        <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
+          Instructions
+        </h2>
+        <div class="rounded-lg border border-default divide-y divide-default">
+          <div class="px-4 py-3">
+            <p class="text-sm text-highlighted mb-1">Custom instructions</p>
+            <p class="text-xs text-muted mb-3">
+              Add rules or guidelines for how the assistant should behave.
+            </p>
+            <UTextarea
+              v-model="form.additionalPrompt"
+              placeholder="Example: Always be friendly and patient. When showing code, include comments explaining what it does..."
+              :rows="3"
+              autoresize
+              class="w-full"
+            />
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-sm text-highlighted mb-1">Search preferences</p>
+            <p class="text-xs text-muted mb-3">
+              Guide how the assistant finds and prioritizes information.
+            </p>
+            <UTextarea
+              v-model="form.searchInstructions"
+              placeholder="Example: Focus on official documentation first. Check for the latest version information..."
+              :rows="3"
+              autoresize
+              class="w-full"
+            />
+          </div>
         </div>
       </section>
 
       <!-- Actions -->
-      <div class="flex items-center gap-3 pt-4 border-t border-default">
+      <div class="flex items-center gap-3">
         <UButton
           type="submit"
           :loading="isSaving"

@@ -39,7 +39,9 @@ const {
 } = useFileUploadWithStatus(route.params.id as string)
 
 const { data } = await useFetch(`/api/chats/${route.params.id}`, {
-  cache: 'force-cache'
+  cache: 'force-cache',
+  getCachedData: (key, nuxtApp) =>
+    nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
 })
 if (!data.value) {
   throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
@@ -97,22 +99,24 @@ function copy(_e: MouseEvent, message: UIMessage) {
 }
 
 type FeedbackType = 'positive' | 'negative' | null
-const feedbackMap = ref<Record<string, FeedbackType>>({})
+const feedbackMap = shallowRef<Record<string, FeedbackType>>({})
 
 if (data.value?.messages) {
+  const initial: Record<string, FeedbackType> = {}
   for (const msg of data.value.messages) {
     const msgWithFeedback = msg as typeof msg & { feedback?: FeedbackType }
     if (msg.role === 'assistant' && msgWithFeedback.feedback) {
-      feedbackMap.value[msg.id] = msgWithFeedback.feedback
+      initial[msg.id] = msgWithFeedback.feedback
     }
   }
+  feedbackMap.value = initial
 }
 
 async function toggleFeedback(_e: MouseEvent, message: UIMessage, type: 'positive' | 'negative') {
   const currentFeedback = feedbackMap.value[message.id] ?? null
   const newFeedback = currentFeedback === type ? null : type
 
-  feedbackMap.value[message.id] = newFeedback
+  feedbackMap.value = { ...feedbackMap.value, [message.id]: newFeedback }
 
   try {
     await $fetch(`/api/messages/${message.id}/feedback`, {
@@ -120,7 +124,7 @@ async function toggleFeedback(_e: MouseEvent, message: UIMessage, type: 'positiv
       body: { feedback: newFeedback }
     })
   } catch {
-    feedbackMap.value[message.id] = currentFeedback
+    feedbackMap.value = { ...feedbackMap.value, [message.id]: currentFeedback }
     toast.add({
       description: 'Failed to save feedback',
       icon: 'i-lucide-alert-circle',
@@ -185,6 +189,24 @@ function getMessageToolCalls(message: UIMessage): ToolCallInfo[] {
     .filter(Boolean)
 }
 
+// Filter out intermediate "thinking out loud" text between tool calls.
+// Only keeps text parts that appear after the last tool call (the actual response).
+function getContentParts(message: UIMessage) {
+  let lastToolIdx = -1
+  for (let i = message.parts.length - 1; i >= 0; i--) {
+    if ((message.parts[i] as { type: string }).type === 'data-tool-call') {
+      lastToolIdx = i
+      break
+    }
+  }
+  return message.parts.filter((p, i) => {
+    const { type } = p as { type: string }
+    if (type === 'data-sources' || type === 'data-tool-call') return false
+    if (type === 'text' && message.role === 'assistant' && i <= lastToolIdx) return false
+    return true
+  })
+}
+
 onMounted(() => {
   if (data.value?.messages.length === 1) {
     chat.regenerate()
@@ -239,7 +261,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
               :tool-calls="getMessageToolCalls(message)"
               :is-loading="chat.status === 'streaming'"
             />
-            <template v-for="(part, index) in message.parts.filter(p => p.type !== 'data-sources' && p.type !== 'data-tool-call')" :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`">
+            <template v-for="(part, index) in getContentParts(message)" :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`">
               <Reasoning
                 v-if="part.type === 'reasoning'"
                 :text="part.text"

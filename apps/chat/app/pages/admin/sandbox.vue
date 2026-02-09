@@ -19,9 +19,9 @@ const isInitialLoading = computed(() => status.value === null)
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-3xl">
+  <div class="px-6 py-8 max-w-2xl mx-auto w-full">
     <header class="mb-8">
-      <h1 class="text-lg font-medium text-highlighted mb-1">
+      <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
         Sandbox
       </h1>
       <p class="text-sm text-muted max-w-lg">
@@ -30,7 +30,7 @@ const isInitialLoading = computed(() => status.value === null)
     </header>
 
     <section class="mb-8">
-      <p class="text-xs text-muted mb-3">
+      <p class="text-[10px] text-muted mb-3 font-pixel tracking-wide uppercase">
         Current Snapshot
       </p>
       <div class="rounded-lg border border-default p-4">
@@ -57,7 +57,7 @@ const isInitialLoading = computed(() => status.value === null)
     </section>
 
     <section class="mb-8">
-      <p class="text-xs text-muted mb-3">
+      <p class="text-[10px] text-muted mb-3 font-pixel tracking-wide uppercase">
         Latest Available
       </p>
       <div class="rounded-lg border border-default p-4">

@@ -2,11 +2,11 @@ import type { SnapshotSyncStatus } from '~~/shared/types/snapshot'
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000
 
-const status = ref<SnapshotSyncStatus | null>(null)
-const isSyncing = ref(false)
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-const isInitialized = ref(false)
+const status = shallowRef<SnapshotSyncStatus | null>(null)
+const isSyncing = shallowRef(false)
+const isLoading = shallowRef(false)
+const error = shallowRef<string | null>(null)
+const isInitialized = shallowRef(false)
 
 let pollInterval: ReturnType<typeof setInterval> | null = null
 

@@ -25,7 +25,14 @@ interface SerializedSource {
 const toast = useToast()
 const overlay = useOverlay()
 
-const { data: sources, refresh } = await useFetch('/api/sources')
+const { data: sources, refresh, status } = useLazyFetch('/api/sources')
+
+// Persist data across navigations via useState, fetch updates silently in background
+const cachedSources = useState('admin-sources', () => sources.value)
+if (!sources.value && cachedSources.value) {
+  sources.value = cachedSources.value
+}
+watch(sources, (v) => { if (v) cachedSources.value = v })
 
 const editingSource = ref<SerializedSource | null>(null)
 const isSyncingAll = ref(false)
@@ -88,14 +95,34 @@ async function deleteSource(source: SerializedSource) {
 
   if (!confirmed) return
 
+  // Optimistic update: remove from list immediately
+  const previousData = sources.value
+  if (sources.value) {
+    sources.value = {
+      ...sources.value,
+      total: sources.value.total - 1,
+      github: {
+        ...sources.value.github,
+        sources: sources.value.github.sources.filter(s => s.id !== source.id),
+        count: source.type === 'github' ? sources.value.github.count - 1 : sources.value.github.count,
+      },
+      youtube: {
+        ...sources.value.youtube,
+        sources: sources.value.youtube.sources.filter(s => s.id !== source.id),
+        count: source.type === 'youtube' ? sources.value.youtube.count - 1 : sources.value.youtube.count,
+      },
+    }
+  }
+
   try {
     await $fetch(`/api/sources/${source.id}`, { method: 'DELETE' })
     toast.add({
       title: 'Source deleted',
       icon: 'i-lucide-check',
     })
-    refresh()
   } catch (error: unknown) {
+    // Rollback on error
+    sources.value = previousData
     toast.add({
       title: 'Error',
       description: error instanceof Error ? error.message : 'Failed to delete source',
@@ -117,7 +144,7 @@ async function triggerSync(sourceId?: string) {
       description: 'The sync workflow has been triggered.',
       icon: 'i-lucide-check',
     })
-    refresh()
+    await refresh()
   } catch (error: unknown) {
     toast.add({
       title: 'Error',
@@ -131,17 +158,17 @@ async function triggerSync(sourceId?: string) {
 }
 
 function handleSaved() {
-  refresh()
   editingSource.value = null
+  refresh()
 }
 
 const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources.value?.youtube?.count || 0) > 0)
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-3xl">
+  <div class="px-6 py-8 max-w-2xl mx-auto w-full">
     <header class="mb-8">
-      <h1 class="text-lg font-medium text-highlighted mb-1">
+      <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
         Sources
       </h1>
       <p class="text-sm text-muted max-w-lg">
@@ -149,6 +176,24 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
       </p>
     </header>
 
+    <!-- Skeleton loading state -->
+    <div v-if="status === 'pending' && !sources" class="space-y-4">
+      <div class="flex items-center gap-2 mb-6">
+        <USkeleton class="h-7 w-20 rounded-md" />
+        <USkeleton class="h-7 w-24 rounded-md" />
+      </div>
+      <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
+        <div v-for="i in 3" :key="i" class="px-4 py-4 flex items-center gap-3">
+          <USkeleton class="size-8 rounded-md shrink-0" />
+          <div class="flex-1">
+            <USkeleton class="h-4 w-40 mb-2" />
+            <USkeleton class="h-3 w-56" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
     <div
       v-if="hasSources && needsSync"
       class="mb-6 rounded-lg border border-warning/20 bg-warning/10 p-4"
@@ -254,7 +299,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
     <div v-else class="space-y-8">
       <section>
         <div class="flex items-center justify-between mb-3">
-          <p class="text-xs text-muted">
+          <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
             GitHub Repositories
           </p>
           <p v-if="filteredGithubSources.length" class="text-xs text-muted">
@@ -305,7 +350,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
 
       <section v-if="sources?.youtubeEnabled">
         <div class="flex items-center justify-between mb-3">
-          <p class="text-xs text-muted">
+          <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
             YouTube Channels
           </p>
           <p v-if="filteredYoutubeSources.length" class="text-xs text-muted">
@@ -361,5 +406,6 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
       @close="editingSource = null"
       @saved="handleSaved"
     />
+    </template>
   </div>
 </template>

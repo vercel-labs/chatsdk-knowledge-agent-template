@@ -1,5 +1,10 @@
 import { db, schema } from '@nuxthub/db'
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
+
+const paramsSchema = z.object({
+  id: z.string().min(1, 'Missing source ID'),
+})
 
 /**
  * DELETE /api/sources/:id
@@ -7,10 +12,7 @@ import { eq } from 'drizzle-orm'
  */
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
-  const id = getRouterParam(event, 'id')
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'Missing source id' })
-  }
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const [deleted] = await db.delete(schema.sources)
     .where(eq(schema.sources.id, id))

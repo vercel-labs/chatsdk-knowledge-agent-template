@@ -28,57 +28,83 @@ export default defineEventHandler(async (event) => {
   const prevStartDate = new Date(startDate)
   prevStartDate.setDate(prevStartDate.getDate() - days)
 
-  // Fetch current period messages
-  const messagesWithStats = await db
-    .select({
-      chatId: schema.messages.chatId,
-      model: schema.messages.model,
-      inputTokens: schema.messages.inputTokens,
-      outputTokens: schema.messages.outputTokens,
-      durationMs: schema.messages.durationMs,
-      feedback: schema.messages.feedback,
-      createdAt: schema.messages.createdAt,
-    })
-    .from(schema.messages)
-    .where(
-      and(
-        eq(schema.messages.role, 'assistant'),
-        gte(schema.messages.createdAt, startDate),
-      ),
-    )
-    .orderBy(desc(schema.messages.createdAt))
-
-  // Fetch previous period messages (for trends)
-  const prevMessagesWithStats = await db
-    .select({
-      chatId: schema.messages.chatId,
-      inputTokens: schema.messages.inputTokens,
-      outputTokens: schema.messages.outputTokens,
-    })
-    .from(schema.messages)
-    .where(
-      and(
-        eq(schema.messages.role, 'assistant'),
-        gte(schema.messages.createdAt, prevStartDate),
-        lt(schema.messages.createdAt, prevEndDate),
-      ),
-    )
-
-  // Get chat -> user mapping for user stats
-  const chatIds = [...new Set(messagesWithStats.map(m => m.chatId))]
-  const chatsData = chatIds.length > 0
-    ? await db
+  // Fetch all three independent data sources in parallel
+  const [messagesWithStats, prevMessagesWithStats, apiUsageDataRaw] = await Promise.all([
+    // Current period messages
+    db
       .select({
-        id: schema.chats.id,
-        userId: schema.chats.userId,
+        chatId: schema.messages.chatId,
+        model: schema.messages.model,
+        inputTokens: schema.messages.inputTokens,
+        outputTokens: schema.messages.outputTokens,
+        durationMs: schema.messages.durationMs,
+        feedback: schema.messages.feedback,
+        createdAt: schema.messages.createdAt,
       })
-      .from(schema.chats)
-    : []
+      .from(schema.messages)
+      .where(
+        and(
+          eq(schema.messages.role, 'assistant'),
+          gte(schema.messages.createdAt, startDate),
+        ),
+      )
+      .orderBy(desc(schema.messages.createdAt)),
+    // Previous period messages (for trends)
+    db
+      .select({
+        chatId: schema.messages.chatId,
+        inputTokens: schema.messages.inputTokens,
+        outputTokens: schema.messages.outputTokens,
+      })
+      .from(schema.messages)
+      .where(
+        and(
+          eq(schema.messages.role, 'assistant'),
+          gte(schema.messages.createdAt, prevStartDate),
+          lt(schema.messages.createdAt, prevEndDate),
+        ),
+      ),
+    // API usage data
+    db
+      .select({
+        source: schema.apiUsage.source,
+        model: schema.apiUsage.model,
+        inputTokens: schema.apiUsage.inputTokens,
+        outputTokens: schema.apiUsage.outputTokens,
+        durationMs: schema.apiUsage.durationMs,
+        createdAt: schema.apiUsage.createdAt,
+      })
+      .from(schema.apiUsage)
+      .where(gte(schema.apiUsage.createdAt, startDate))
+      .orderBy(desc(schema.apiUsage.createdAt)),
+  ])
+
+  // Get chat -> user mapping for user stats (depends on messagesWithStats)
+  const chatIds = [...new Set(messagesWithStats.map(m => m.chatId))]
+  // Get prev chat IDs for trend (depends on prevMessagesWithStats)
+  const prevChatIds = [...new Set(prevMessagesWithStats.map(m => m.chatId))]
+
+  // Fetch chats and prev chats in parallel (both independent from each other)
+  const [chatsData, prevChatsData] = await Promise.all([
+    chatIds.length > 0
+      ? db.select({ id: schema.chats.id, userId: schema.chats.userId }).from(schema.chats)
+      : Promise.resolve([]),
+    prevChatIds.length > 0
+      ? db.select({ id: schema.chats.id, userId: schema.chats.userId }).from(schema.chats)
+      : Promise.resolve([]),
+  ])
 
   const chatUserMap = new Map<string, string>()
   for (const chat of chatsData) {
     if (chatIds.includes(chat.id)) {
       chatUserMap.set(chat.id, chat.userId)
+    }
+  }
+
+  const prevUserIds = new Set<string>()
+  for (const chat of prevChatsData) {
+    if (prevChatIds.includes(chat.id)) {
+      prevUserIds.add(chat.userId)
     }
   }
 
@@ -101,33 +127,6 @@ export default defineEventHandler(async (event) => {
       userInfoMap.set(user.id, { name: user.name, email: user.email, avatar: user.avatar })
     }
   }
-
-  // Count active users in previous period for trend
-  const prevChatIds = [...new Set(prevMessagesWithStats.map(m => m.chatId))]
-  const prevChatsData = prevChatIds.length > 0
-    ? await db
-      .select({ id: schema.chats.id, userId: schema.chats.userId })
-      .from(schema.chats)
-    : []
-  const prevUserIds = new Set<string>()
-  for (const chat of prevChatsData) {
-    if (prevChatIds.includes(chat.id)) {
-      prevUserIds.add(chat.userId)
-    }
-  }
-
-  const apiUsageDataRaw = await db
-    .select({
-      source: schema.apiUsage.source,
-      model: schema.apiUsage.model,
-      inputTokens: schema.apiUsage.inputTokens,
-      outputTokens: schema.apiUsage.outputTokens,
-      durationMs: schema.apiUsage.durationMs,
-      createdAt: schema.apiUsage.createdAt,
-    })
-    .from(schema.apiUsage)
-    .where(gte(schema.apiUsage.createdAt, startDate))
-    .orderBy(desc(schema.apiUsage.createdAt))
 
   // Collect available sources and models from unfiltered data (for dropdown options)
   const allSources = new Set<string>(['web'])

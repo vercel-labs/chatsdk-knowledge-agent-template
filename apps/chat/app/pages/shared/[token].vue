@@ -29,7 +29,10 @@ interface DataSourcesPart {
   data: { sources: Source[] }
 }
 
-const { data, error } = await useFetch(`/api/shared/${route.params.token}`)
+const { data, error } = await useFetch(`/api/shared/${route.params.token}`, {
+  getCachedData: (key, nuxtApp) =>
+    nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
+})
 
 if (error.value) {
   throw createError({

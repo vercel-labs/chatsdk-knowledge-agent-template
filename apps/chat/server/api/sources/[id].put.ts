@@ -2,6 +2,10 @@ import { db, schema } from '@nuxthub/db'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
+const paramsSchema = z.object({
+  id: z.string().min(1, 'Missing source ID'),
+})
+
 const bodySchema = z.object({
   label: z.string().min(1).optional(),
   // Common output field
@@ -23,10 +27,7 @@ const bodySchema = z.object({
  * Update an existing source
  */
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'Missing source id' })
-  }
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const body = await readValidatedBody(event, bodySchema.parse)
 
