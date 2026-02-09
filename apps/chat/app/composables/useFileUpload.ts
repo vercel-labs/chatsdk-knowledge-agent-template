@@ -21,11 +21,15 @@ function fileToInput(file: File): HTMLInputElement {
 }
 
 export function useFileUploadWithStatus(chatId: string) {
-  const files = ref<FileWithStatus[]>([])
+  const files = shallowRef<FileWithStatus[]>([])
   const toast = useToast()
   const { loggedIn } = useUserSession()
 
   const upload = useUpload(`/api/upload/${chatId}`, { method: 'PUT' })
+
+  function updateFileAt(id: string, update: Partial<FileWithStatus>) {
+    files.value = files.value.map(f => f.id === id ? { ...f, ...update } : f)
+  }
 
   async function uploadFiles(newFiles: File[]) {
     if (!loggedIn.value) {
@@ -42,9 +46,6 @@ export function useFileUploadWithStatus(chatId: string) {
     files.value = [...files.value, ...filesWithStatus]
 
     const uploadPromises = filesWithStatus.map(async (fileWithStatus) => {
-      const index = files.value.findIndex(f => f.id === fileWithStatus.id)
-      if (index === -1) return
-
       try {
         const input = fileToInput(fileWithStatus.file)
         const response = await upload(input) as BlobResult | BlobResult[] | undefined
@@ -59,12 +60,11 @@ export function useFileUploadWithStatus(chatId: string) {
           throw new Error('Upload failed')
         }
 
-        files.value[index] = {
-          ...files.value[index]!,
+        updateFileAt(fileWithStatus.id, {
           status: 'uploaded',
           uploadedUrl: result.url,
           uploadedPathname: result.pathname
-        }
+        })
       } catch (error) {
         const errorMessage = (error as { data?: { message?: string } }).data?.message
           || (error as Error).message
@@ -75,11 +75,10 @@ export function useFileUploadWithStatus(chatId: string) {
           icon: 'i-lucide-alert-circle',
           color: 'error'
         })
-        files.value[index] = {
-          ...files.value[index]!,
+        updateFileAt(fileWithStatus.id, {
           status: 'error',
           error: errorMessage
-        }
+        })
       }
     })
 

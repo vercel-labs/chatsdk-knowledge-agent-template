@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SourceOcrItem } from '~/shared/utils/source-ocr'
+import type { SourceOcrItem } from '#shared/utils/source-ocr'
 
 interface PendingFile {
   id: string
@@ -33,12 +33,9 @@ const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 
-// Fetch sources to check if YouTube is enabled
-const { data: sourcesData } = await useFetch('/api/sources')
+const { data: sourcesData } = useLazyFetch('/api/sources')
 const youtubeEnabled = computed(() => sourcesData.value?.youtubeEnabled ?? false)
 
-// Get type from query param (defaults to 'github')
-// If YouTube is requested but not enabled, fallback to GitHub
 const requestedType = route.query.type === 'youtube' ? 'youtube' : 'github'
 const initialType = (requestedType === 'youtube' && !youtubeEnabled.value ? 'github' : requestedType) as 'github' | 'youtube'
 
@@ -46,7 +43,7 @@ const isSubmitting = ref(false)
 const isExtracting = ref(false)
 const isDragging = ref(false)
 const showQuickImport = ref(false)
-const pendingFiles = ref<PendingFile[]>([])
+const pendingFiles = shallowRef<PendingFile[]>([])
 const sources = ref<ExtractedSource[]>([
   {
     id: crypto.randomUUID(),
@@ -68,7 +65,6 @@ const sources = ref<ExtractedSource[]>([
 ])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// Auto-expand Quick Import when files are dragged
 watch(pendingFiles, (files) => {
   if (files.length > 0 && !showQuickImport.value) {
     showQuickImport.value = true
@@ -106,21 +102,25 @@ function isConfigFile(file: File): boolean {
 }
 
 function handleFiles(files: File[]) {
+  const newItems: PendingFile[] = []
   for (const file of files) {
     if (file.type.startsWith('image/')) {
-      pendingFiles.value.push({
+      newItems.push({
         id: crypto.randomUUID(),
         file,
         previewUrl: URL.createObjectURL(file),
         type: 'image',
       })
     } else if (isConfigFile(file)) {
-      pendingFiles.value.push({
+      newItems.push({
         id: crypto.randomUUID(),
         file,
         type: 'config',
       })
     }
+  }
+  if (newItems.length > 0) {
+    pendingFiles.value = [...pendingFiles.value, ...newItems]
   }
 }
 
@@ -240,7 +240,6 @@ function handleFileSelect(event: Event) {
 }
 
 function removeSource(id: string) {
-  // Keep at least one source
   if (sources.value.length > 1) {
     sources.value = sources.value.filter(s => s.id !== id)
   }
@@ -300,7 +299,12 @@ async function saveAll() {
       })
       created++
     } catch (error) {
-      console.error('Failed to create source:', error)
+      toast.add({
+        title: 'Failed to create source',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+      })
     }
   }
 
@@ -336,9 +340,9 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-3xl">
+  <div class="px-6 py-8 max-w-2xl mx-auto w-full">
     <header class="mb-8">
-      <h1 class="text-lg font-medium text-highlighted mb-1">
+      <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
         Add Sources
       </h1>
       <p class="text-sm text-muted">
@@ -346,9 +350,8 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </p>
     </header>
 
-    <!-- Expandable Quick Import Section -->
     <section v-if="showQuickImport" class="mb-8">
-      <p class="text-xs text-muted mb-3">
+      <p class="text-[10px] text-muted mb-3 font-pixel tracking-wide uppercase">
         Quick import
       </p>
 
@@ -392,7 +395,7 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
 
     <section v-if="pendingFiles.length > 0" class="mb-8">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-xs text-muted">
+        <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
           Files to extract
         </p>
         <UButton
@@ -441,7 +444,7 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
 
     <section class="mb-2">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-xs text-muted">
+        <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
           Your sources
         </p>
         <button
@@ -542,7 +545,6 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
       </div>
     </section>
 
-    <!-- Power users notice above separator -->
     <div class="mb-2 text-center">
       <button
         class="text-xs text-muted hover:text-primary transition-colors inline-flex items-center gap-1.5"

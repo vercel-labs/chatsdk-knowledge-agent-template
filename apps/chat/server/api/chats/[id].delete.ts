@@ -1,13 +1,18 @@
 import { blob } from 'hub:blob'
 import { db, schema } from '@nuxthub/db'
 import { and, eq } from 'drizzle-orm'
+import { z } from 'zod'
+
+const paramsSchema = z.object({
+  id: z.string().min(1, 'Missing chat ID'),
+})
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
-  const { id } = getRouterParams(event)
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const chat = await db.query.chats.findFirst({
-    where: () => and(eq(schema.chats.id, id as string), eq(schema.chats.userId, session.user?.id || session.id))
+    where: () => and(eq(schema.chats.id, id), eq(schema.chats.userId, session.user?.id || session.id))
   })
 
   if (!chat) {
@@ -39,6 +44,6 @@ export default defineEventHandler(async (event) => {
   }
 
   return await db.delete(schema.chats)
-    .where(and(eq(schema.chats.id, id as string), eq(schema.chats.userId, session.user?.id || session.id)))
+    .where(and(eq(schema.chats.id, id), eq(schema.chats.userId, session.user?.id || session.id)))
     .returning()
 })

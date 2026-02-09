@@ -8,6 +8,8 @@ const { loggedIn, openInPopup } = useUserSession()
 
 const open = ref(false)
 
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+
 const deleteModal = overlay.create(LazyModalConfirm, {
   props: {
     title: 'Delete chat',
@@ -38,17 +40,17 @@ const { data: chats, refresh: refreshChats } = await useFetch<Chat[]>('/api/chat
 
 watch(loggedIn, () => {
   refreshChats()
-
   open.value = false
 })
 
 const { groups } = useChats(chats)
 
-const items = computed(() => groups.value?.flatMap((group) => {
+const items = computed(() => groups.value?.flatMap((group, groupIndex) => {
   return [
     {
       label: group.label,
-      type: 'label' as const
+      type: 'label' as const,
+      class: groupIndex > 0 ? 'border-t border-default mt-2 pt-3' : ''
     }, ...group.items.map(item => ({
       ...item,
       slot: 'chat' as const,
@@ -57,6 +59,60 @@ const items = computed(() => groups.value?.flatMap((group) => {
     }))
   ]
 }))
+
+// Limit displayed chats for performance
+const DISPLAY_LIMIT = 40
+const showAllChats = ref(false)
+
+const displayedItems = computed(() => {
+  if (!items.value || showAllChats.value) return items.value
+  return items.value.slice(0, DISPLAY_LIMIT)
+})
+
+const hasMoreChats = computed(() => (items.value?.length ?? 0) > DISPLAY_LIMIT)
+
+const adminNavigation = [
+  [
+    { label: 'General', type: 'label' as const },
+    { label: 'Sources', icon: 'i-lucide-database', to: '/admin', exact: true },
+    { label: 'Assistant', icon: 'i-lucide-bot', to: '/admin/agent' },
+  ],
+  [
+    { label: 'System', type: 'label' as const },
+    { label: 'Sandbox', icon: 'i-lucide-box', to: '/admin/sandbox' },
+    { label: 'Statistics', icon: 'i-lucide-bar-chart-3', to: '/admin/stats' },
+  ],
+]
+
+// Dual scroll fades for chat list
+const chatScrollArea = useTemplateRef('chatScrollArea')
+const showTopFade = ref(false)
+const showBottomFade = ref(true)
+
+function updateScrollFades() {
+  const el = chatScrollArea.value?.$el as HTMLElement | undefined
+  if (!el) return
+  showTopFade.value = el.scrollTop > 8
+  showBottomFade.value = el.scrollTop + el.clientHeight < el.scrollHeight - 8
+}
+
+watch(() => chatScrollArea.value?.$el, (el, _, onCleanup) => {
+  if (!el) {
+    showTopFade.value = false
+    showBottomFade.value = true
+    return
+  }
+
+  el.addEventListener('scroll', updateScrollFades, { passive: true })
+  const ro = new ResizeObserver(updateScrollFades)
+  ro.observe(el)
+  nextTick(() => requestAnimationFrame(updateScrollFades))
+
+  onCleanup(() => {
+    el.removeEventListener('scroll', updateScrollFades)
+    ro.disconnect()
+  })
+}, { flush: 'post' })
 
 async function deleteChat(id: string) {
   const instance = deleteModal.open()
@@ -103,83 +159,145 @@ defineShortcuts({
       :min-size="12"
       collapsible
       resizable
-      class="bg-elevated/50"
+      class="border-e-0"
     >
       <template #header="{ collapsed }">
-        <NuxtLink to="/" class="flex items-center gap-0.5" :class="{ 'mx-auto': collapsed }">
-          <UIcon name="custom:savoir" class="size-6" />
-          <span v-if="!collapsed" class="text-xl font-semibold text-highlighted">Savoir</span>
-        </NuxtLink>
-
-        <div v-if="!collapsed" class="flex items-center gap-1.5 ms-auto">
-          <UDashboardSearchButton collapsed />
-          <UDashboardSidebarCollapse />
+        <div v-if="!collapsed" class="flex items-center gap-1.5 w-full">
+          <div class="flex-1 min-w-0">
+            <UserMenu v-if="loggedIn" size="xs" />
+            <UButton
+              v-else
+              label="Login"
+              icon="i-simple-icons-github"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              block
+              @click="openInPopup('/auth/github')"
+            />
+          </div>
+          <UDashboardSearchButton collapsed size="xs" />
         </div>
-      </template>
 
-      <template #default="{ collapsed }">
-        <div class="flex flex-col gap-1.5">
+        <template v-if="!collapsed">
+          <UserStats v-if="loggedIn && !isAdminRoute" />
+
           <UButton
-            v-bind="collapsed ? { icon: 'i-lucide-plus' } : { label: 'New chat' }"
+            v-if="!isAdminRoute"
+            label="New chat"
             variant="soft"
             block
             to="/"
             @click="open = false"
           />
 
+        </template>
+      </template>
+
+      <template #default="{ collapsed }">
+        <!-- Admin mode -->
+        <template v-if="isAdminRoute">
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <UNavigationMenu
+              :items="adminNavigation"
+              :collapsed
+              orientation="vertical"
+              :ui="{ separator: 'h-6 bg-transparent', label: 'font-pixel tracking-wide uppercase text-[10px] text-muted pt-2 first:pt-0 pb-1' }"
+            />
+          </div>
+
           <template v-if="collapsed">
+            <UserMenu v-if="loggedIn" collapsed />
+            <UButton
+              v-else
+              icon="i-simple-icons-github"
+              color="neutral"
+              variant="ghost"
+              square
+              @click="openInPopup('/auth/github')"
+            />
             <UDashboardSearchButton collapsed />
             <UDashboardSidebarCollapse />
           </template>
-        </div>
+        </template>
 
-        <UNavigationMenu
-          v-if="!collapsed"
-          :items
-          :collapsed
-          orientation="vertical"
-          :ui="{ link: 'overflow-hidden' }"
-        >
-          <template #chat-trailing="{ item }">
-            <div class="flex -mr-1.5 translate-x-full group-hover:translate-x-0 transition-transform">
-              <UButton
-                icon="i-lucide-share"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                tabindex="-1"
-                @click.stop.prevent="shareChat(item as any)"
-              />
-              <UButton
-                icon="i-lucide-x"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                tabindex="-1"
-                @click.stop.prevent="deleteChat((item as any).id)"
-              />
-            </div>
+        <!-- Chat mode -->
+        <template v-else>
+          <template v-if="collapsed">
+            <UButton
+              icon="i-lucide-plus"
+              variant="soft"
+              block
+              to="/"
+              @click="open = false"
+            />
+            <UserMenu v-if="loggedIn" collapsed />
+            <UButton
+              v-else
+              icon="i-simple-icons-github"
+              color="neutral"
+              variant="ghost"
+              square
+              @click="openInPopup('/auth/github')"
+            />
+            <UDashboardSearchButton collapsed />
+            <UDashboardSidebarCollapse />
           </template>
-        </UNavigationMenu>
+
+          <div v-else class="flex flex-col flex-1 min-h-0 relative">
+            <div
+              v-show="showTopFade"
+              class="pointer-events-none h-12 bg-gradient-to-b from-[var(--ui-bg)] to-transparent absolute top-0 inset-x-0 z-10 transition-opacity duration-150"
+              :class="showTopFade ? 'opacity-100' : 'opacity-0'"
+            />
+            <UScrollArea ref="chatScrollArea" class="flex-1 min-h-0">
+              <UNavigationMenu
+                :items="displayedItems"
+                :collapsed
+                orientation="vertical"
+                :ui="{ link: 'overflow-hidden', label: 'font-pixel tracking-wide uppercase text-[10px] text-muted pb-1' }"
+              >
+                <template #chat-trailing="{ item }">
+                  <div class="flex -mr-1.5 translate-x-full group-hover:translate-x-0 transition-transform">
+                    <UButton
+                      icon="i-lucide-share"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
+                      tabindex="-1"
+                      @click.stop.prevent="shareChat(item as any)"
+                    />
+                    <UButton
+                      icon="i-lucide-x"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
+                      tabindex="-1"
+                      @click.stop.prevent="deleteChat((item as any).id)"
+                    />
+                  </div>
+                </template>
+              </UNavigationMenu>
+              <button
+                v-if="hasMoreChats && !showAllChats"
+                class="w-full py-2 px-2.5 text-left text-xs text-muted hover:text-highlighted transition-colors font-pixel tracking-wide"
+                @click="showAllChats = true"
+              >
+                Show older chats
+              </button>
+            </UScrollArea>
+            <div
+              v-show="showBottomFade"
+              class="pointer-events-none h-20 bg-gradient-to-t from-[var(--ui-bg)] to-transparent -mt-20 relative z-10 shrink-0 transition-opacity duration-150"
+              :class="showBottomFade ? 'opacity-100' : 'opacity-0'"
+            />
+          </div>
+        </template>
       </template>
 
-      <template #footer="{ collapsed }">
-        <div class="flex flex-col gap-2 w-full">
-          <UserStats v-if="loggedIn" :collapsed />
-          <UserMenu v-if="loggedIn" :collapsed />
-          <UButton
-            v-else
-            :label="collapsed ? '' : 'Login with GitHub'"
-            icon="i-simple-icons-github"
-            color="neutral"
-            variant="ghost"
-            class="w-full"
-            @click="openInPopup('/auth/github')"
-          />
-        </div>
-      </template>
+      <template #footer />
     </UDashboardSidebar>
 
     <UDashboardSearch
@@ -194,6 +312,18 @@ defineShortcuts({
       }, ...groups]"
     />
 
-    <slot />
+    <div class="flex-1 flex m-2 rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="isAdminRoute && 'flex-col'">
+      <template v-if="isAdminRoute">
+        <div class="shrink-0 flex items-center gap-1.5 sm:px-4 h-12">
+          <UButton icon="i-lucide-arrow-left" label="Back" variant="ghost" color="neutral" size="xs" to="/" />
+          <div class="flex-1" />
+          <UColorModeButton />
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <slot />
+        </div>
+      </template>
+      <slot v-else />
+    </div>
   </UDashboardGroup>
 </template>

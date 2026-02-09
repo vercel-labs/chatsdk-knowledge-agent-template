@@ -2,7 +2,9 @@
 @import "@nuxt/ui";
 
 @theme static {
-  --font-sans: 'Barlow', sans-serif;
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-pixel: 'Geist Pixel Line', monospace;
 
   --color-primary-50: #E6EBFA;
   --color-primary-100: #C2CDF3;
@@ -21,7 +23,49 @@
   --ui-container: var(--container-3xl);
 }
 
+html {
+  background-color: var(--ui-bg);
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
+}
+
+/* Discreet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(25% 0 0 / 0.5) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: oklch(25% 0 0 / 0.5);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(35% 0 0 / 0.6);
+}
+
+/* Linear-inspired darker theme — shift dark mode one step deeper */
+.dark {
+  /* Backgrounds: shell is near-black, surfaces step up visibly */
+  --ui-bg: oklch(14.5% 0 0);                /* neutral-950 (was neutral-900) */
+  --ui-bg-muted: oklch(17.5% 0 0);          /* between 950/900 */
+  --ui-bg-elevated: oklch(20.5% 0 0);       /* neutral-900 (was neutral-800) */
+  --ui-bg-accented: oklch(26.9% 0 0);       /* neutral-800 (was neutral-700) */
+
+  /* Borders: slightly brighter to stay visible on darker surfaces */
+  --ui-border: oklch(26.9% 0 0);            /* neutral-800 (was neutral-800, now more visible) */
+  --ui-border-muted: oklch(23% 0 0);        /* between 900/800 */
+  --ui-border-accented: oklch(30% 0 0);     /* between 800/700 */
 }

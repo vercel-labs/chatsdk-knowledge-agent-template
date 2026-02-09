@@ -2,9 +2,13 @@ import { db, schema } from '@nuxthub/db'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
+const paramsSchema = z.object({
+  id: z.string().min(1, 'Missing chat ID'),
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
-  const { id } = getRouterParams(event)
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const { isPublic } = await readValidatedBody(event, z.object({
     isPublic: z.boolean()
@@ -12,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   const chat = await db.query.chats.findFirst({
     where: () => and(
-      eq(schema.chats.id, id as string),
+      eq(schema.chats.id, id),
       eq(schema.chats.userId, session.user?.id || session.id)
     )
   })
@@ -28,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
   const [updated] = await db.update(schema.chats)
     .set({ isPublic, shareToken })
-    .where(eq(schema.chats.id, id as string))
+    .where(eq(schema.chats.id, id))
     .returning()
 
   return updated

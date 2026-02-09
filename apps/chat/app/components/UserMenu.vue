@@ -3,6 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 defineProps<{
   collapsed?: boolean
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 }>()
 
 const colorMode = useColorMode()
@@ -144,6 +145,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
         src: user?.avatar || undefined,
         alt: user?.name || user?.username
       }"
+      :size
       color="neutral"
       variant="ghost"
       block

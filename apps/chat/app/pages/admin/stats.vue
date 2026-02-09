@@ -11,7 +11,9 @@ const selectedSources = ref<string[]>([])
 const selectedModels = ref<string[]>([])
 const chartMetric = ref<'tokens' | 'messages'>('tokens')
 
-const { data: stats, refresh, status } = await useFetch<GlobalStatsResponse>('/api/stats', {
+const cachedStats = useState<GlobalStatsResponse | null>('admin-stats', () => null)
+
+const { data: stats, refresh, status } = useLazyFetch<GlobalStatsResponse>('/api/stats', {
   query: computed(() => ({
     days: selectedPeriod.value,
     sources: selectedSources.value.length > 0 ? selectedSources.value.join(',') : undefined,
@@ -20,7 +22,11 @@ const { data: stats, refresh, status } = await useFetch<GlobalStatsResponse>('/a
   watch: [selectedPeriod, selectedSources, selectedModels],
 })
 
-// Track if we're refreshing (vs initial load) to avoid flickering
+if (!stats.value && cachedStats.value) {
+  stats.value = cachedStats.value
+}
+watch(stats, (v) => { if (v) cachedStats.value = v })
+
 const isRefreshing = computed(() => status.value === 'pending' && stats.value !== null)
 
 const hasFilters = computed(() => selectedSources.value.length > 0 || selectedModels.value.length > 0)
@@ -66,7 +72,6 @@ function formatCost(amount: number): string {
   return `$${amount.toFixed(4)}`
 }
 
-// Feedback score color
 function getScoreColor(score: number | null): string {
   if (score === null) return 'text-muted'
   if (score >= 80) return 'text-success'
@@ -74,14 +79,12 @@ function getScoreColor(score: number | null): string {
   return 'text-error'
 }
 
-// Model satisfaction rate
 function getModelSatisfaction(model: { positive: number, negative: number }): number | null {
   const total = model.positive + model.negative
   if (total === 0) return null
   return Math.round((model.positive / total) * 100)
 }
 
-// Trend formatting
 function formatTrend(trend: number | null): string {
   if (trend === null) return '—'
   const sign = trend >= 0 ? '+' : ''
@@ -102,7 +105,6 @@ function getTrendIcon(trend: number | null): string {
   return 'i-lucide-minus'
 }
 
-// Source color map
 const sourceColorMap: Record<string, string> = {
   'web': 'bg-primary',
   'github-bot': 'bg-emerald-500',
@@ -114,7 +116,6 @@ function getSourceColor(source: string): string {
   return sourceColorMap[source] ?? 'bg-gray-400'
 }
 
-// Stacked-by-source chart data
 const chartDataBySource = computed(() => {
   if (!stats.value?.dailyBySource) return []
 
@@ -158,7 +159,6 @@ const chartMax = computed(() => {
   return max || 1
 })
 
-// Get evenly spaced date labels for the x-axis (5 labels max)
 const chartDateLabels = computed(() => {
   if (chartDataBySource.value.length === 0) return []
   if (chartDataBySource.value.length <= 5) {
@@ -174,7 +174,6 @@ const chartDateLabels = computed(() => {
   })
 })
 
-// Peak hours
 const peakHoursData = computed(() => stats.value?.hourlyDistribution ?? [])
 const peakHoursMax = computed(() => {
   let max = 0
@@ -184,7 +183,6 @@ const peakHoursMax = computed(() => {
   return max || 1
 })
 
-// Model cost lookup from estimatedCost
 function getModelCost(modelId: string): number | null {
   const entry = stats.value?.estimatedCost?.byModel?.find(m => m.model === modelId)
   return entry ? entry.totalCost : null
@@ -193,11 +191,11 @@ function getModelCost(modelId: string): number | null {
 </script>
 
 <template>
-  <div class="px-6 lg:px-10 py-8 max-w-5xl">
+  <div class="px-6 py-8 max-w-5xl mx-auto w-full">
     <header class="mb-6">
       <div class="flex items-center justify-between gap-4">
         <div>
-          <h1 class="text-lg font-medium text-highlighted mb-1">
+          <h1 class="text-lg font-medium text-highlighted mb-1 font-pixel tracking-wide">
             Usage Statistics
           </h1>
           <p class="text-sm text-muted max-w-lg">
@@ -235,8 +233,19 @@ function getModelCost(modelId: string): number | null {
       </div>
     </header>
 
-    <div v-if="status === 'pending' && !stats" class="flex items-center justify-center py-16">
-      <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
+    <div v-if="status === 'pending' && !stats">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div v-for="i in 6" :key="i" class="rounded-lg border border-default bg-elevated/50 p-4">
+          <USkeleton class="h-3 w-16 mb-2" />
+          <USkeleton class="h-7 w-12 mb-1" />
+          <USkeleton class="h-3 w-10" />
+        </div>
+      </div>
+      <USkeleton class="h-48 w-full rounded-lg mb-8" />
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <USkeleton class="h-56 w-full rounded-lg" />
+        <USkeleton class="h-56 w-full rounded-lg" />
+      </div>
     </div>
 
     <template v-else-if="stats">
@@ -244,7 +253,6 @@ function getModelCost(modelId: string): number | null {
         class="transition-opacity duration-200"
         :class="isRefreshing ? 'opacity-50 pointer-events-none' : 'opacity-100'"
       >
-        <!-- Filter Bar -->
         <div v-if="sourceOptions.length > 0 || modelOptions.length > 0" class="flex items-center gap-3 mb-6 flex-wrap">
           <USelectMenu
             v-if="sourceOptions.length > 0"
@@ -278,7 +286,6 @@ function getModelCost(modelId: string): number | null {
           </UButton>
         </div>
 
-        <!-- KPI Cards with Trends -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           <div class="rounded-lg border border-default bg-elevated/50 p-4">
             <p class="text-xs text-muted mb-1">
@@ -353,7 +360,6 @@ function getModelCost(modelId: string): number | null {
           </div>
         </div>
 
-        <!-- Usage Chart (Stacked by Source) -->
         <section class="mb-10">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-medium text-highlighted">
@@ -426,9 +432,8 @@ function getModelCost(modelId: string): number | null {
           </div>
         </section>
 
-        <!-- Peak Hours -->
         <section v-if="peakHoursData.some(h => h.messageCount > 0)" class="mb-10">
-          <h2 class="text-sm font-medium text-highlighted mb-3">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
             Peak Hours (UTC)
           </h2>
           <div class="rounded-lg border border-default bg-elevated/50 p-4 overflow-hidden">
@@ -457,11 +462,9 @@ function getModelCost(modelId: string): number | null {
           </div>
         </section>
 
-        <!-- Two column layout for tables -->
         <div class="grid md:grid-cols-2 gap-8 mb-8 items-start">
-          <!-- Top Users -->
           <section>
-            <h2 class="text-sm font-medium text-highlighted mb-3">
+            <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
               Top Users
             </h2>
             <div v-if="stats.topUsers && stats.topUsers.length > 0" class="rounded-lg border border-default overflow-hidden">
@@ -516,9 +519,8 @@ function getModelCost(modelId: string): number | null {
             </div>
           </section>
 
-          <!-- By Source -->
           <section v-if="stats.bySource && stats.bySource.length > 0">
-            <h2 class="text-sm font-medium text-highlighted mb-3">
+            <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
               By Source
             </h2>
             <div class="rounded-lg border border-default overflow-hidden">
@@ -560,9 +562,8 @@ function getModelCost(modelId: string): number | null {
           </section>
         </div>
 
-        <!-- By Model (full width) -->
         <section>
-          <h2 class="text-sm font-medium text-highlighted mb-3">
+          <h2 class="text-xs text-highlighted mb-3 font-pixel tracking-wide uppercase">
             By Model
           </h2>
           <div v-if="stats.byModel.length > 0" class="rounded-lg border border-default overflow-hidden">

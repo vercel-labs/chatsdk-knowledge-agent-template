@@ -1,14 +1,18 @@
 import { db, schema } from '@nuxthub/db'
 import { and, asc, eq } from 'drizzle-orm'
+import { z } from 'zod'
+
+const paramsSchema = z.object({
+  id: z.string().min(1, 'Missing chat ID'),
+})
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
-
-  const { id } = getRouterParams(event)
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const chat = await db.query.chats.findFirst({
     where: () => and(
-      eq(schema.chats.id, id as string),
+      eq(schema.chats.id, id),
       eq(schema.chats.userId, session.user?.id || session.id)
     ),
     with: {

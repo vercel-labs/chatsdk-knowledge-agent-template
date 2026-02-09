@@ -69,6 +69,17 @@ export default defineNuxtConfig({
     blob: true
   },
 
+  routeRules: {
+    // Shared chats are read-only, great ISR candidate
+    '/shared/**': { isr: { expiration: 300 } },
+    // Auth API routes should never be cached
+    '/api/auth/**': { isr: false, cache: false },
+    // Chat API responses are user-specific
+    '/api/chats/**': { isr: false, cache: false },
+    // Admin pages are behind auth, skip ISR
+    '/admin/**': { isr: false, cache: false },
+  },
+
   runtimeConfig: {
     // Admin users (comma-separated GitHub emails or usernames)
     adminUsers: '',
