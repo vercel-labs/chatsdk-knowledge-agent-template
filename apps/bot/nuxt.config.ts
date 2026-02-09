@@ -21,13 +21,6 @@ export default defineNuxtConfig({
     },
   },
 
-  // Workaround for prepare:types hook error
-  hooks: {
-    'prepare:types': (opts) => {
-      opts.sharedTsConfig = opts.sharedTsConfig || { compilerOptions: {} }
-    },
-  },
-
   runtimeConfig: {
     github: {
       webhookSecret: '',
