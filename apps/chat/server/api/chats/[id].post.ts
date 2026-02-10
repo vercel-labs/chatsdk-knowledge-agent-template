@@ -200,6 +200,16 @@ export default defineEventHandler(async (event) => {
 
     const requestStartTime = Date.now()
 
+    // Abort the agent when the client disconnects (e.g. chat.stop())
+    const abortController = new AbortController()
+    event.node.res.once('close', () => {
+      // Only abort if the response didn't finish normally (i.e. client disconnected)
+      if (!event.node.res.writableFinished) {
+        log.info('chat', `[${requestId}] Client disconnected, aborting agent`)
+        abortController.abort()
+      }
+    })
+
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         streamWriter = writer
@@ -259,7 +269,10 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        const result = await agent.stream({ messages: await convertToModelMessages(messages) })
+        const result = await agent.stream({
+          messages: await convertToModelMessages(messages),
+          abortSignal: abortController.signal,
+        })
         writer.merge(result.toUIMessageStream())
       },
       onFinish: async ({ messages: responseMessages }) => {
