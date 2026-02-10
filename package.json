@@ -36,5 +36,8 @@
     "automd": "^0.4.3",
     "turbo": "^2.8.3"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.22",
+  "overrides": {
+    "minimatch": "^10.0.1"
+  }
 }
