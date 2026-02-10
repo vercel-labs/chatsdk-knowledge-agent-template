@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.39",
-    "@chat-adapter/discord": "^4.8.0",
-    "@chat-adapter/state-memory": "^4.8.0",
+    "@chat-adapter/discord": "^4.9.0",
+    "@chat-adapter/state-memory": "^4.9.0",
     "@octokit/auth-app": "^8.2.0",
     "@octokit/rest": "^22.0.1",
     "@savoir/sdk": "workspace:*",
     "ai": "^6.0.78",
-    "chat": "^4.8.0",
+    "chat": "^4.9.0",
     "nuxt": "^4.3.1",
     "zod": "^4.3.6"
   },
