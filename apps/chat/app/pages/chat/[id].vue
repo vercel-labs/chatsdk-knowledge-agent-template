@@ -39,8 +39,11 @@ const {
   clearFiles
 } = useFileUploadWithStatus(route.params.id as string)
 
+const nuxtApp = useNuxtApp()
+const chatKey = `chat-${route.params.id}`
+
 const { data } = await useFetch(`/api/chats/${route.params.id}`, {
-  cache: 'force-cache',
+  key: chatKey,
   getCachedData: (key, nuxtApp) =>
     nuxtApp.payload.data[key] ?? nuxtApp.static.data[key],
 })
@@ -49,6 +52,7 @@ if (!data.value) {
 }
 
 const input = ref('')
+const isNewChat = (data.value?.messages.length ?? 0) <= 1
 
 const chat = new Chat({
   id: data.value.id,
@@ -184,14 +188,64 @@ function getContentParts(message: UIMessage) {
   })
 }
 
-onMounted(() => {
-  if (data.value?.messages.length === 1) {
-    chat.regenerate()
+const chatMessagesRef = ref<InstanceType<typeof import('#components').UChatMessages>>()
+
+function getScrollParent(node: HTMLElement | null): HTMLElement | null {
+  let current = node
+  while (current && current !== document.body && current !== document.documentElement) {
+    const style = window.getComputedStyle(current)
+    if (/auto|scroll/.test(style.overflowY)) {
+      return current
+    }
+    current = current.parentElement
   }
+  return document.documentElement
+}
+
+let scrollObserver: ResizeObserver | undefined
+
+onMounted(() => {
+  if (isNewChat) {
+    chat.regenerate()
+    // New chats have minimal content — no scroll fix needed, auto-scroll handles streaming.
+    return
+  }
+
+  // Existing chats: scroll to bottom immediately, then keep pinned while MDC renders.
+  // We disable UChatMessages' shouldScrollToBottom to avoid a second conflicting scroll.
+  const el = chatMessagesRef.value?.$el as HTMLElement | undefined
+  const scrollParent = el ? getScrollParent(el) : null
+
+  if (scrollParent && el) {
+    scrollParent.scrollTop = scrollParent.scrollHeight
+
+    // Keep pinned to bottom as MDC content finishes rendering (only scroll DOWN to avoid
+    // confusing UChatMessages' userScrolledUp detection).
+    scrollObserver = new ResizeObserver(() => {
+      const maxScroll = scrollParent.scrollHeight - scrollParent.clientHeight
+      if (maxScroll > scrollParent.scrollTop) {
+        scrollParent.scrollTop = scrollParent.scrollHeight
+      }
+    })
+    scrollObserver.observe(el)
+
+    // Disconnect after content has settled
+    setTimeout(() => {
+      scrollObserver?.disconnect()
+      scrollObserver = undefined
+    }, 500)
+  }
+})
+
+onUnmounted(() => {
+  scrollObserver?.disconnect()
 })
 
 watch(() => chat.status, (newStatus, oldStatus) => {
   if (oldStatus === 'streaming' && newStatus === 'ready') {
+    // Persist completed messages into the Nuxt payload cache so navigating
+    // back to this chat won't show stale data and re-trigger regeneration.
+    nuxtApp.payload.data[chatKey] = { ...data.value, messages: chat.messages }
     refreshNuxtData('user-stats')
   }
 })
@@ -207,7 +261,9 @@ watch(() => chat.status, (newStatus, oldStatus) => {
       <DragDropOverlay :show="isDragging" />
       <UContainer ref="dropzoneRef" class="flex-1 flex flex-col gap-4 sm:gap-6">
         <UChatMessages
+          ref="chatMessagesRef"
           should-auto-scroll
+          :should-scroll-to-bottom="isNewChat"
           :messages="chat.messages"
           :status="chat.status"
           :spacing-offset="160"
