@@ -29,7 +29,8 @@ const { data: chats, refresh: refreshChats } = await useFetch<Chat[]>('/api/chat
   key: 'chats',
   transform: data => data.map(chat => ({
     id: chat.id,
-    label: chat.title || 'Untitled',
+    label: chat.title || 'Generating title…',
+    generating: !chat.title,
     to: `/chat/${chat.id}`,
     icon: 'i-lucide-message-circle',
     createdAt: chat.createdAt,
@@ -55,7 +56,7 @@ const items = computed(() => groups.value?.flatMap((group, groupIndex) => {
       ...item,
       slot: 'chat' as const,
       icon: undefined,
-      class: item.label === 'Untitled' ? 'text-muted' : ''
+      class: item.generating ? 'text-muted' : ''
     }))
   ]
 }))
@@ -256,6 +257,11 @@ defineShortcuts({
                 orientation="vertical"
                 :ui="{ link: 'overflow-hidden', label: 'font-pixel tracking-wide uppercase text-[10px] text-muted pb-1' }"
               >
+                <template #chat-label="{ item }">
+                  <TextScramble v-if="(item as any).generating" />
+                  <span v-else class="truncate">{{ item.label }}</span>
+                </template>
+
                 <template #chat-trailing="{ item }">
                   <div class="flex -mr-1.5 translate-x-full group-hover:translate-x-0 transition-transform">
                     <UButton
