@@ -31,7 +31,9 @@ const cachedSources = useState('admin-sources', () => sources.value)
 if (!sources.value && cachedSources.value) {
   sources.value = cachedSources.value
 }
-watch(sources, (v) => { if (v) cachedSources.value = v })
+watch(sources, (v) => {
+  if (v) cachedSources.value = v 
+})
 
 const editingSource = ref<SerializedSource | null>(null)
 const isSyncingAll = ref(false)
@@ -190,218 +192,218 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
     </div>
 
     <template v-else>
-    <div
-      v-if="hasSources && needsSync"
-      class="mb-6 rounded-lg border border-warning/20 bg-warning/10 p-4"
-    >
-      <div class="flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <UIcon name="i-lucide-alert-triangle" class="size-5 text-warning" />
-          <div>
-            <p class="text-sm font-medium text-highlighted">
-              Sources need syncing
-            </p>
-            <p class="text-xs text-muted">
-              <template v-if="lastSyncAgo">
-                Last synced {{ lastSyncAgo }}
-              </template>
-              <template v-else>
-                Never synced
-              </template>
-            </p>
+      <div
+        v-if="hasSources && needsSync"
+        class="mb-6 rounded-lg border border-warning/20 bg-warning/10 p-4"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <UIcon name="i-lucide-alert-triangle" class="size-5 text-warning" />
+            <div>
+              <p class="text-sm font-medium text-highlighted">
+                Sources need syncing
+              </p>
+              <p class="text-xs text-muted">
+                <template v-if="lastSyncAgo">
+                  Last synced {{ lastSyncAgo }}
+                </template>
+                <template v-else>
+                  Never synced
+                </template>
+              </p>
+            </div>
           </div>
+          <UButton
+            size="xs"
+            color="warning"
+            :loading="isSyncingAll"
+            @click="triggerSync()"
+          >
+            Sync now
+          </UButton>
         </div>
-        <UButton
-          size="xs"
-          color="warning"
-          :loading="isSyncingAll"
-          @click="triggerSync()"
-        >
-          Sync now
-        </UButton>
       </div>
-    </div>
 
-    <div
-      v-if="hasSources"
-      class="flex flex-col gap-4 mb-6"
-    >
-      <div class="flex items-center gap-2">
-        <UButton
-          icon="i-lucide-refresh-cw"
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          :loading="isSyncingAll"
-          @click="triggerSync()"
-        >
-          Sync All
-        </UButton>
+      <div
+        v-if="hasSources"
+        class="flex flex-col gap-4 mb-6"
+      >
+        <div class="flex items-center gap-2">
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :loading="isSyncingAll"
+            @click="triggerSync()"
+          >
+            Sync All
+          </UButton>
+          <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            to="/admin/new"
+          >
+            Add Source
+          </UButton>
+          <UButton
+            v-if="sources?.snapshotRepoUrl"
+            icon="i-lucide-external-link"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :to="sources.snapshotRepoUrl"
+            target="_blank"
+          >
+            View Repository
+          </UButton>
+          <span v-if="lastSyncAgo && !needsSync" class="text-xs text-muted ml-2">
+            Last synced {{ lastSyncAgo }}
+          </span>
+        </div>
+
+        <UInput
+          v-model="searchQuery"
+          icon="i-lucide-search"
+          placeholder="Filter sources..."
+          size="sm"
+          class="max-w-xs"
+          :ui="{ root: 'w-full' }"
+        />
+      </div>
+
+      <div
+        v-if="!hasSources"
+        class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg"
+      >
+        <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
+          <UIcon name="i-lucide-database" class="size-5 text-muted" aria-hidden="true" />
+        </div>
+        <p class="text-sm font-medium text-highlighted mb-1">
+          No sources yet
+        </p>
+        <p class="text-xs text-muted mb-4 text-center max-w-xs">
+          Add your first source to give the AI knowledge about your favorite tools
+        </p>
         <UButton
           icon="i-lucide-plus"
           size="xs"
           to="/admin/new"
         >
-          Add Source
+          Add your first source
         </UButton>
-        <UButton
-          v-if="sources?.snapshotRepoUrl"
-          icon="i-lucide-external-link"
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          :to="sources.snapshotRepoUrl"
-          target="_blank"
-        >
-          View Repository
-        </UButton>
-        <span v-if="lastSyncAgo && !needsSync" class="text-xs text-muted ml-2">
-          Last synced {{ lastSyncAgo }}
-        </span>
       </div>
 
-      <UInput
-        v-model="searchQuery"
-        icon="i-lucide-search"
-        placeholder="Filter sources..."
-        size="sm"
-        class="max-w-xs"
-        :ui="{ root: 'w-full' }"
+      <div v-else class="space-y-8">
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
+              GitHub Repositories
+            </p>
+            <p v-if="filteredGithubSources.length" class="text-xs text-muted">
+              {{ filteredGithubSources.length }} {{ filteredGithubSources.length === 1 ? 'repository' : 'repositories' }}
+            </p>
+          </div>
+
+          <template v-if="filteredGithubSources.length">
+            <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
+              <div v-for="source in paginatedGithubSources" :key="source.id" class="px-4 hover:bg-elevated/50 transition-colors">
+                <SourceCard
+                  :source
+                  @edit="editingSource = source"
+                  @delete="deleteSource(source)"
+                  @sync="triggerSync(source.id)"
+                />
+              </div>
+            </div>
+            <div v-if="filteredGithubSources.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
+              <UPagination
+                v-model:page="githubPage"
+                :items-per-page="ITEMS_PER_PAGE"
+                :total="filteredGithubSources.length"
+                :sibling-count="1"
+                show-edges
+                size="sm"
+              />
+            </div>
+          </template>
+          <template v-else-if="sources?.github?.count && searchQuery">
+            <div class="py-8 text-center border border-dashed border-default rounded-lg">
+              <p class="text-sm text-muted">
+                No GitHub repositories match your search
+              </p>
+            </div>
+          </template>
+          <UButton
+            v-else
+            color="neutral"
+            variant="ghost"
+            class="w-full h-14 border border-dashed border-default hover:border-muted"
+            to="/admin/new?type=github"
+            icon="i-lucide-plus"
+          >
+            Add a GitHub repository
+          </UButton>
+        </section>
+
+        <section v-if="sources?.youtubeEnabled">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
+              YouTube Channels
+            </p>
+            <p v-if="filteredYoutubeSources.length" class="text-xs text-muted">
+              {{ filteredYoutubeSources.length }} {{ filteredYoutubeSources.length === 1 ? 'channel' : 'channels' }}
+            </p>
+          </div>
+
+          <template v-if="filteredYoutubeSources.length">
+            <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
+              <div v-for="source in paginatedYoutubeSources" :key="source.id" class="px-4 hover:bg-elevated/50 transition-colors">
+                <SourceCard
+                  :source
+                  @edit="editingSource = source"
+                  @delete="deleteSource(source)"
+                  @sync="triggerSync(source.id)"
+                />
+              </div>
+            </div>
+            <div v-if="filteredYoutubeSources.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
+              <UPagination
+                v-model:page="youtubePage"
+                :items-per-page="ITEMS_PER_PAGE"
+                :total="filteredYoutubeSources.length"
+                :sibling-count="1"
+                show-edges
+                size="sm"
+              />
+            </div>
+          </template>
+          <template v-else-if="sources?.youtube?.count && searchQuery">
+            <div class="py-8 text-center border border-dashed border-default rounded-lg">
+              <p class="text-sm text-muted">
+                No YouTube channels match your search
+              </p>
+            </div>
+          </template>
+          <UButton
+            v-else-if="sources?.youtubeEnabled"
+            color="neutral"
+            variant="ghost"
+            class="w-full h-14 border border-dashed border-default hover:border-muted"
+            to="/admin/new?type=youtube"
+            icon="i-lucide-plus"
+          >
+            Add a YouTube channel
+          </UButton>
+        </section>
+      </div>
+
+      <SourceModal
+        v-if="editingSource"
+        :source="editingSource"
+        @close="editingSource = null"
+        @saved="handleSaved"
       />
-    </div>
-
-    <div
-      v-if="!hasSources"
-      class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg"
-    >
-      <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
-        <UIcon name="i-lucide-database" class="size-5 text-muted" aria-hidden="true" />
-      </div>
-      <p class="text-sm font-medium text-highlighted mb-1">
-        No sources yet
-      </p>
-      <p class="text-xs text-muted mb-4 text-center max-w-xs">
-        Add your first source to give the AI knowledge about your favorite tools
-      </p>
-      <UButton
-        icon="i-lucide-plus"
-        size="xs"
-        to="/admin/new"
-      >
-        Add your first source
-      </UButton>
-    </div>
-
-    <div v-else class="space-y-8">
-      <section>
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
-            GitHub Repositories
-          </p>
-          <p v-if="filteredGithubSources.length" class="text-xs text-muted">
-            {{ filteredGithubSources.length }} {{ filteredGithubSources.length === 1 ? 'repository' : 'repositories' }}
-          </p>
-        </div>
-
-        <template v-if="filteredGithubSources.length">
-          <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
-            <div v-for="source in paginatedGithubSources" :key="source.id" class="px-4 hover:bg-elevated/50 transition-colors">
-              <SourceCard
-                :source
-                @edit="editingSource = source"
-                @delete="deleteSource(source)"
-                @sync="triggerSync(source.id)"
-              />
-            </div>
-          </div>
-          <div v-if="filteredGithubSources.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
-            <UPagination
-              v-model:page="githubPage"
-              :items-per-page="ITEMS_PER_PAGE"
-              :total="filteredGithubSources.length"
-              :sibling-count="1"
-              show-edges
-              size="sm"
-            />
-          </div>
-        </template>
-        <template v-else-if="sources?.github?.count && searchQuery">
-          <div class="py-8 text-center border border-dashed border-default rounded-lg">
-            <p class="text-sm text-muted">
-              No GitHub repositories match your search
-            </p>
-          </div>
-        </template>
-        <UButton
-          v-else
-          color="neutral"
-          variant="ghost"
-          class="w-full h-14 border border-dashed border-default hover:border-muted"
-          to="/admin/new?type=github"
-          icon="i-lucide-plus"
-        >
-          Add a GitHub repository
-        </UButton>
-      </section>
-
-      <section v-if="sources?.youtubeEnabled">
-        <div class="flex items-center justify-between mb-3">
-          <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
-            YouTube Channels
-          </p>
-          <p v-if="filteredYoutubeSources.length" class="text-xs text-muted">
-            {{ filteredYoutubeSources.length }} {{ filteredYoutubeSources.length === 1 ? 'channel' : 'channels' }}
-          </p>
-        </div>
-
-        <template v-if="filteredYoutubeSources.length">
-          <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
-            <div v-for="source in paginatedYoutubeSources" :key="source.id" class="px-4 hover:bg-elevated/50 transition-colors">
-              <SourceCard
-                :source
-                @edit="editingSource = source"
-                @delete="deleteSource(source)"
-                @sync="triggerSync(source.id)"
-              />
-            </div>
-          </div>
-          <div v-if="filteredYoutubeSources.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
-            <UPagination
-              v-model:page="youtubePage"
-              :items-per-page="ITEMS_PER_PAGE"
-              :total="filteredYoutubeSources.length"
-              :sibling-count="1"
-              show-edges
-              size="sm"
-            />
-          </div>
-        </template>
-        <template v-else-if="sources?.youtube?.count && searchQuery">
-          <div class="py-8 text-center border border-dashed border-default rounded-lg">
-            <p class="text-sm text-muted">
-              No YouTube channels match your search
-            </p>
-          </div>
-        </template>
-        <UButton
-          v-else-if="sources?.youtubeEnabled"
-          color="neutral"
-          variant="ghost"
-          class="w-full h-14 border border-dashed border-default hover:border-muted"
-          to="/admin/new?type=youtube"
-          icon="i-lucide-plus"
-        >
-          Add a YouTube channel
-        </UButton>
-      </section>
-    </div>
-
-    <SourceModal
-      v-if="editingSource"
-      :source="editingSource"
-      @close="editingSource = null"
-      @saved="handleSaved"
-    />
     </template>
   </div>
 </template>

@@ -22,7 +22,9 @@ const { data: config, refresh, status } = useLazyFetch<AgentConfig>('/api/agent-
 if (!config.value && cachedConfig.value) {
   config.value = cachedConfig.value
 }
-watch(config, (v) => { if (v) cachedConfig.value = v })
+watch(config, (v) => {
+  if (v) cachedConfig.value = v 
+})
 
 const form = ref<{
   additionalPrompt: string
@@ -182,8 +184,12 @@ async function resetConfig() {
         <div class="rounded-lg border border-default divide-y divide-default">
           <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <p class="text-sm text-highlighted">Language</p>
-              <p class="text-xs text-muted">The language the assistant will respond in</p>
+              <p class="text-sm text-highlighted">
+                Language
+              </p>
+              <p class="text-xs text-muted">
+                The language the assistant will respond in
+              </p>
             </div>
             <USelect
               v-model="form.language"
@@ -194,8 +200,12 @@ async function resetConfig() {
           </div>
           <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <p class="text-sm text-highlighted">Intelligence</p>
-              <p class="text-xs text-muted">Choose between speed and quality</p>
+              <p class="text-sm text-highlighted">
+                Intelligence
+              </p>
+              <p class="text-xs text-muted">
+                Choose between speed and quality
+              </p>
             </div>
             <USelect
               v-model="form.defaultModel"
@@ -206,8 +216,12 @@ async function resetConfig() {
           </div>
           <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <p class="text-sm text-highlighted">Tone</p>
-              <p class="text-xs text-muted">How the assistant communicates</p>
+              <p class="text-sm text-highlighted">
+                Tone
+              </p>
+              <p class="text-xs text-muted">
+                How the assistant communicates
+              </p>
             </div>
             <USelect
               v-model="form.responseStyle"
@@ -218,8 +232,12 @@ async function resetConfig() {
           </div>
           <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
-              <p class="text-sm text-highlighted">Source references</p>
-              <p class="text-xs text-muted">How sources are shown in responses</p>
+              <p class="text-sm text-highlighted">
+                Source references
+              </p>
+              <p class="text-xs text-muted">
+                How sources are shown in responses
+              </p>
             </div>
             <USelect
               v-model="form.citationFormat"
@@ -237,7 +255,9 @@ async function resetConfig() {
         </h2>
         <div class="rounded-lg border border-default divide-y divide-default">
           <div class="px-4 py-3">
-            <p class="text-sm text-highlighted mb-3">Creativity</p>
+            <p class="text-sm text-highlighted mb-3">
+              Creativity
+            </p>
             <USlider
               v-model="form.temperature"
               :min="0"
@@ -251,7 +271,9 @@ async function resetConfig() {
             </div>
           </div>
           <div class="px-4 py-3">
-            <p class="text-sm text-highlighted mb-3">Search depth</p>
+            <p class="text-sm text-highlighted mb-3">
+              Search depth
+            </p>
             <USlider
               v-model="form.maxStepsMultiplier"
               :min="0.5"
@@ -273,7 +295,9 @@ async function resetConfig() {
         </h2>
         <div class="rounded-lg border border-default divide-y divide-default">
           <div class="px-4 py-3">
-            <p class="text-sm text-highlighted mb-1">Custom instructions</p>
+            <p class="text-sm text-highlighted mb-1">
+              Custom instructions
+            </p>
             <p class="text-xs text-muted mb-3">
               Add rules or guidelines for how the assistant should behave.
             </p>
@@ -286,7 +310,9 @@ async function resetConfig() {
             />
           </div>
           <div class="px-4 py-3">
-            <p class="text-sm text-highlighted mb-1">Search preferences</p>
+            <p class="text-sm text-highlighted mb-1">
+              Search preferences
+            </p>
             <p class="text-xs text-muted mb-3">
               Guide how the assistant finds and prioritizes information.
             </p>

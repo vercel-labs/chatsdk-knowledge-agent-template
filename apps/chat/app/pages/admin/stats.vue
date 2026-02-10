@@ -25,7 +25,9 @@ const { data: stats, refresh, status } = useLazyFetch<GlobalStatsResponse>('/api
 if (!stats.value && cachedStats.value) {
   stats.value = cachedStats.value
 }
-watch(stats, (v) => { if (v) cachedStats.value = v })
+watch(stats, (v) => {
+  if (v) cachedStats.value = v 
+})
 
 const isRefreshing = computed(() => status.value === 'pending' && stats.value !== null)
 

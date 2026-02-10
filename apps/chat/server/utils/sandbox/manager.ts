@@ -120,8 +120,7 @@ async function findRunningSandbox(snapshotId: string): Promise<Sandbox | null> {
       return await Sandbox.get({ sandboxId: running.id })
     }
     return null
-  }
-  catch {
+  } catch {
     return null
   }
 }

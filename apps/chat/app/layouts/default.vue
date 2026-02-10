@@ -190,7 +190,6 @@ defineShortcuts({
             to="/"
             @click="open = false"
           />
-
         </template>
       </template>
 
@@ -315,7 +314,14 @@ defineShortcuts({
     <div class="flex-1 flex m-2 rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="isAdminRoute && 'flex-col'">
       <template v-if="isAdminRoute">
         <div class="shrink-0 flex items-center gap-1.5 sm:px-4 h-12">
-          <UButton icon="i-lucide-arrow-left" label="Back" variant="ghost" color="neutral" size="xs" to="/" />
+          <UButton
+            icon="i-lucide-arrow-left"
+            label="Back"
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            to="/"
+          />
           <div class="flex-1" />
           <UColorModeButton />
         </div>

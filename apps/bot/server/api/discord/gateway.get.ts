@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const durationMs = 10 * 60 * 1000
-  const origin = getRequestURL(event).origin
+  const { origin } = getRequestURL(event)
   const webhookUrl = `${origin}/api/webhooks/discord`
 
   return discord.startGatewayListener(
