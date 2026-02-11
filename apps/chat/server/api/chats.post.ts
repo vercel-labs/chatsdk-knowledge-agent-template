@@ -3,7 +3,7 @@ import { db, schema } from '@nuxthub/db'
 import { z } from 'zod'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const { user } = await requireUserSession(event)
   const { id, message } = await readValidatedBody(event, z.object({
     id: z.string(),
     message: z.custom<UIMessage>()
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const [chat] = await db.insert(schema.chats).values({
     id,
     title: '',
-    userId: session.user?.id || session.id
+    userId: user.id
   }).returning()
 
   if (!chat) {

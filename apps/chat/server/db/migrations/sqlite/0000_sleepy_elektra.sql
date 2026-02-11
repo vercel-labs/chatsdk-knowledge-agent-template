@@ -1,3 +1,21 @@
+CREATE TABLE `account` (
+	`id` text PRIMARY KEY NOT NULL,
+	`accountId` text NOT NULL,
+	`providerId` text NOT NULL,
+	`userId` text NOT NULL,
+	`accessToken` text,
+	`refreshToken` text,
+	`idToken` text,
+	`accessTokenExpiresAt` integer,
+	`refreshTokenExpiresAt` integer,
+	`scope` text,
+	`password` text,
+	`createdAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`updatedAt` integer NOT NULL,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `account_userId_idx` ON `account` (`userId`);--> statement-breakpoint
 CREATE TABLE `agent_config` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text DEFAULT 'default' NOT NULL,
@@ -55,6 +73,21 @@ CREATE TABLE `messages` (
 );
 --> statement-breakpoint
 CREATE INDEX `messages_chat_id_idx` ON `messages` (`chat_id`);--> statement-breakpoint
+CREATE TABLE `session` (
+	`id` text PRIMARY KEY NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`token` text NOT NULL,
+	`createdAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`updatedAt` integer NOT NULL,
+	`ipAddress` text,
+	`userAgent` text,
+	`userId` text NOT NULL,
+	`impersonatedBy` text,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
+CREATE INDEX `session_userId_idx` ON `session` (`userId`);--> statement-breakpoint
 CREATE TABLE `sources` (
 	`id` text PRIMARY KEY NOT NULL,
 	`type` text NOT NULL,
@@ -88,16 +121,29 @@ CREATE TABLE `usage_stats` (
 --> statement-breakpoint
 CREATE INDEX `usage_stats_date_idx` ON `usage_stats` (`date`);--> statement-breakpoint
 CREATE UNIQUE INDEX `usage_stats_date_user_source_model_idx` ON `usage_stats` (`date`,`user_id`,`source`,`model`);--> statement-breakpoint
-CREATE TABLE `users` (
+CREATE TABLE `user` (
 	`id` text PRIMARY KEY NOT NULL,
-	`email` text NOT NULL,
 	`name` text NOT NULL,
-	`avatar` text NOT NULL,
-	`username` text NOT NULL,
-	`provider` text NOT NULL,
-	`provider_id` text NOT NULL,
-	`role` text DEFAULT 'user' NOT NULL,
-	`created_at` integer NOT NULL
+	`email` text NOT NULL,
+	`emailVerified` integer DEFAULT false NOT NULL,
+	`image` text,
+	`createdAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`updatedAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`role` text,
+	`banned` integer DEFAULT false,
+	`banReason` text,
+	`banExpires` integer,
+	`username` text
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_provider_id_idx` ON `users` (`provider`,`provider_id`);
+CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
+CREATE TABLE `verification` (
+	`id` text PRIMARY KEY NOT NULL,
+	`identifier` text NOT NULL,
+	`value` text NOT NULL,
+	`expiresAt` integer NOT NULL,
+	`createdAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`updatedAt` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);

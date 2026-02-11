@@ -113,18 +113,18 @@ export default defineEventHandler(async (event) => {
   const usersData = userIds.length > 0
     ? await db
       .select({
-        id: schema.users.id,
-        name: schema.users.name,
-        email: schema.users.email,
-        avatar: schema.users.avatar,
+        id: schema.user.id,
+        name: schema.user.name,
+        email: schema.user.email,
+        image: schema.user.image,
       })
-      .from(schema.users)
+      .from(schema.user)
     : []
 
-  const userInfoMap = new Map<string, { name: string, email: string, avatar: string }>()
+  const userInfoMap = new Map<string, { name: string, email: string, image: string | null }>()
   for (const user of usersData) {
     if (userIds.includes(user.id)) {
-      userInfoMap.set(user.id, { name: user.name, email: user.email, avatar: user.avatar })
+      userInfoMap.set(user.id, { name: user.name, email: user.email, image: user.image })
     }
   }
 
@@ -376,7 +376,7 @@ export default defineEventHandler(async (event) => {
         userId,
         name: userInfo?.name ?? 'Unknown',
         email: userInfo?.email ?? '',
-        avatar: userInfo?.avatar ?? '',
+        image: userInfo?.image ?? '',
         ...stats,
         totalTokens: stats.inputTokens + stats.outputTokens,
       }

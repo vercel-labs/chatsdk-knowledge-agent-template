@@ -50,7 +50,7 @@ export interface TopUserStats {
   userId: string
   name: string
   email: string
-  avatar: string
+  image: string
   messageCount: number
   inputTokens: number
   outputTokens: number

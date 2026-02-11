@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ auth: 'user' })
+
 const input = ref('')
 const loading = ref(false)
 const chatId = crypto.randomUUID()

@@ -4,10 +4,21 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxtjs/mdc',
     '@nuxthub/core',
-    'nuxt-auth-utils',
+    '@onmax/nuxt-better-auth',
     'workflow/nuxt',
     'evlog/nuxt',
   ],
+
+  auth: {
+    redirects: {
+      login: '/login',
+      guest: '/',
+    },
+    schema: {
+      usePlural: false,
+      casing: 'camelCase',
+    },
+  },
 
   evlog: {
     env: {
@@ -77,7 +88,7 @@ export default defineNuxtConfig({
     // Chat API responses are user-specific
     '/api/chats/**': { isr: false, cache: false },
     // Admin pages are behind auth, skip ISR
-    '/admin/**': { isr: false, cache: false },
+    '/admin/**': { isr: false, cache: false, auth: { user: { role: 'admin' } } },
   },
 
   runtimeConfig: {
@@ -102,6 +113,7 @@ export default defineNuxtConfig({
       apiKey: '',
     },
     public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       github: {
         botTrigger: '@nuxt-agent',
       },

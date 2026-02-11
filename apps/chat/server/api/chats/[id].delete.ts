@@ -8,11 +8,11 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const chat = await db.query.chats.findFirst({
-    where: () => and(eq(schema.chats.id, id), eq(schema.chats.userId, session.user?.id || session.id))
+    where: () => and(eq(schema.chats.id, id), eq(schema.chats.userId, user.id))
   })
 
   if (!chat) {
@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const username = session.user?.username || session.id
-  const chatFolder = `${username}/${id}`
+  const chatFolder = `${user.username}/${id}`
 
   try {
     const { blobs } = await blob.list({
@@ -44,6 +43,6 @@ export default defineEventHandler(async (event) => {
   }
 
   return await db.delete(schema.chats)
-    .where(and(eq(schema.chats.id, id), eq(schema.chats.userId, session.user?.id || session.id)))
+    .where(and(eq(schema.chats.id, id), eq(schema.chats.userId, user.id)))
     .returning()
 })

@@ -4,11 +4,12 @@ import { LazyModalConfirm, LazyModalShare } from '#components'
 const route = useRoute()
 const toast = useToast()
 const overlay = useOverlay()
-const { loggedIn, openInPopup } = useUserSession()
+const { loggedIn } = useUserSession()
 
 const open = ref(false)
 
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
 
 const deleteModal = overlay.create(LazyModalConfirm, {
   props: {
@@ -25,7 +26,7 @@ const shareModal = overlay.create(LazyModalShare, {
   }
 })
 
-const { data: chats, refresh: refreshChats } = await useFetch<Chat[]>('/api/chats', {
+const { data: chats, refresh: refreshChats } = await useFetch('/api/chats', {
   key: 'chats',
   transform: data => data.map(chat => ({
     id: chat.id,
@@ -168,13 +169,13 @@ defineShortcuts({
             <UserMenu v-if="loggedIn" size="xs" />
             <UButton
               v-else
-              label="Login"
-              icon="i-simple-icons-github"
+              label="Sign in"
+              icon="i-lucide-log-in"
               color="neutral"
-              variant="ghost"
+              variant="soft"
               size="xs"
               block
-              @click="openInPopup('/auth/github')"
+              @click="navigateTo('/login')"
             />
           </div>
           <UDashboardSearchButton collapsed size="xs" />
@@ -208,14 +209,15 @@ defineShortcuts({
 
           <template v-if="collapsed">
             <UserMenu v-if="loggedIn" collapsed />
-            <UButton
-              v-else
-              icon="i-simple-icons-github"
-              color="neutral"
-              variant="ghost"
-              square
-              @click="openInPopup('/auth/github')"
-            />
+            <UTooltip v-else text="Sign in">
+              <UButton
+                icon="i-lucide-log-in"
+                color="neutral"
+                variant="soft"
+                square
+                @click="navigateTo('/login')"
+              />
+            </UTooltip>
             <UDashboardSearchButton collapsed />
             <UDashboardSidebarCollapse />
           </template>
@@ -232,14 +234,15 @@ defineShortcuts({
               @click="open = false"
             />
             <UserMenu v-if="loggedIn" collapsed />
-            <UButton
-              v-else
-              icon="i-simple-icons-github"
-              color="neutral"
-              variant="ghost"
-              square
-              @click="openInPopup('/auth/github')"
-            />
+            <UTooltip v-else text="Sign in">
+              <UButton
+                icon="i-lucide-log-in"
+                color="neutral"
+                variant="soft"
+                square
+                @click="navigateTo('/login')"
+              />
+            </UTooltip>
             <UDashboardSearchButton collapsed />
             <UDashboardSidebarCollapse />
           </template>
@@ -317,8 +320,8 @@ defineShortcuts({
       }, ...groups]"
     />
 
-    <div class="flex-1 flex m-2 rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="isAdminRoute && 'flex-col'">
-      <template v-if="isAdminRoute">
+    <div class="flex-1 flex m-2 rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="(isAdminRoute || isSettingsRoute) && 'flex-col'">
+      <template v-if="isAdminRoute || isSettingsRoute">
         <div class="shrink-0 flex items-center gap-1.5 sm:px-4 h-12">
           <UButton
             icon="i-lucide-arrow-left"

@@ -7,8 +7,8 @@ import type { UserStats } from '../../../shared/types/stats'
  * Get current user's usage statistics
  */
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
-  const userId = session.user?.id || session.id
+  const { user } = await requireUserSession(event)
+  const userId = user.id
 
   // Get all chats for this user
   const userChats = await db
