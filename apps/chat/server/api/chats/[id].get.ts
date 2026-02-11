@@ -7,13 +7,13 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const chat = await db.query.chats.findFirst({
     where: () => and(
       eq(schema.chats.id, id),
-      eq(schema.chats.userId, session.user?.id || session.id)
+      eq(schema.chats.userId, user.id)
     ),
     with: {
       messages: {

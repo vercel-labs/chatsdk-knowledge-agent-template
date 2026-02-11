@@ -19,13 +19,6 @@ export default defineCachedEventHandler(
         messages: {
           orderBy: () => asc(schema.messages.createdAt)
         },
-        user: {
-          columns: {
-            name: true,
-            avatar: true,
-            username: true
-          }
-        }
       }
     })
 
@@ -36,6 +29,12 @@ export default defineCachedEventHandler(
       })
     }
 
+    // Fetch user info from Better Auth's user table
+    const user = await db.select({
+      name: schema.user.name,
+      image: schema.user.image,
+    }).from(schema.user).where(eq(schema.user.id, chat.userId)).get()
+
     setHeader(event, 'Cache-Control', 's-maxage=300, stale-while-revalidate=3600')
 
     return {
@@ -43,7 +42,10 @@ export default defineCachedEventHandler(
       title: chat.title,
       createdAt: chat.createdAt,
       messages: chat.messages,
-      author: chat.user
+      author: {
+        name: user?.name || 'Unknown',
+        image: user?.image || '',
+      }
     }
   },
   {

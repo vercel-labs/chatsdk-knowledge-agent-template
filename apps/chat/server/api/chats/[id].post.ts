@@ -103,8 +103,8 @@ export default defineEventHandler(async (event) => {
   })
 
   try {
-    const session = await getUserSession(event)
-    requestLog.set({ userId: session.user?.id || session.id })
+    const { user } = await requireUserSession(event)
+    requestLog.set({ userId: user.id })
 
     const { id } = await getValidatedRouterParams(event, z.object({
       id: z.string(),
@@ -120,7 +120,7 @@ export default defineEventHandler(async (event) => {
     const chat = await db.query.chats.findFirst({
       where: () => and(
         eq(schema.chats.id, id as string),
-        eq(schema.chats.userId, session.user?.id || session.id),
+        eq(schema.chats.userId, user.id),
       ),
       with: {
         messages: true,

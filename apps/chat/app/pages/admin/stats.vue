@@ -26,7 +26,7 @@ if (!stats.value && cachedStats.value) {
   stats.value = cachedStats.value
 }
 watch(stats, (v) => {
-  if (v) cachedStats.value = v 
+  if (v) cachedStats.value = v
 })
 
 const isRefreshing = computed(() => status.value === 'pending' && stats.value !== null)
@@ -489,8 +489,8 @@ function getModelCost(modelId: string): number | null {
                     <td class="px-4 py-2">
                       <div class="flex items-center gap-2">
                         <img
-                          v-if="user.avatar"
-                          :src="user.avatar"
+                          v-if="user.image"
+                          :src="user.image"
                           :alt="user.name"
                           class="size-6 rounded-full"
                         >

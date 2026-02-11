@@ -8,6 +8,8 @@ import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 import ProseStreamPre from '../../components/prose/PreStream.vue'
 import type { ToolCall } from '#shared/types/tool-call'
 
+definePageMeta({ auth: 'user' })
+
 const components = {
   pre: ProseStreamPre as unknown as DefineComponent
 }

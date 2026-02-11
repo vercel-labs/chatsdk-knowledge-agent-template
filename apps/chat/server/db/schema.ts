@@ -1,25 +1,10 @@
 import { sqliteTable, text, integer, index, uniqueIndex, real } from 'drizzle-orm/sqlite-core'
+// Better Auth manages user/session/account tables automatically via hub:db
 import { relations } from 'drizzle-orm'
 
 const timestamps = {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
 }
-
-export const users = sqliteTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  email: text('email').notNull(),
-  name: text('name').notNull(),
-  avatar: text('avatar').notNull(),
-  username: text('username').notNull(),
-  provider: text('provider').notNull(),
-  providerId: text('provider_id').notNull(),
-  role: text('role', { enum: ['user', 'admin'] }).notNull().default('user'),
-  ...timestamps
-}, table => [uniqueIndex('users_provider_id_idx').on(table.provider, table.providerId)])
-
-export const usersRelations = relations(users, ({ many }) => ({
-  chats: many(chats)
-}))
 
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -33,12 +18,8 @@ export const chats = sqliteTable('chats', {
   uniqueIndex('chats_share_token_idx').on(table.shareToken)
 ])
 
-export const chatsRelations = relations(chats, ({ one, many }) => ({
-  user: one(users, {
-    fields: [chats.userId],
-    references: [users.id]
-  }),
-  messages: many(messages)
+export const chatsRelations = relations(chats, ({ many }) => ({
+  messages: many(messages),
 }))
 
 export const messages = sqliteTable('messages', {

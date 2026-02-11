@@ -67,8 +67,8 @@ definePageMeta({
           <template #center>
             <div class="flex items-center gap-2">
               <UAvatar
-                v-if="data?.author.avatar"
-                :src="data.author.avatar"
+                v-if="data?.author.image"
+                :src="data.author.image"
                 :alt="data.author.name"
                 size="xs"
               />

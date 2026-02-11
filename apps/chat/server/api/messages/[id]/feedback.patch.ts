@@ -7,7 +7,7 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const { feedback } = await readValidatedBody(event, z.object({
@@ -29,8 +29,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Verify the message belongs to a chat owned by the user
-  if (message.chat.userId !== session.user?.id && message.chat.userId !== session.id) {
+  if (message.chat.userId !== user.id) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden'
