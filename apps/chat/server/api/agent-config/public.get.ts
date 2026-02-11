@@ -8,21 +8,6 @@ import { getAgentConfig } from '../../utils/agent-config'
  * the current agent configuration via the SDK.
  */
 export default defineEventHandler(async (event) => {
-  // Validate API key (similar to sandbox routes)
-  const config = useRuntimeConfig()
-  const secretKey = config.savoirSecretKey
-
-  if (secretKey) {
-    const authHeader = getHeader(event, 'Authorization')
-    const apiKey = authHeader?.replace('Bearer ', '')
-
-    if (!apiKey || apiKey !== secretKey) {
-      throw createError({
-        statusCode: 401,
-        message: 'Invalid or missing API key',
-      })
-    }
-  }
-
+  await requireUserSession(event)
   return await getAgentConfig()
 })

@@ -87,6 +87,7 @@ const adminNavigation = [
     { label: 'System', type: 'label' as const },
     { label: 'Sandbox', icon: 'i-lucide-box', to: '/admin/sandbox' },
     { label: 'Statistics', icon: 'i-lucide-bar-chart-3', to: '/admin/stats' },
+    { label: 'API Keys', icon: 'i-lucide-key', to: '/admin/api-keys' },
   ],
 ]
 

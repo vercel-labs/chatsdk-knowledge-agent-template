@@ -32,6 +32,7 @@ const usageSchema = z.object({
  * ```
  */
 export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
   const body = await readValidatedBody(event, usageSchema.parse)
 
   const usage = await db.insert(schema.apiUsage).values({

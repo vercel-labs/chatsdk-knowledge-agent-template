@@ -1,4 +1,4 @@
-import { admin } from 'better-auth/plugins'
+import { admin, apiKey } from 'better-auth/plugins'
 import { sql } from 'drizzle-orm'
 
 export default defineServerAuth(({ runtimeConfig, db }) => {
@@ -25,7 +25,19 @@ export default defineServerAuth(({ runtimeConfig, db }) => {
         username: { type: 'string' as const, required: false },
       },
     },
-    plugins: [admin()],
+    plugins: [
+      admin(),
+      apiKey({
+        enableSessionForAPIKeys: true,
+        customAPIKeyGetter: (ctx) => {
+          const xApiKey = ctx.headers?.get('x-api-key')
+          if (xApiKey) return xApiKey
+          const authHeader = ctx.headers?.get('authorization')
+          if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7)
+          return null
+        },
+      }),
+    ],
     databaseHooks: {
       user: {
         create: {

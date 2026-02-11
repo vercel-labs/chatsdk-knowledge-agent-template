@@ -59,6 +59,7 @@ interface CommandResult {
 }
 
 export default defineEventHandler(async (event) => {
+  await requireUserSession(event)
   const requestLog = useLogger(event)
   const body = await readValidatedBody(event, bodySchema.parse)
 

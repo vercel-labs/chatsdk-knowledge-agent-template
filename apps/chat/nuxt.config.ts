@@ -98,7 +98,6 @@ export default defineNuxtConfig({
     // Savoir SDK config
     savoir: {
       apiKey: '',
-      secretKey: '',
     },
     // GitHub config
     github: {

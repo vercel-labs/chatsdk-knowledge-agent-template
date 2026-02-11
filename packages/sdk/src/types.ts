@@ -1,7 +1,7 @@
 export interface SavoirConfig {
   /** Base URL of your Savoir API (e.g., 'https://chat.example.com') */
   apiUrl: string
-  /** API key for authentication. Required if the API has SAVOIR_SECRET_KEY configured. */
+  /** API key for authentication. Create one from the admin panel (/admin/api-keys) or user settings (/settings/api-keys). */
   apiKey?: string
   /** Reuse an existing sandbox session instead of creating a new one. */
   sessionId?: string
