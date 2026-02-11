@@ -50,6 +50,7 @@ CREATE TABLE `chats` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text,
 	`user_id` text NOT NULL,
+	`mode` text DEFAULT 'chat' NOT NULL,
 	`is_public` integer DEFAULT false NOT NULL,
 	`share_token` text,
 	`created_at` integer NOT NULL

@@ -18,16 +18,13 @@ async function onSubmit() {
   try {
     if (mode.value === 'signup') {
       await signUp.email({ name: name.value, email: email.value, password: password.value })
-    }
-    else {
+    } else {
       await signIn.email({ email: email.value, password: password.value })
     }
     await navigateTo('/', { replace: true })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     error.value = e?.data?.message || e?.message || 'Something went wrong. Please try again.'
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -48,7 +45,6 @@ function onGitHub() {
       </div>
 
       <div class="ring ring-default rounded-xl bg-elevated p-8 space-y-6">
-        <!-- Tab toggle -->
         <div class="flex rounded-lg bg-default p-1 gap-1">
           <button
             class="flex-1 text-sm font-medium py-1.5 rounded-md transition-colors"

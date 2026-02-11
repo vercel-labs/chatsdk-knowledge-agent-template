@@ -18,6 +18,7 @@ const route = useRoute()
 const toast = useToast()
 const clipboard = useClipboard()
 const { model } = useModels()
+const { setMode } = useChatMode()
 
 function getFileName(url: string): string {
   try {
@@ -51,6 +52,10 @@ const { data } = await useFetch(`/api/chats/${route.params.id}`, {
 })
 if (!data.value) {
   throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+}
+
+if (data.value.mode) {
+  setMode(data.value.mode as 'chat' | 'admin')
 }
 
 const input = ref('')
@@ -231,7 +236,6 @@ onMounted(() => {
     })
     scrollObserver.observe(el)
 
-    // Disconnect after content has settled
     setTimeout(() => {
       scrollObserver?.disconnect()
       scrollObserver = undefined
@@ -314,10 +318,6 @@ watch(() => chat.status, (newStatus, oldStatus) => {
               <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
                 {{ part.text }}
               </p>
-              <ToolWeather
-                v-else-if="part.type === 'tool-weather'"
-                :invocation="(part as WeatherUIToolInvocation)"
-              />
               <ToolChart
                 v-else-if="part.type === 'tool-chart'"
                 :invocation="(part as ChartUIToolInvocation)"

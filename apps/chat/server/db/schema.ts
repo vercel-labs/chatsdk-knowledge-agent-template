@@ -10,6 +10,7 @@ export const chats = sqliteTable('chats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text('title'),
   userId: text('user_id').notNull(),
+  mode: text('mode', { enum: ['chat', 'admin'] }).notNull().default('chat'),
   isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
   shareToken: text('share_token'),
   ...timestamps

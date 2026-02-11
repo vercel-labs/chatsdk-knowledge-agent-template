@@ -10,6 +10,7 @@ const open = ref(false)
 
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 const isSettingsRoute = computed(() => route.path.startsWith('/settings'))
+const isHomepage = computed(() => route.path === '/')
 
 const deleteModal = overlay.create(LazyModalConfirm, {
   props: {
@@ -33,7 +34,8 @@ const { data: chats, refresh: refreshChats } = await useFetch('/api/chats', {
     label: chat.title || 'Generating title…',
     generating: !chat.title,
     to: `/chat/${chat.id}`,
-    icon: 'i-lucide-message-circle',
+    icon: chat.mode === 'admin' ? 'i-lucide-shield' : 'i-lucide-message-circle',
+    mode: chat.mode,
     createdAt: chat.createdAt,
     isPublic: chat.isPublic,
     shareToken: chat.shareToken
@@ -47,31 +49,33 @@ watch(loggedIn, () => {
 
 const { groups } = useChats(chats)
 
-const items = computed(() => groups.value?.flatMap((group, groupIndex) => {
-  return [
-    {
-      label: group.label,
-      type: 'label' as const,
-      class: groupIndex > 0 ? 'border-t border-default mt-2 pt-3' : ''
-    }, ...group.items.map(item => ({
-      ...item,
-      slot: 'chat' as const,
-      icon: undefined,
-      class: item.generating ? 'text-muted' : ''
-    }))
-  ]
-}))
-
-// Limit displayed chats for performance
 const DISPLAY_LIMIT = 40
 const showAllChats = ref(false)
 
-const displayedItems = computed(() => {
-  if (!items.value || showAllChats.value) return items.value
-  return items.value.slice(0, DISPLAY_LIMIT)
+const displayedGroups = computed(() => {
+  if (!groups.value || showAllChats.value) return groups.value
+  let count = 0
+  return groups.value.map(group => {
+    if (count >= DISPLAY_LIMIT) return { ...group, items: [] as typeof group.items }
+    const items = group.items.slice(0, DISPLAY_LIMIT - count)
+    count += items.length
+    return { ...group, items }
+  }).filter(g => g.items.length > 0)
 })
 
-const hasMoreChats = computed(() => (items.value?.length ?? 0) > DISPLAY_LIMIT)
+const hasMoreChats = computed(() => {
+  const total = groups.value?.reduce((sum, g) => sum + g.items.length, 0) ?? 0
+  return total > DISPLAY_LIMIT
+})
+
+function chatContextItems(chat: UIChat) {
+  return [
+    [
+      { label: 'Share', icon: 'i-lucide-share', onSelect: () => shareChat(chat) },
+      { label: 'Delete', icon: 'i-lucide-trash', color: 'error' as const, onSelect: () => deleteChat(chat.id) },
+    ]
+  ]
+}
 
 const adminNavigation = [
   [
@@ -86,7 +90,6 @@ const adminNavigation = [
   ],
 ]
 
-// Dual scroll fades for chat list
 const chatScrollArea = useTemplateRef('chatScrollArea')
 const showTopFade = ref(false)
 const showBottomFade = ref(true)
@@ -196,7 +199,6 @@ defineShortcuts({
       </template>
 
       <template #default="{ collapsed }">
-        <!-- Admin mode -->
         <template v-if="isAdminRoute">
           <div class="flex-1 overflow-y-auto min-h-0">
             <UNavigationMenu
@@ -223,7 +225,6 @@ defineShortcuts({
           </template>
         </template>
 
-        <!-- Chat mode -->
         <template v-else>
           <template v-if="collapsed">
             <UButton
@@ -250,44 +251,42 @@ defineShortcuts({
           <div v-else class="flex flex-col flex-1 min-h-0 relative">
             <div
               v-show="showTopFade"
-              class="pointer-events-none h-12 bg-gradient-to-b from-[var(--ui-bg)] to-transparent absolute top-0 inset-x-0 z-10 transition-opacity duration-150"
+              class="pointer-events-none h-12 bg-linear-to-b from-default to-transparent absolute top-0 inset-x-0 z-10 transition-opacity duration-150"
               :class="showTopFade ? 'opacity-100' : 'opacity-0'"
             />
             <UScrollArea ref="chatScrollArea" class="flex-1 min-h-0">
-              <UNavigationMenu
-                :items="displayedItems"
-                :collapsed
-                orientation="vertical"
-                :ui="{ link: 'overflow-hidden', label: 'font-pixel tracking-wide uppercase text-[10px] text-muted pb-1' }"
-              >
-                <template #chat-label="{ item }">
-                  <TextScramble v-if="(item as any).generating" />
-                  <span v-else class="truncate">{{ item.label }}</span>
+              <nav class="flex flex-col gap-px p-1.5">
+                <template v-for="(group, gi) in displayedGroups" :key="group.label">
+                  <p
+                    class="font-pixel tracking-wide uppercase text-[10px] text-muted px-2.5 pb-1"
+                    :class="gi > 0 && 'border-t border-default mt-2 pt-3'"
+                  >
+                    {{ group.label }}
+                  </p>
+                  <UContextMenu
+                    v-for="chat in group.items"
+                    :key="chat.id"
+                    :items="chatContextItems(chat)"
+                    size="xs"
+                  >
+                    <NuxtLink
+                      :to="chat.to"
+                      class="group flex items-center gap-1.5 px-2 py-1 rounded-md text-sm overflow-hidden transition-colors"
+                      :class="[
+                        route.params.id === chat.id
+                          ? 'text-highlighted font-medium bg-linear-to-r from-elevated to-primary/0'
+                          : 'text-muted hover:bg-linear-to-r from-elevated to-primary/0',
+                        chat.generating && 'text-muted!',
+                      ]"
+                      @click="open = false"
+                    >
+                      <UIcon v-if="(chat as any).mode === 'admin'" name="i-lucide-shield" class="size-4 shrink-0" />
+                      <TextScramble v-if="chat.generating" />
+                      <span v-else class="truncate">{{ chat.label }}</span>
+                    </NuxtLink>
+                  </UContextMenu>
                 </template>
-
-                <template #chat-trailing="{ item }">
-                  <div class="flex -mr-1.5 translate-x-full group-hover:translate-x-0 transition-transform">
-                    <UButton
-                      icon="i-lucide-share"
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                      tabindex="-1"
-                      @click.stop.prevent="shareChat(item as any)"
-                    />
-                    <UButton
-                      icon="i-lucide-x"
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      class="text-muted hover:text-primary hover:bg-accented/50 focus-visible:bg-accented/50 p-0.5"
-                      tabindex="-1"
-                      @click.stop.prevent="deleteChat((item as any).id)"
-                    />
-                  </div>
-                </template>
-              </UNavigationMenu>
+              </nav>
               <button
                 v-if="hasMoreChats && !showAllChats"
                 class="w-full py-2 px-2.5 text-left text-xs text-muted hover:text-highlighted transition-colors font-pixel tracking-wide"
@@ -298,7 +297,7 @@ defineShortcuts({
             </UScrollArea>
             <div
               v-show="showBottomFade"
-              class="pointer-events-none h-20 bg-gradient-to-t from-[var(--ui-bg)] to-transparent -mt-20 relative z-10 shrink-0 transition-opacity duration-150"
+              class="pointer-events-none h-20 bg-linear-to-t from-default to-transparent -mt-20 relative z-10 shrink-0 transition-opacity duration-150"
               :class="showBottomFade ? 'opacity-100' : 'opacity-0'"
             />
           </div>
@@ -320,25 +319,38 @@ defineShortcuts({
       }, ...groups]"
     />
 
-    <div class="flex-1 flex m-2 rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="(isAdminRoute || isSettingsRoute) && 'flex-col'">
-      <template v-if="isAdminRoute || isSettingsRoute">
-        <div class="shrink-0 flex items-center gap-1.5 sm:px-4 h-12">
-          <UButton
-            icon="i-lucide-arrow-left"
-            label="Back"
-            variant="ghost"
-            color="neutral"
-            size="xs"
-            to="/"
-          />
-          <div class="flex-1" />
-          <UColorModeButton />
-        </div>
-        <div class="flex-1 overflow-y-auto">
-          <slot />
-        </div>
-      </template>
-      <slot v-else />
+    <div
+      class="flex-1 flex flex-col m-2 min-w-0 relative transition-[margin] duration-300 ease-out"
+      :class="!isAdminRoute && !isSettingsRoute && isHomepage ? 'mt-10' : 'mt-2'"
+    >
+      <div
+        v-if="!isAdminRoute && !isSettingsRoute"
+        class="absolute bottom-full left-0 right-0 flex justify-center pb-1 transition-opacity duration-300"
+        :class="isHomepage ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+      >
+        <ChatModeTabs />
+      </div>
+
+      <div class="flex-1 flex rounded-xl ring ring-default bg-muted shadow-sm min-w-0 overflow-hidden" :class="(isAdminRoute || isSettingsRoute) && 'flex-col'">
+        <template v-if="isAdminRoute || isSettingsRoute">
+          <div class="shrink-0 flex items-center gap-1.5 sm:px-4 h-12">
+            <UButton
+              icon="i-lucide-arrow-left"
+              label="Back"
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              to="/"
+            />
+            <div class="flex-1" />
+            <UColorModeButton />
+          </div>
+          <div class="flex-1 overflow-y-auto">
+            <slot />
+          </div>
+        </template>
+        <slot v-else />
+      </div>
     </div>
   </UDashboardGroup>
 </template>

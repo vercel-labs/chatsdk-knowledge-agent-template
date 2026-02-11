@@ -6,6 +6,7 @@ const loading = ref(false)
 const chatId = crypto.randomUUID()
 
 const { model } = useModels()
+const { mode } = useChatMode()
 
 const {
   dropzoneRef,
@@ -32,6 +33,7 @@ async function createChat(prompt: string) {
     method: 'POST',
     body: {
       id: chatId,
+      mode: mode.value,
       message: {
         role: 'user',
         parts
@@ -48,7 +50,7 @@ async function onSubmit() {
   clearFiles()
 }
 
-const quickChats = [
+const chatQuickChats = [
   {
     label: 'What are Nitro tasks and how do I use them in my Nuxt app?',
     icon: 'i-logos-nuxt-icon'
@@ -74,6 +76,35 @@ const quickChats = [
     icon: 'i-logos-nuxt-icon'
   }
 ]
+
+const adminQuickChats = [
+  {
+    label: 'Show me the usage statistics for the last 7 days',
+    icon: 'i-lucide-bar-chart-3'
+  },
+  {
+    label: 'List all registered users and their activity',
+    icon: 'i-lucide-users'
+  },
+  {
+    label: 'What sources are currently configured?',
+    icon: 'i-lucide-database'
+  },
+  {
+    label: 'Show me the most recent chat conversations',
+    icon: 'i-lucide-message-circle'
+  },
+  {
+    label: 'What is the current agent configuration?',
+    icon: 'i-lucide-bot'
+  },
+  {
+    label: 'How many tokens have been consumed today?',
+    icon: 'i-lucide-coins'
+  }
+]
+
+const quickChats = computed(() => mode.value === 'admin' ? adminQuickChats : chatQuickChats)
 </script>
 
 <template>
@@ -124,7 +155,7 @@ const quickChats = [
           </template>
         </UChatPrompt>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <UButton
             v-for="quickChat in quickChats"
             :key="quickChat.label"
@@ -133,7 +164,7 @@ const quickChats = [
             size="sm"
             color="neutral"
             variant="outline"
-            class="rounded-full"
+            class="rounded-full justify-start"
             @click="createChat(quickChat.label)"
           />
         </div>

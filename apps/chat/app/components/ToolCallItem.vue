@@ -10,8 +10,24 @@ const props = defineProps<{
 const isExpanded = ref(false)
 const displayedLabel = ref('')
 
+const adminToolLabels: Record<string, { loading: string, done: string }> = {
+  query_stats: { loading: 'Querying usage statistics', done: 'Queried usage statistics' },
+  list_users: { loading: 'Listing users', done: 'Listed users' },
+  list_sources: { loading: 'Listing sources', done: 'Listed sources' },
+  query_chats: { loading: 'Querying chats', done: 'Queried chats' },
+  run_sql: { loading: 'Running SQL query', done: 'Ran SQL query' },
+  get_agent_config: { loading: 'Fetching agent config', done: 'Fetched agent config' },
+  chart: { loading: 'Generating chart', done: 'Generated chart' },
+}
+
 const fullLabel = computed(() => {
   const { toolName, args, state } = props.tool
+
+  const adminLabel = adminToolLabels[toolName]
+  if (adminLabel) {
+    return state === 'loading' ? adminLabel.loading : adminLabel.done
+  }
+
   const commands = args?.commands as string[] || (args?.command ? [args.command as string] : [])
 
   if (toolName === 'search_and_read') {
@@ -154,7 +170,7 @@ function truncateOutput(text: string, maxLines = 8): string {
       <span class="relative flex size-1 shrink-0">
         <span
           v-if="tool.state === 'loading'"
-          class="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"
+          class="animate-ping absolute inline-flex size-full rounded-full bg-current opacity-75"
         />
         <span
           class="relative inline-flex rounded-full size-1 bg-current"

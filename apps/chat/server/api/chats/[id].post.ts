@@ -7,83 +7,10 @@ import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
 import { generateTitle } from '../../utils/chat/generate-title'
 import { routeQuestion, buildSystemPromptWithComplexity } from '../../utils/router/route-question'
-import { getAgentConfig, type AgentConfigData } from '../../utils/agent-config'
+import { getAgentConfig } from '../../utils/agent-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
-
-const BASE_SYSTEM_PROMPT = `You are an AI assistant that answers questions based on the available sources.
-
-## CRITICAL: Sources First
-
-Your knowledge may be outdated. ONLY answer based on what you find in the sources.
-- If you can't find information, say "I couldn't find this in the available sources"
-- NEVER make up information or guess - only state what you found
-- Always cite the source file when quoting content
-
-## Search Strategy
-
-1. **Explore first** (use relative paths, NEVER recursive):
-   \`\`\`bash
-   ls docs/           # List available sources (NOT ls -R)
-   ls docs/nitro/     # Explore one source
-   \`\`\`
-
-2. **Search with grep** (always limit results):
-   \`\`\`bash
-   grep -r "keyword" docs/nitro --include="*.md" -l | head -5
-   \`\`\`
-
-3. **Read files with cat**:
-   \`\`\`bash
-   cat docs/nitro/file.md
-   \`\`\`
-
-## IMPORTANT
-
-- Do NOT output text between tool calls. Use tools silently, then provide your complete answer only at the end.
-- Use "| head -N" to limit output
-
-## Response Style
-
-- Be concise and helpful
-- Include relevant code examples when available
-- Use markdown formatting
-- Cite the source file path
-`
-
-function buildDynamicSystemPrompt(agentConfigData: AgentConfigData): string {
-  let prompt = BASE_SYSTEM_PROMPT
-
-  const styleInstructions: Record<AgentConfigData['responseStyle'], string> = {
-    concise: 'Keep your responses brief and to the point.',
-    detailed: 'Provide comprehensive explanations with context.',
-    technical: 'Focus on technical details and include code examples.',
-    friendly: 'Be conversational and approachable in your responses.',
-  }
-  prompt = prompt.replace(
-    '## Response Style\n\n- Be concise and helpful',
-    `## Response Style\n\n- ${styleInstructions[agentConfigData.responseStyle]}`,
-  )
-
-  if (agentConfigData.language && agentConfigData.language !== 'en') {
-    prompt += `\n\n## Language\nRespond in ${agentConfigData.language}.`
-  }
-
-  if (agentConfigData.citationFormat === 'footnote') {
-    prompt += '\n\n## Citations\nPlace all source citations as footnotes at the end of your response.'
-  } else if (agentConfigData.citationFormat === 'none') {
-    prompt += '\n\n## Citations\nDo not include source citations in your response.'
-  }
-
-  if (agentConfigData.searchInstructions) {
-    prompt += `\n\n## Custom Search Instructions\n${agentConfigData.searchInstructions}`
-  }
-
-  if (agentConfigData.additionalPrompt) {
-    prompt += `\n\n## Additional Instructions\n${agentConfigData.additionalPrompt}`
-  }
-
-  return prompt
-}
+import { adminTools } from '../../utils/chat/admin-tools'
+import { ADMIN_SYSTEM_PROMPT, buildDynamicSystemPrompt } from '../../utils/chat/prompts'
 
 defineRouteMeta({
   openAPI: {
@@ -131,7 +58,13 @@ export default defineEventHandler(async (event) => {
       requestLog.set({ outcome: 'error' })
       throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
     }
-    requestLog.set({ existingMessages: chat.messages.length })
+    requestLog.set({ existingMessages: chat.messages.length, chatMode: chat.mode })
+
+    const isAdminChat = chat.mode === 'admin'
+
+    if (isAdminChat && user.role !== 'admin') {
+      throw createError({ statusCode: 403, statusMessage: 'Admin access required' })
+    }
 
     const lastMessage = messages[messages.length - 1]
     if (lastMessage?.role === 'user' && messages.length > 1) {
@@ -190,13 +123,19 @@ export default defineEventHandler(async (event) => {
       getAgentConfig(),
     ])
 
-    const effectiveMaxSteps = Math.round(routerConfig.maxSteps * agentConfigData.maxStepsMultiplier)
+    const effectiveMaxSteps = isAdminChat
+      ? 15 // Admin tools are faster, fewer steps needed
+      : Math.round(routerConfig.maxSteps * agentConfigData.maxStepsMultiplier)
 
     const effectiveModel = agentConfigData.defaultModel || model
 
-    const dynamicSystemPrompt = buildDynamicSystemPrompt(agentConfigData)
+    const dynamicSystemPrompt = isAdminChat
+      ? ADMIN_SYSTEM_PROMPT
+      : buildDynamicSystemPrompt(agentConfigData)
 
-    log.info('chat', `[${requestId}] Starting agent with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfigData.maxStepsMultiplier}x)`)
+    const effectiveTools = isAdminChat ? adminTools : savoir.tools
+
+    log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfigData.maxStepsMultiplier}x)`)
 
     const requestStartTime = Date.now()
 
@@ -216,8 +155,8 @@ export default defineEventHandler(async (event) => {
 
         const agent = new ToolLoopAgent({
           model: effectiveModel,
-          instructions: buildSystemPromptWithComplexity(dynamicSystemPrompt, routerConfig),
-          tools: savoir.tools,
+          instructions: isAdminChat ? dynamicSystemPrompt : buildSystemPromptWithComplexity(dynamicSystemPrompt, routerConfig),
+          tools: effectiveTools,
           stopWhen: stepCountIs(effectiveMaxSteps),
           onStepFinish: (stepResult) => {
             const stepDurationMs = Date.now() - stepStartTime
@@ -233,6 +172,27 @@ export default defineEventHandler(async (event) => {
               toolCallCount += stepResult.toolCalls.length
               const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
               log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
+
+              // Emit tool call events for admin tools (SDK tools handle this via onToolCall)
+              if (isAdminChat && streamWriter) {
+                for (const tc of stepResult.toolCalls) {
+                  streamWriter.write({
+                    type: 'data-tool-call',
+                    id: tc.toolCallId,
+                    data: {
+                      toolCallId: tc.toolCallId,
+                      toolName: tc.toolName,
+                      args: tc.args,
+                      state: 'done',
+                      result: {
+                        success: true,
+                        durationMs: stepDurationMs,
+                        commands: [],
+                      },
+                    },
+                  })
+                }
+              }
             } else {
               log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
             }
@@ -293,9 +253,11 @@ export default defineEventHandler(async (event) => {
         })))
         const dbDurationMs = Date.now() - dbStartTime
 
-        const currentSessionId = savoir.getSessionId()
-        if (currentSessionId) {
-          await kv.set(KV_KEYS.ACTIVE_SANDBOX_SESSION, currentSessionId)
+        if (!isAdminChat) {
+          const currentSessionId = savoir.getSessionId()
+          if (currentSessionId) {
+            await kv.set(KV_KEYS.ACTIVE_SANDBOX_SESSION, currentSessionId)
+          }
         }
 
         requestLog.set({

@@ -6,6 +6,9 @@ export interface UIChat {
   generating?: boolean
   icon: string
   createdAt: string
+  to: string
+  isPublic: boolean
+  shareToken: string | null
 }
 
 export function useChats(chats: Ref<UIChat[] | undefined>) {

@@ -4,14 +4,20 @@ import { z } from 'zod'
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const { id, message } = await readValidatedBody(event, z.object({
+  const { id, mode, message } = await readValidatedBody(event, z.object({
     id: z.string(),
+    mode: z.enum(['chat', 'admin']).default('chat'),
     message: z.custom<UIMessage>()
   }).parse)
+
+  if (mode === 'admin' && user.role !== 'admin') {
+    throw createError({ statusCode: 403, statusMessage: 'Admin access required' })
+  }
 
   const [chat] = await db.insert(schema.chats).values({
     id,
     title: '',
+    mode,
     userId: user.id
   }).returning()
 

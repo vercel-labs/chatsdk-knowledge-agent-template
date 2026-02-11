@@ -117,10 +117,6 @@ definePageMeta({
                 <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
                   {{ part.text }}
                 </p>
-                <ToolWeather
-                  v-else-if="part.type === 'tool-weather'"
-                  :invocation="(part as WeatherUIToolInvocation)"
-                />
                 <ToolChart
                   v-else-if="part.type === 'tool-chart'"
                   :invocation="(part as ChartUIToolInvocation)"

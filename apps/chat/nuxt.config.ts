@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@onmax/nuxt-better-auth',
     'workflow/nuxt',
     'evlog/nuxt',
+    'nuxt-charts',
   ],
 
   auth: {

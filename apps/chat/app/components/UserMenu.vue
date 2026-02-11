@@ -78,8 +78,12 @@ const items = computed<DropdownMenuItem[][]>(() => {
         <div class="flex items-center gap-2 px-1 py-0.5">
           <UAvatar :src="user?.image" :alt="user?.name ?? user?.username" size="sm" />
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-medium text-highlighted truncate">{{ user?.name ?? user?.username }}</p>
-            <p class="text-[11px] text-muted truncate">{{ user?.email ?? `@${user?.username}` }}</p>
+            <p class="text-xs font-medium text-highlighted truncate">
+              {{ user?.name ?? user?.username }}
+            </p>
+            <p class="text-[11px] text-muted truncate">
+              {{ user?.email ?? `@${user?.username}` }}
+            </p>
           </div>
         </div>
         <USeparator class="mt-1.5" />

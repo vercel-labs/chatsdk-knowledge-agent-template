@@ -21,11 +21,9 @@ async function saveProfile() {
     await client!.updateUser({ name: nameInput.value })
     await fetchSession({ force: true })
     toast.add({ title: 'Profile updated', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to update profile', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
-  finally {
+  } finally {
     isSavingProfile.value = false
   }
 }
@@ -42,11 +40,9 @@ async function changePassword() {
     currentPassword.value = ''
     newPassword.value = ''
     toast.add({ title: 'Password changed', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to change password', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
-  finally {
+  } finally {
     isChangingPassword.value = false
   }
 }
@@ -64,8 +60,7 @@ async function linkGithub() {
   isLinkingGithub.value = true
   try {
     await client!.linkSocial({ provider: 'github' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to link GitHub', color: 'error', icon: 'i-lucide-alert-circle' })
     isLinkingGithub.value = false
   }
@@ -77,11 +72,9 @@ async function unlinkGithub() {
     await client!.unlinkAccount({ providerId: 'github' })
     await refreshAccounts()
     toast.add({ title: 'GitHub account unlinked', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to unlink account', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
-  finally {
+  } finally {
     isUnlinking.value = false
   }
 }
@@ -97,11 +90,9 @@ async function revokeSession(token: string) {
     await client!.revokeSession({ token })
     await refreshSessions()
     toast.add({ title: 'Session revoked', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke session', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
-  finally {
+  } finally {
     revokingSession.value = null
   }
 }
@@ -112,11 +103,9 @@ async function revokeOtherSessions() {
     await client!.revokeOtherSessions()
     await refreshSessions()
     toast.add({ title: 'Other sessions revoked', icon: 'i-lucide-check' })
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke sessions', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
-  finally {
+  } finally {
     isRevokingAll.value = false
   }
 }
@@ -140,8 +129,7 @@ async function deleteAccount() {
     await client!.deleteUser()
     await signOut()
     navigateTo('/login')
-  }
-  catch (e: any) {
+  } catch (e: any) {
     toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to delete account', color: 'error', icon: 'i-lucide-alert-circle' })
     isDeletingAccount.value = false
   }
@@ -336,7 +324,7 @@ async function deleteAccount() {
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           Danger zone
         </h2>
-        <div class="rounded-lg border border-error/30 divide-y divide-default">
+        <div class="rounded-lg border border-error/30 bg-linear-to-br from-transparent to-error/10 divide-y divide-default">
           <div class="flex items-center justify-between gap-4 px-4 py-3">
             <div>
               <p class="text-sm text-highlighted">
