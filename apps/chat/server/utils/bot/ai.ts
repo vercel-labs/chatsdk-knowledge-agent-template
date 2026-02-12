@@ -1,12 +1,11 @@
-import { generateText, Output, stepCountIs, ToolLoopAgent } from 'ai'
+import { generateText, Output } from 'ai'
 import { log } from 'evlog'
-import { type AgentConfig, agentConfigSchema, getDefaultConfig } from '../router/schema'
+import { type AgentConfig, agentConfigSchema, getDefaultConfig, ROUTER_MODEL } from '../router/schema'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
 import { buildBotSystemPrompt, buildBotUserMessage } from '../prompts/bot'
+import { createAgent } from '../create-agent'
 import { createInternalSavoir } from './savoir'
 import type { ThreadContext } from './types'
-
-const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
 
 function buildRouterInput(question: string, context?: ThreadContext): string {
   const parts: string[] = []
@@ -73,32 +72,11 @@ export async function generateAIResponse(
       },
     })
 
-    const [routerConfig, savoirConfig] = await Promise.all([
-      routeQuestion(question, context),
-      savoir.getAgentConfig().catch((error) => {
-        log.warn('bot', `Failed to fetch agent config: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        return null
-      }),
-    ])
-
-    const effectiveMaxSteps = savoirConfig
-      ? Math.round(routerConfig.maxSteps * savoirConfig.maxStepsMultiplier)
-      : routerConfig.maxSteps
-    const effectiveModel = savoirConfig?.defaultModel || routerConfig.model
-
-    log.info('bot', `Starting agent for #${context?.number || 'unknown'} with ${routerConfig.complexity} complexity (${effectiveMaxSteps} steps, multiplier: ${savoirConfig?.maxStepsMultiplier || 1}x)`)
-
-    const agent = new ToolLoopAgent({
-      model: effectiveModel,
-      instructions: buildBotSystemPrompt(context, routerConfig, savoirConfig),
+    const agent = createAgent({
       tools: savoir.tools,
-      stopWhen: stepCountIs(effectiveMaxSteps),
-      prepareStep: ({ stepNumber }) => {
-        // Remove tools on the last step to force text output
-        if (stepNumber >= effectiveMaxSteps - 1) {
-          return { activeTools: [] }
-        }
-      },
+      route: () => routeQuestion(question, context),
+      buildPrompt: (routerConfig, agentConfig) => buildBotSystemPrompt(context, routerConfig, agentConfig),
+      resolveModel: (routerConfig, agentConfig) => agentConfig.defaultModel || routerConfig.model,
     })
 
     const result = await agent.generate({
@@ -147,4 +125,3 @@ ${errorMessage}
 Please try again later or open a discussion if this persists.`
   }
 }
-

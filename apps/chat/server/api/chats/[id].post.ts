@@ -1,4 +1,4 @@
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, stepCountIs, ToolLoopAgent, type UIMessage } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { kv } from '@nuxthub/kv'
@@ -7,11 +7,11 @@ import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
 import { generateTitle } from '../../utils/chat/generate-title'
 import { routeQuestion } from '../../utils/router/route-question'
-import { getAgentConfig } from '../../utils/agent-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { adminTools } from '../../utils/chat/admin-tools'
 import { ADMIN_SYSTEM_PROMPT, buildChatSystemPrompt } from '../../utils/prompts/chat'
 import { applyComplexity } from '../../utils/prompts/shared'
+import { createAgent, type RoutingResult } from '../../utils/create-agent'
 
 defineRouteMeta({
   openAPI: {
@@ -121,24 +121,86 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    const [routerConfig, agentConfigData] = await Promise.all([
-      routeQuestion(messages, requestId),
-      getAgentConfig(),
-    ])
+    let routingResult: RoutingResult | undefined
+    let effectiveModel = model
 
-    const effectiveMaxSteps = isAdminChat
-      ? 15 // Admin tools are faster, fewer steps needed
-      : Math.round(routerConfig.maxSteps * agentConfigData.maxStepsMultiplier)
+    const agent = createAgent({
+      tools: savoir.tools,
+      route: () => routeQuestion(messages, requestId),
+      buildPrompt: (routerConfig, agentConfig) => applyComplexity(buildChatSystemPrompt(agentConfig), routerConfig),
+      resolveModel: (_, agentConfig) => agentConfig.defaultModel || model,
+      admin: isAdminChat
+        ? { tools: adminTools, systemPrompt: ADMIN_SYSTEM_PROMPT }
+        : undefined,
+      onRouted: (routed) => {
+        routingResult = routed
+        const { effectiveModel: routedModel, effectiveMaxSteps, routerConfig, agentConfig } = routed
+        effectiveModel = routedModel
+        log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${routedModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfig.maxStepsMultiplier}x)`)
+      },
+      onStepFinish: (stepResult) => {
+        const stepDurationMs = Date.now() - stepStartTime
+        stepDurations.push(stepDurationMs)
+        stepCount++
 
-    const effectiveModel = agentConfigData.defaultModel || model
+        if (stepResult.usage) {
+          totalInputTokens += stepResult.usage.inputTokens ?? 0
+          totalOutputTokens += stepResult.usage.outputTokens ?? 0
+        }
 
-    const dynamicSystemPrompt = isAdminChat
-      ? ADMIN_SYSTEM_PROMPT
-      : buildChatSystemPrompt(agentConfigData)
+        if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
+          toolCallCount += stepResult.toolCalls.length
+          const tools = stepResult.toolCalls.map((c: { toolName: string }) => c.toolName).join(', ')
+          log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
 
-    const effectiveTools = isAdminChat ? adminTools : savoir.tools
+          // Emit tool call events for admin tools (SDK tools handle this via onToolCall)
+          if (isAdminChat && streamWriter) {
+            for (const tc of stepResult.toolCalls) {
+              streamWriter.write({
+                type: 'data-tool-call',
+                id: tc.toolCallId,
+                data: {
+                  toolCallId: tc.toolCallId,
+                  toolName: tc.toolName,
+                  args: tc.args,
+                  state: 'done',
+                  result: {
+                    success: true,
+                    durationMs: stepDurationMs,
+                    commands: [],
+                  },
+                },
+              })
+            }
+          }
+        } else {
+          log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
+        }
 
-    log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfigData.maxStepsMultiplier}x)`)
+        stepStartTime = Date.now()
+      },
+      onFinish: (result) => {
+        const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
+        requestLog.set({
+          finishReason: result.finishReason,
+          totalInputTokens,
+          totalOutputTokens,
+          totalTokens: totalInputTokens + totalOutputTokens,
+          stepCount,
+          toolCallCount,
+          stepDurations,
+          totalAgentMs: totalDurationMs,
+          ...(routingResult && {
+            routerComplexity: routingResult.routerConfig.complexity,
+            routerMaxSteps: routingResult.routerConfig.maxSteps,
+            effectiveMaxSteps: routingResult.effectiveMaxSteps,
+            stepsMultiplier: routingResult.agentConfig.maxStepsMultiplier,
+            routerReasoning: routingResult.routerConfig.reasoning,
+          }),
+        })
+        log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
+      },
+    })
 
     const requestStartTime = Date.now()
 
@@ -155,79 +217,6 @@ export default defineEventHandler(async (event) => {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         streamWriter = writer
-
-        const agent = new ToolLoopAgent({
-          model: effectiveModel,
-          instructions: isAdminChat ? dynamicSystemPrompt : applyComplexity(dynamicSystemPrompt, routerConfig),
-          tools: effectiveTools,
-          stopWhen: stepCountIs(effectiveMaxSteps),
-          prepareStep: isAdminChat ? undefined : ({ stepNumber }) => {
-            // Remove tools on the last step to force text output
-            if (stepNumber >= effectiveMaxSteps - 1) {
-              return { activeTools: [] }
-            }
-          },
-          onStepFinish: (stepResult) => {
-            const stepDurationMs = Date.now() - stepStartTime
-            stepDurations.push(stepDurationMs)
-            stepCount++
-
-            if (stepResult.usage) {
-              totalInputTokens += stepResult.usage.inputTokens ?? 0
-              totalOutputTokens += stepResult.usage.outputTokens ?? 0
-            }
-
-            if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
-              toolCallCount += stepResult.toolCalls.length
-              const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
-              log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
-
-              // Emit tool call events for admin tools (SDK tools handle this via onToolCall)
-              if (isAdminChat && streamWriter) {
-                for (const tc of stepResult.toolCalls) {
-                  streamWriter.write({
-                    type: 'data-tool-call',
-                    id: tc.toolCallId,
-                    data: {
-                      toolCallId: tc.toolCallId,
-                      toolName: tc.toolName,
-                      args: tc.args,
-                      state: 'done',
-                      result: {
-                        success: true,
-                        durationMs: stepDurationMs,
-                        commands: [],
-                      },
-                    },
-                  })
-                }
-              }
-            } else {
-              log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
-            }
-
-            stepStartTime = Date.now()
-          },
-          onFinish: (result) => {
-            const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
-            requestLog.set({
-              finishReason: result.finishReason,
-              totalInputTokens,
-              totalOutputTokens,
-              totalTokens: totalInputTokens + totalOutputTokens,
-              stepCount,
-              toolCallCount,
-              stepDurations,
-              totalAgentMs: totalDurationMs,
-              routerComplexity: routerConfig.complexity,
-              routerMaxSteps: routerConfig.maxSteps,
-              effectiveMaxSteps,
-              stepsMultiplier: agentConfigData.maxStepsMultiplier,
-              routerReasoning: routerConfig.reasoning,
-            })
-            log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
-          },
-        })
 
         if (!chat.title && messages[0]) {
           generateTitle({

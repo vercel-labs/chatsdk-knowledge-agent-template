@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+export const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
+export const DEFAULT_MODEL = 'google/gemini-3-flash'
+
 export const agentConfigSchema = z.object({
   complexity: z.enum(['trivial', 'simple', 'moderate', 'complex'])
     .describe('trivial=greeting, simple=single lookup, moderate=multi-search, complex=deep analysis'),

@@ -3,9 +3,7 @@ import { generateText, Output } from 'ai'
 import { log } from 'evlog'
 import type { UIMessage } from 'ai'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
-import { type AgentConfig, agentConfigSchema, getDefaultConfig } from './schema'
-
-const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
+import { type AgentConfig, agentConfigSchema, getDefaultConfig, ROUTER_MODEL } from './schema'
 
 function extractQuestionFromMessages(messages: UIMessage[]): string {
   const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')
