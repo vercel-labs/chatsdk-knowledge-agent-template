@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from '@octokit/rest'
 import { Message, parseMarkdown, stringifyMarkdown, type Adapter, type AdapterPostableMessage, type RawMessage, type WebhookOptions, type FetchResult, type ThreadInfo, type FormattedContent, type ChatInstance } from 'chat'
+import { createError, log } from 'evlog'
 import type { ThreadContext } from '../types'
 
 export interface GitHubThreadId {
@@ -99,6 +100,11 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   // eslint-disable-next-line require-await
   async initialize(chat: ChatInstance): Promise<void> {
     this.chat = chat
+    log.info({
+      event: 'github.adapter.initialized',
+      userName: this.userName,
+      replyToNewIssues: this.replyToNewIssues,
+    })
   }
 
   private async getOctokit(owner: string, repo: string): Promise<Octokit> {
@@ -115,13 +121,29 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
 
     const appOctokit = new Octokit({ authStrategy: createAppAuth, auth: { appId: this.appId, privateKey: this.privateKey } })
 
-    const { data: installation } = await appOctokit.apps.getRepoInstallation({ owner, repo })
+    let installation
+    try {
+      const result = await appOctokit.apps.getRepoInstallation({ owner, repo })
+      installation = result.data
+    } catch (error) {
+      throw createError({
+        message: `GitHub App not installed on ${cacheKey}`,
+        why: error instanceof Error ? error.message : 'Failed to get installation',
+        fix: `Install the GitHub App on the repository ${cacheKey} from the app settings page`,
+      })
+    }
 
     const { token } = await auth({ type: 'installation', installationId: installation.id })
 
     const octokit = new Octokit({ auth: token })
 
     this.octokitCache.set(cacheKey, { octokit, expiresAt: Date.now() + 50 * 60 * 1000 })
+
+    log.info({
+      event: 'github.octokit.created',
+      repo: cacheKey,
+      installationId: installation.id,
+    })
 
     return octokit
   }
@@ -140,12 +162,24 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   async handleWebhook(request: Request, options?: WebhookOptions): Promise<Response> {
     const body = await request.text()
     const signature = request.headers.get('X-Hub-Signature-256')
+    const eventType = request.headers.get('X-GitHub-Event')
+    const deliveryId = request.headers.get('X-GitHub-Delivery')
 
     if (!this.verifySignature(body, signature)) {
+      log.warn({
+        event: 'github.webhook.invalid_signature',
+        deliveryId,
+        eventType,
+      })
       return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 401 })
     }
 
-    const eventType = request.headers.get('X-GitHub-Event')
+    log.info({
+      event: 'github.webhook.received',
+      eventType,
+      deliveryId,
+      chatReady: !!this.chat,
+    })
 
     if (eventType === 'ping') {
       return new Response(JSON.stringify({ ok: true, message: 'pong' }), { status: 200 })
@@ -153,20 +187,36 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
 
     if (eventType === 'issue_comment') {
       const payload = JSON.parse(body) as GitHubIssueCommentPayload
+      const repo = `${payload.repository.owner.login}/${payload.repository.name}`
+      const issue = payload.issue.number
 
       if (payload.action !== 'created') {
+        log.info({
+          event: 'github.webhook.skipped',
+          reason: 'action_not_created',
+          action: payload.action,
+          repo,
+          issue,
+        })
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
       const botUserName = `${this.userName}[bot]`
       if (payload.comment.user.login === this.userName || payload.comment.user.login === botUserName) {
+        log.info({
+          event: 'github.webhook.skipped',
+          reason: 'own_comment',
+          author: payload.comment.user.login,
+          repo,
+          issue,
+        })
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
       const threadId = this.encodeThreadId({
         owner: payload.repository.owner.login,
         repo: payload.repository.name,
-        issueNumber: payload.issue.number,
+        issueNumber: issue,
       })
 
       const message = this.parseMessage({
@@ -177,6 +227,17 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
         created_at: payload.comment.created_at,
       })
 
+      log.info({
+        event: 'github.webhook.processing',
+        type: 'issue_comment',
+        repo,
+        issue,
+        threadId,
+        author: payload.comment.user.login,
+        isMention: message.isMention,
+        commentId: payload.comment.id,
+      })
+
       this.chat!.processMessage(this, threadId, message, options)
 
       return new Response(JSON.stringify({ ok: true }), { status: 200 })
@@ -184,13 +245,29 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
 
     if (eventType === 'issues') {
       const payload = JSON.parse(body) as GitHubIssuesPayload
+      const repo = `${payload.repository.owner.login}/${payload.repository.name}`
+      const issue = payload.issue.number
 
       if (payload.action !== 'opened') {
+        log.info({
+          event: 'github.webhook.skipped',
+          reason: 'action_not_opened',
+          action: payload.action,
+          repo,
+          issue,
+        })
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
       const botUserName = `${this.userName}[bot]`
       if (payload.issue.user.login === this.userName || payload.issue.user.login === botUserName) {
+        log.info({
+          event: 'github.webhook.skipped',
+          reason: 'own_issue',
+          author: payload.issue.user.login,
+          repo,
+          issue,
+        })
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
@@ -198,13 +275,21 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       const hasMention = issueText.includes(`@${this.userName}`)
 
       if (!this.replyToNewIssues && !hasMention) {
+        log.info({
+          event: 'github.webhook.skipped',
+          reason: 'no_mention_and_reply_disabled',
+          repo,
+          issue,
+          replyToNewIssues: this.replyToNewIssues,
+          hasMention,
+        })
         return new Response(JSON.stringify({ ok: true }), { status: 200 })
       }
 
       const threadId = this.encodeThreadId({
         owner: payload.repository.owner.login,
         repo: payload.repository.name,
-        issueNumber: payload.issue.number,
+        issueNumber: issue,
       })
 
       const message = this.parseMessage({
@@ -217,11 +302,27 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
 
       message.isMention = true
 
+      log.info({
+        event: 'github.webhook.processing',
+        type: 'new_issue',
+        repo,
+        issue,
+        threadId,
+        author: payload.issue.user.login,
+        hasMention,
+        replyToNewIssues: this.replyToNewIssues,
+      })
+
       this.chat!.processMessage(this, threadId, message, options)
 
       return new Response(JSON.stringify({ ok: true }), { status: 200 })
     }
 
+    log.info({
+      event: 'github.webhook.unhandled',
+      eventType,
+      deliveryId,
+    })
     return new Response(JSON.stringify({ ok: true }), { status: 200 })
   }
 
@@ -236,6 +337,13 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       repo,
       issue_number: issueNumber,
       body,
+    })
+
+    log.info({
+      event: 'github.comment.posted',
+      repo: `${owner}/${repo}`,
+      issue: issueNumber,
+      commentId: data.id,
     })
 
     return {

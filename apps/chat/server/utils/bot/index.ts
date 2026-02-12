@@ -2,7 +2,7 @@ import { Chat, ConsoleLogger, type Adapter, type Message, type Thread } from 'ch
 import { createDiscordAdapter } from '@chat-adapter/discord'
 import { createMemoryState } from '@chat-adapter/state-memory'
 import { createRedisState } from '@chat-adapter/state-redis'
-import { log } from 'evlog'
+import { createError, log } from 'evlog'
 import { SavoirGitHubAdapter } from './adapters/github'
 import { generateAIResponse } from './ai'
 import { hasContextProvider } from './types'
@@ -11,12 +11,36 @@ let botInstance: Chat | null = null
 
 async function handleBotResponse(thread: Thread, message: Message) {
   const { adapter } = thread
+  const startTime = Date.now()
 
-  await adapter.addReaction(thread.id, message.id, 'eyes').catch(() => {})
+  log.info({
+    event: 'bot.response.start',
+    adapter: adapter.name,
+    threadId: thread.id,
+    author: message.author.userName,
+    isMention: message.isMention,
+    messageLength: message.text.length,
+  })
+
+  await adapter.addReaction(thread.id, message.id, 'eyes').catch((error) => {
+    log.warn({
+      event: 'bot.reaction.failed',
+      emoji: 'eyes',
+      threadId: thread.id,
+      error: error instanceof Error ? error.message : 'Unknown',
+    })
+  })
 
   try {
     const context = hasContextProvider(adapter)
-      ? await adapter.fetchThreadContext(thread.id).catch(() => undefined)
+      ? await adapter.fetchThreadContext(thread.id).catch((error) => {
+        log.warn({
+          event: 'bot.context.failed',
+          threadId: thread.id,
+          error: error instanceof Error ? error.message : 'Unknown',
+        })
+        return undefined
+      })
       : { platform: adapter.name, title: '', body: '', labels: [], state: '', source: adapter.name }
 
     const response = await generateAIResponse(message.text, context)
@@ -25,8 +49,22 @@ async function handleBotResponse(thread: Thread, message: Message) {
 
     await adapter.removeReaction(thread.id, message.id, 'eyes').catch(() => {})
     await adapter.addReaction(thread.id, message.id, 'thumbs_up').catch(() => {})
+
+    log.info({
+      event: 'bot.response.success',
+      adapter: adapter.name,
+      threadId: thread.id,
+      durationMs: Date.now() - startTime,
+      responseLength: response.length,
+    })
   } catch (error) {
-    log.error('bot', `Error: ${error instanceof Error ? error.message : 'Unknown'}`)
+    log.error({
+      event: 'bot.response.failed',
+      adapter: adapter.name,
+      threadId: thread.id,
+      durationMs: Date.now() - startTime,
+      error: error instanceof Error ? error.message : 'Unknown',
+    })
 
     await adapter.removeReaction(thread.id, message.id, 'eyes').catch(() => {})
 
@@ -40,8 +78,12 @@ async function handleBotResponse(thread: Thread, message: Message) {
 ${error instanceof Error ? error.message : 'Unknown error'}
 \`\`\`
 </details>`)
-    } catch (error) {
-      log.error('bot', `Error: ${error instanceof Error ? error.message : 'Unknown'}`)
+    } catch (postError) {
+      log.error({
+        event: 'bot.error_post.failed',
+        threadId: thread.id,
+        error: postError instanceof Error ? postError.message : 'Unknown',
+      })
     }
   }
 }
@@ -49,7 +91,16 @@ ${error instanceof Error ? error.message : 'Unknown error'}
 function createBot(): Chat {
   const config = useRuntimeConfig()
 
-  const botUserName = (config.public.github?.botTrigger as string).replace('@', '')
+  const botTrigger = config.public.github?.botTrigger as string
+  if (!botTrigger) {
+    throw createError({
+      message: 'Bot trigger not configured',
+      why: 'NUXT_PUBLIC_GITHUB_BOT_TRIGGER is not set',
+      fix: 'Set NUXT_PUBLIC_GITHUB_BOT_TRIGGER to the bot mention trigger (e.g. @nuxt-agent)',
+    })
+  }
+
+  const botUserName = botTrigger.replace('@', '')
 
   const adapters: Record<string, Adapter> = {}
 
@@ -87,12 +138,16 @@ function createBot(): Chat {
     logger: 'info',
   })
 
-  // Direct mentions — works for any adapter
   bot.onNewMention(async (thread, message) => {
+    log.info({
+      event: 'bot.mention',
+      adapter: thread.adapter.name,
+      threadId: thread.id,
+      author: message.author.userName,
+    })
     await handleBotResponse(thread, message)
   })
 
-  // Thread continuation — respond in threads where the bot already participated (Discord only)
   bot.onNewMessage(/.*/, async (thread, message) => {
     if (message.isMention || message.author.isBot) return
     if (thread.adapter.name === 'github') return
@@ -101,7 +156,20 @@ function createBot(): Chat {
     const botHasReplied = messages.some((m: Message) => m.author.isBot)
     if (!botHasReplied) return
 
+    log.info({
+      event: 'bot.thread_continuation',
+      adapter: thread.adapter.name,
+      threadId: thread.id,
+      author: message.author.userName,
+    })
     await handleBotResponse(thread, message)
+  })
+
+  log.info({
+    event: 'bot.created',
+    userName: botUserName,
+    adapters: Object.keys(adapters),
+    state: redisUrl ? 'redis' : 'memory',
   })
 
   return bot
