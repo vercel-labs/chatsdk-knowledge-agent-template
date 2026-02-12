@@ -1,5 +1,5 @@
 import type { DiscordAdapter } from '@chat-adapter/discord'
-import { useBot } from '../../utils/bot'
+import { useBot } from '../../utils/bot/index'
 
 export default defineEventHandler(async (event) => {
   const bot = useBot()

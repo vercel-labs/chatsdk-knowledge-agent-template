@@ -1,8 +1,9 @@
 import { generateText, Output, stepCountIs, ToolLoopAgent } from 'ai'
 import { log } from 'evlog'
-import { createSavoir, type AgentConfig as SavoirAgentConfig } from '@savoir/sdk'
 import type { ThreadContext } from './types'
-import { type AgentConfig, agentConfigSchema, getDefaultConfig } from './router-schema'
+import { createInternalSavoir } from './savoir'
+import type { AgentConfigData } from '../agent-config'
+import { type AgentConfig, agentConfigSchema, getDefaultConfig } from '../router/schema'
 
 const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
 
@@ -11,20 +12,20 @@ Analyze the user's question and determine the appropriate configuration for the 
 
 ## Classification Guidelines
 
-**trivial** (maxSteps: 3, model: gemini-2.5-flash-lite)
+**trivial** (maxSteps: 4, model: gemini-2.5-flash-lite)
 - Simple greetings: "Hello", "Thanks", "Hi there"
 - Acknowledgments without questions
 
-**simple** (maxSteps: 6, model: gemini-2.5-flash-lite)
+**simple** (maxSteps: 8, model: gemini-2.5-flash-lite)
 - Single concept lookups: "What is useAsyncData?", "How to use useFetch?"
 - Direct API questions with clear answers
 
-**moderate** (maxSteps: 12, model: gemini-3-flash)
+**moderate** (maxSteps: 15, model: gemini-3-flash)
 - Comparisons: "Difference between useFetch and useAsyncData?"
 - Integration questions: "How to use Nuxt with TypeScript?"
 - Questions requiring multiple file searches
 
-**complex** (maxSteps: 20, model: gemini-3-flash or claude-opus-4.5)
+**complex** (maxSteps: 25, model: gemini-3-flash or claude-opus-4.5)
 - Debugging scenarios: "My middleware isn't working with auth"
 - Architecture questions: "How to structure a multi-package monorepo?"
 - Deep analysis requiring extensive documentation review
@@ -83,24 +84,10 @@ export async function generateAIResponse(
   question: string,
   context?: ThreadContext,
 ): Promise<string> {
-  const config = useRuntimeConfig()
-
-  if (!config.savoir.apiUrl) {
-    return `Hello! I'm the documentation bot, but I'm not fully configured yet.
-
-Please set the following environment variables:
-- \`NUXT_SAVOIR_API_URL\` - URL of the Savoir chat API
-- \`NUXT_SAVOIR_API_KEY\` - API key (if required)
-
-Once configured, I'll be able to search the documentation and help answer your questions!`
-  }
-
   const startTime = Date.now()
 
   try {
-    const savoir = createSavoir({
-      apiUrl: config.savoir.apiUrl,
-      apiKey: config.savoir.apiKey || undefined,
+    const savoir = createInternalSavoir({
       source: context?.platform ? `${context.platform}-bot` : 'bot',
       sourceId: context?.number ? `issue-${context.number}` : undefined,
       onToolCall: (info) => {
@@ -179,7 +166,7 @@ Please try again later or open a discussion if this persists.`
   }
 }
 
-function buildSystemPrompt(context?: ThreadContext, agentConfig?: AgentConfig, savoirConfig?: SavoirAgentConfig | null): string {
+function buildSystemPrompt(context?: ThreadContext, agentConfig?: AgentConfig, savoirConfig?: AgentConfigData | null): string {
   const basePrompt = `You are a documentation assistant with bash access to a sandbox containing docs (markdown, JSON, YAML).
 
 ## Critical Rule
@@ -203,7 +190,7 @@ Chain commands with \`&&\` when possible. 2-3 well-targeted commands is better t
   let prompt = basePrompt
 
   if (savoirConfig) {
-    const styleInstructions: Record<SavoirAgentConfig['responseStyle'], string> = {
+    const styleInstructions: Record<AgentConfigData['responseStyle'], string> = {
       concise: 'Keep your responses brief and to the point.',
       detailed: 'Provide comprehensive explanations with context.',
       technical: 'Focus on technical details and include code examples.',

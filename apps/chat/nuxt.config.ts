@@ -88,6 +88,8 @@ export default defineNuxtConfig({
     '/api/auth/**': { isr: false, cache: false },
     // Chat API responses are user-specific
     '/api/chats/**': { isr: false, cache: false },
+    // Webhook routes should never be cached
+    '/api/webhooks/**': { isr: false, cache: false },
     // Admin pages are behind auth, skip ISR
     '/admin/**': { isr: false, cache: false, auth: { user: { role: 'admin' } } },
   },
@@ -107,6 +109,14 @@ export default defineNuxtConfig({
       appId: '',
       appPrivateKey: '',
       webhookSecret: '',
+      replyToNewIssues: false,
+    },
+    // Discord config
+    discord: {
+      botToken: '',
+      publicKey: '',
+      applicationId: '',
+      mentionRoleIds: '',
     },
     // YouTube config
     youtube: {

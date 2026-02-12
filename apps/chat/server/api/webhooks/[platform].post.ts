@@ -1,4 +1,4 @@
-import { useBot } from '../../utils/bot'
+import { useBot } from '../../utils/bot/index'
 
 export default defineEventHandler((event) => {
   const platform = getRouterParam(event, 'platform')
