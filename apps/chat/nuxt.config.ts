@@ -88,6 +88,8 @@ export default defineNuxtConfig({
     '/api/auth/**': { isr: false, cache: false },
     // Chat API responses are user-specific
     '/api/chats/**': { isr: false, cache: false },
+    // Webhook routes should never be cached
+    '/api/webhooks/**': { isr: false, cache: false },
     // Admin pages are behind auth, skip ISR
     '/admin/**': { isr: false, cache: false, auth: { user: { role: 'admin' } } },
   },
@@ -95,11 +97,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Admin users (comma-separated GitHub emails or usernames)
     adminUsers: '',
-    // Savoir SDK config
-    savoir: {
-      apiKey: '',
-    },
-    // GitHub config
     github: {
       token: '',
       snapshotRepo: '',
@@ -107,15 +104,21 @@ export default defineNuxtConfig({
       appId: '',
       appPrivateKey: '',
       webhookSecret: '',
+      replyToNewIssues: false,
     },
-    // YouTube config
+    discord: {
+      botToken: '',
+      publicKey: '',
+      applicationId: '',
+      mentionRoleIds: '',
+    },
     youtube: {
       apiKey: '',
     },
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       github: {
-        botTrigger: '@nuxt-agent',
+        botTrigger: '',
       },
     },
   }
