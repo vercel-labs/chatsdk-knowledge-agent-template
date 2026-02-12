@@ -96,6 +96,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     this.replyToNewIssues = config.replyToNewIssues ?? false
   }
 
+  // eslint-disable-next-line require-await
   async initialize(chat: ChatInstance): Promise<void> {
     this.chat = chat
   }

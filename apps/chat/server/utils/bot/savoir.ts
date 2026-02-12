@@ -79,7 +79,7 @@ Use standard Unix commands to explore and read files.`,
 
       try {
         const active = await getOrCreateSandbox(sessionId)
-        sessionId = active.sessionId
+        ;({ sessionId } = active)
 
         const result = await active.sandbox.runCommand({
           cmd: 'bash',
@@ -153,7 +153,7 @@ Maximum 10 commands per batch.`,
         for (const cmd of commands) validateCommand(cmd)
 
         const active = await getOrCreateSandbox(sessionId)
-        sessionId = active.sessionId
+        ;({ sessionId } = active)
 
         const results = []
         for (const command of commands) {
