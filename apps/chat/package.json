@@ -22,6 +22,7 @@
     "@ai-sdk/vue": "^3.0.78",
     "@chat-adapter/discord": "^4.9.0",
     "@chat-adapter/state-memory": "^4.9.0",
+    "@chat-adapter/state-redis": "^4.9.0",
     "@evlog/nuxthub": "https://pkg.pr.new/@evlog/nuxthub@71",
     "@googleapis/youtube": "^31.0.0",
     "@iconify-json/logos": "^1.2.10",

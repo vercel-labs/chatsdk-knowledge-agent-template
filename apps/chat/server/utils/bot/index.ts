@@ -1,6 +1,7 @@
 import { Chat, ConsoleLogger, type Adapter, type Message, type Thread } from 'chat'
 import { createDiscordAdapter } from '@chat-adapter/discord'
 import { createMemoryState } from '@chat-adapter/state-memory'
+import { createRedisState } from '@chat-adapter/state-redis'
 import { log } from 'evlog'
 import { SavoirGitHubAdapter } from './adapters/github'
 import { generateAIResponse } from './ai'
@@ -74,10 +75,15 @@ function createBot(): Chat {
     })
   }
 
+  const redisUrl = process.env.REDIS_URL
+  const state = redisUrl
+    ? createRedisState({ url: redisUrl, logger: new ConsoleLogger('info').child('redis-state') })
+    : createMemoryState()
+
   const bot = new Chat({
     userName: botUserName,
     adapters,
-    state: createMemoryState(),
+    state,
     logger: 'info',
   })
 
