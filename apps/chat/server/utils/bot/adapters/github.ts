@@ -78,6 +78,16 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   private chat: ChatInstance | null = null
   private octokitCache = new Map<string, { octokit: Octokit, expiresAt: number }>()
 
+  /** Map normalized SDK emoji names to GitHub reaction content names */
+  private static readonly EMOJI_MAP: Record<string, string> = {
+    thumbs_up: '+1',
+    thumbs_down: '-1',
+  }
+
+  private resolveEmoji(emoji: string): string {
+    return SavoirGitHubAdapter.EMOJI_MAP[emoji] ?? emoji
+  }
+
   constructor(config: GitHubAdapterConfig) {
     this.userName = config.userName
     this.webhookSecret = config.webhookSecret
@@ -281,7 +291,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     const { owner, repo, issueNumber } = this.decodeThreadId(threadId)
     const octokit = await this.getOctokit(owner, repo)
 
-    const content = emoji as '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes'
+    const content = this.resolveEmoji(emoji) as '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes'
 
     if (messageId.startsWith('issue:')) {
       await octokit.reactions.createForIssue({
@@ -304,6 +314,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     const { owner, repo, issueNumber } = this.decodeThreadId(threadId)
     const octokit = await this.getOctokit(owner, repo)
 
+    const resolvedEmoji = this.resolveEmoji(emoji)
     const botUserName = `${this.userName}[bot]`
 
     if (messageId.startsWith('issue:')) {
@@ -314,7 +325,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       })
 
       const ourReaction = reactions.find(
-        r => r.content === emoji && (r.user?.login === this.userName || r.user?.login === botUserName),
+        r => r.content === resolvedEmoji && (r.user?.login === this.userName || r.user?.login === botUserName),
       )
       if (!ourReaction) return
 
@@ -332,7 +343,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       })
 
       const ourReaction = reactions.find(
-        r => r.content === emoji && (r.user?.login === this.userName || r.user?.login === botUserName),
+        r => r.content === resolvedEmoji && (r.user?.login === this.userName || r.user?.login === botUserName),
       )
       if (!ourReaction) return
 

@@ -97,11 +97,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Admin users (comma-separated GitHub emails or usernames)
     adminUsers: '',
-    // Savoir SDK config
-    savoir: {
-      apiKey: '',
-    },
-    // GitHub config
     github: {
       token: '',
       snapshotRepo: '',
@@ -111,21 +106,19 @@ export default defineNuxtConfig({
       webhookSecret: '',
       replyToNewIssues: false,
     },
-    // Discord config
     discord: {
       botToken: '',
       publicKey: '',
       applicationId: '',
       mentionRoleIds: '',
     },
-    // YouTube config
     youtube: {
       apiKey: '',
     },
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       github: {
-        botTrigger: '@nuxt-agent',
+        botTrigger: '',
       },
     },
   }

@@ -23,7 +23,7 @@ async function handleBotResponse(thread: Thread, message: Message) {
     await thread.post(response)
 
     await adapter.removeReaction(thread.id, message.id, 'eyes').catch(() => {})
-    await adapter.addReaction(thread.id, message.id, '+1').catch(() => {})
+    await adapter.addReaction(thread.id, message.id, 'thumbs_up').catch(() => {})
   } catch (error) {
     log.error('bot', `Error: ${error instanceof Error ? error.message : 'Unknown'}`)
 
@@ -48,7 +48,7 @@ ${error instanceof Error ? error.message : 'Unknown error'}
 function createBot(): Chat {
   const config = useRuntimeConfig()
 
-  const botUserName = (config.public.github.botTrigger as string).replace('@', '')
+  const botUserName = (config.public.github?.botTrigger as string).replace('@', '')
 
   const adapters: Record<string, Adapter> = {}
 
