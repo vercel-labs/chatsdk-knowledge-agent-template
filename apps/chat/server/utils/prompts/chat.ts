@@ -1,4 +1,5 @@
 import type { AgentConfigData } from '../agent-config'
+import { applyAgentConfig } from './shared'
 
 export const ADMIN_SYSTEM_PROMPT = `You are an admin assistant for the Savoir application. You help administrators understand app usage, monitor performance, manage users, and debug issues.
 
@@ -65,37 +66,6 @@ Your knowledge may be outdated. ONLY answer based on what you find in the source
 - Cite the source file path
 `
 
-export function buildDynamicSystemPrompt(agentConfigData: AgentConfigData): string {
-  let prompt = BASE_SYSTEM_PROMPT
-
-  const styleInstructions: Record<AgentConfigData['responseStyle'], string> = {
-    concise: 'Keep your responses brief and to the point.',
-    detailed: 'Provide comprehensive explanations with context.',
-    technical: 'Focus on technical details and include code examples.',
-    friendly: 'Be conversational and approachable in your responses.',
-  }
-  prompt = prompt.replace(
-    '## Response Style\n\n- Be concise and helpful',
-    `## Response Style\n\n- ${styleInstructions[agentConfigData.responseStyle]}`,
-  )
-
-  if (agentConfigData.language && agentConfigData.language !== 'en') {
-    prompt += `\n\n## Language\nRespond in ${agentConfigData.language}.`
-  }
-
-  if (agentConfigData.citationFormat === 'footnote') {
-    prompt += '\n\n## Citations\nPlace all source citations as footnotes at the end of your response.'
-  } else if (agentConfigData.citationFormat === 'none') {
-    prompt += '\n\n## Citations\nDo not include source citations in your response.'
-  }
-
-  if (agentConfigData.searchInstructions) {
-    prompt += `\n\n## Custom Search Instructions\n${agentConfigData.searchInstructions}`
-  }
-
-  if (agentConfigData.additionalPrompt) {
-    prompt += `\n\n## Additional Instructions\n${agentConfigData.additionalPrompt}`
-  }
-
-  return prompt
+export function buildChatSystemPrompt(agentConfigData: AgentConfigData): string {
+  return applyAgentConfig(BASE_SYSTEM_PROMPT, agentConfigData)
 }

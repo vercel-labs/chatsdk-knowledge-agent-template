@@ -2,34 +2,10 @@ import { createGateway } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
 import { log } from 'evlog'
 import type { UIMessage } from 'ai'
+import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
 import { type AgentConfig, agentConfigSchema, getDefaultConfig } from './schema'
 
 const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
-
-const ROUTER_SYSTEM_PROMPT = `You are a question classifier for an AI assistant.
-Analyze the user's question and determine the appropriate configuration for the agent.
-
-## Classification Guidelines
-
-**trivial** (maxSteps: 4, model: gemini-2.5-flash-lite)
-- Simple greetings: "Hello", "Thanks", "Hi there"
-- Acknowledgments without questions
-
-**simple** (maxSteps: 8, model: gemini-2.5-flash-lite)
-- Single concept lookups: "What is X?", "How to use Y?"
-- Direct questions with likely clear answers
-
-**moderate** (maxSteps: 15, model: gemini-3-flash)
-- Comparisons: "Difference between X and Y?"
-- Integration questions requiring exploration
-- Questions requiring multiple searches
-
-**complex** (maxSteps: 25, model: gemini-3-flash or claude-opus-4.5)
-- Debugging scenarios
-- Architecture questions
-- Deep analysis requiring extensive research
-
-Use claude-opus-4.5 only for the most complex cases requiring deep reasoning.`
 
 function extractQuestionFromMessages(messages: UIMessage[]): string {
   const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')
@@ -78,15 +54,4 @@ export async function routeQuestion(
     log.error('chat', `[${requestId}] Router failed: ${errorMessage}, using default config`)
     return getDefaultConfig()
   }
-}
-
-export function buildSystemPromptWithComplexity(basePrompt: string, agentConfig: AgentConfig): string {
-  const complexityHints: Record<AgentConfig['complexity'], string> = {
-    trivial: 'This is a simple greeting or acknowledgment. Respond briefly without searching.',
-    simple: 'This is a straightforward question. Explore with `ls`, then do a targeted search.',
-    moderate: 'This requires some research. Explore the sources structure first, then search within relevant directories.',
-    complex: 'This is a complex question. Map out the available sources with `ls`, then systematically search relevant areas.',
-  }
-
-  return `${basePrompt}\n\n## Task Complexity: ${agentConfig.complexity}\n${complexityHints[agentConfig.complexity]}`
 }

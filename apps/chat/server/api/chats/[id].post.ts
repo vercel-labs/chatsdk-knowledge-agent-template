@@ -6,11 +6,12 @@ import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
 import { generateTitle } from '../../utils/chat/generate-title'
-import { routeQuestion, buildSystemPromptWithComplexity } from '../../utils/router/route-question'
+import { routeQuestion } from '../../utils/router/route-question'
 import { getAgentConfig } from '../../utils/agent-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { adminTools } from '../../utils/chat/admin-tools'
-import { ADMIN_SYSTEM_PROMPT, buildDynamicSystemPrompt } from '../../utils/chat/prompts'
+import { ADMIN_SYSTEM_PROMPT, buildChatSystemPrompt } from '../../utils/prompts/chat'
+import { applyComplexity } from '../../utils/prompts/shared'
 
 defineRouteMeta({
   openAPI: {
@@ -133,7 +134,7 @@ export default defineEventHandler(async (event) => {
 
     const dynamicSystemPrompt = isAdminChat
       ? ADMIN_SYSTEM_PROMPT
-      : buildDynamicSystemPrompt(agentConfigData)
+      : buildChatSystemPrompt(agentConfigData)
 
     const effectiveTools = isAdminChat ? adminTools : savoir.tools
 
@@ -157,7 +158,7 @@ export default defineEventHandler(async (event) => {
 
         const agent = new ToolLoopAgent({
           model: effectiveModel,
-          instructions: isAdminChat ? dynamicSystemPrompt : buildSystemPromptWithComplexity(dynamicSystemPrompt, routerConfig),
+          instructions: isAdminChat ? dynamicSystemPrompt : applyComplexity(dynamicSystemPrompt, routerConfig),
           tools: effectiveTools,
           stopWhen: stepCountIs(effectiveMaxSteps),
           onStepFinish: (stepResult) => {
