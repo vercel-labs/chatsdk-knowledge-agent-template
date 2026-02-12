@@ -1,10 +1,10 @@
 import { generateText, Output, stepCountIs, ToolLoopAgent } from 'ai'
 import { log } from 'evlog'
-import type { ThreadContext } from './types'
-import { createInternalSavoir } from './savoir'
 import { type AgentConfig, agentConfigSchema, getDefaultConfig } from '../router/schema'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
 import { buildBotSystemPrompt, buildBotUserMessage } from '../prompts/bot'
+import { createInternalSavoir } from './savoir'
+import type { ThreadContext } from './types'
 
 const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
 

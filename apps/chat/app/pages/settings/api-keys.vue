@@ -162,7 +162,9 @@ function copyKey(key: string) {
                 </div>
                 <p class="text-xs text-muted">
                   {{ key.start ? `${key.start}...` : 'sk_...' }} · Created {{ new Date(key.createdAt).toLocaleDateString() }}
-                  <template v-if="key.expiresAt"> · Expires {{ new Date(key.expiresAt).toLocaleDateString() }}</template>
+                  <template v-if="key.expiresAt">
+                    · Expires {{ new Date(key.expiresAt).toLocaleDateString() }}
+                  </template>
                 </p>
               </div>
               <UButton
