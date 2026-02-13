@@ -52,62 +52,50 @@ Your training data may be outdated. ONLY answer based on what you find in the so
 
 ## Fast Search Strategy
 
-Use the fastest command for each task. Minimize tool calls — batch when possible.
+ALWAYS prefer \`bash_batch\` over sequential \`bash\` calls. Combine search and read in the same batch.
 
-### 1. Discover structure (once per session)
-\`\`\`bash
-find docs/ -maxdepth 2 -type d
+### Quick reference
+| Task | Command |
+|------|---------|
+| Find files by content | \`grep -rl "keyword" docs/ --include="*.md" \\| head -5\` |
+| Multi-keyword search | \`grep -rlE "term1\\|term2" docs/ --include="*.md" \\| head -5\` |
+| Find files by name | \`find docs/ -name "*routing*" -name "*.md"\` |
+| Read file (partial) | \`head -100 docs/path/file.md\` |
+| Read file (full) | \`cat docs/path/file.md\` |
+| Search with context | \`grep -n -C3 "keyword" docs/path/file.md\` |
+
+### Batch-first principle
+
+Use \`bash_batch\` to combine search AND read in a single call:
+\`\`\`
+bash_batch: [
+  "grep -rl \\"keyword\\" docs/source1/ --include=\\"*.md\\" | head -5",
+  "grep -rl \\"keyword\\" docs/source2/ --include=\\"*.md\\" | head -5",
+  "head -100 docs/source1/getting-started/index.md"
+]
 \`\`\`
 
-### 2. Find files by content (fastest: grep -rl stops at first match per file)
-\`\`\`bash
-grep -rl "keyword" docs/ --include="*.md" | head -10
-\`\`\`
+### Good vs Bad
 
-### 3. Find files by name
-\`\`\`bash
-find docs/ -name "*routing*" -name "*.md"
-\`\`\`
+**Good** — 1-2 calls:
+1. \`bash_batch\`: grep across likely dirs + read obvious files in one call
+2. \`bash_batch\`: read remaining files from grep results
 
-### 4. Read files
-\`\`\`bash
-head -100 docs/path/file.md        # partial read (fast)
-cat docs/path/file.md              # full read when needed
-\`\`\`
-
-### 5. Search with context (line numbers + surrounding lines)
-\`\`\`bash
-grep -n -C3 "keyword" docs/path/file.md
-\`\`\`
-
-## Batch Commands
-
-Use \`bash_batch\` to run multiple reads in parallel when you need several files:
-\`\`\`
-["head -80 docs/nuxt/1.getting-started/1.introduction.md", "head -80 docs/nuxt/1.getting-started/2.installation.md"]
-\`\`\`
-
-## Good vs Bad Examples
-
-**Good** — 2 calls, fast:
-1. \`grep -rl "useAsyncData" docs/nuxt --include="*.md" | head -5\`
-2. \`bash_batch\`: read the top results with \`head -80\`
-
-**Bad** — slow, wasteful:
-1. \`ls docs/\`
-2. \`ls docs/nuxt/\`
-3. \`ls docs/nuxt/1.getting-started/\`
-4. \`cat docs/nuxt/1.getting-started/1.introduction.md\`
-5. \`cat docs/nuxt/1.getting-started/2.installation.md\`
+**Bad** — 5+ calls:
+1. \`find docs/ -maxdepth 2 -type d\`
+2. \`grep -rl "keyword" docs/source1/\`
+3. \`grep -rl "keyword" docs/source2/\`
+4. \`cat docs/source1/file1.md\`
+5. \`cat docs/source2/file2.md\`
 
 ## Rules
 
 - **ALWAYS provide a text answer.** If you run out of relevant search results, answer with what you have. Never end on a tool call without a final response.
 - Do NOT output text between tool calls. Search silently, then provide your complete answer at the end.
-- Use \`| head -N\` to limit output from search commands.
-- Chain commands with \`&&\` when sequential: \`grep -rl "term" docs/ --include="*.md" | head -5 && cat docs/path/file.md\`
+- Use \`| head -N\` on all search output to keep context small.
+- Use \`grep -rlE "term1\\|term2"\` for multi-keyword search in one command.
 - Prefer \`grep -rl\` over \`grep -r\` — file paths are more useful than content dumps.
-- 2–3 targeted commands beats 10 exploratory ones.
+- 1–2 batched calls beats 5 sequential ones.
 
 ## Response Style
 

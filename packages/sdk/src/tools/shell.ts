@@ -82,15 +82,22 @@ Use standard Unix commands to explore and read files.`,
 export function createBashBatchTool(client: SavoirClient, onToolCall?: ToolCallCallback) {
   return tool({
     description: `Execute multiple bash commands in the documentation sandbox in a single request.
-More efficient than multiple single bash calls. Commands run sequentially.
-Use when you need to run several related commands (e.g., list + read multiple files).
+More efficient than multiple single bash calls — use this as your primary tool.
+Combine search (grep) and read (head/cat) commands in a single batch.
 Maximum 10 commands per batch.`,
     inputSchema: z.object({
       commands: z.array(z.string()).min(1).max(10).describe('Array of bash commands to execute'),
     }),
     inputExamples: [
-      { input: { commands: ['head -80 docs/getting-started.md', 'head -80 docs/installation.md'] } },
-      { input: { commands: ['grep -rl "routing" docs/ --include="*.md" | head -5', 'cat docs/api/reference.md'] } },
+      { input: { commands: [
+        'grep -rl "useAsyncData" docs/ --include="*.md" | head -5',
+        'head -80 docs/nuxt/1.getting-started/1.introduction.md',
+      ] } },
+      { input: { commands: [
+        'grep -rl "routing" docs/nuxt/ --include="*.md" | head -5',
+        'grep -rl "routing" docs/nitro/ --include="*.md" | head -5',
+        'head -80 docs/nuxt/1.getting-started/3.routing.md',
+      ] } },
     ],
     onInputAvailable: ({ toolCallId, input }) => {
       onToolCall?.({

@@ -132,8 +132,8 @@ function createInternalBashBatchTool(onToolCall?: ToolCallCallback) {
 
   return tool({
     description: `Execute multiple bash commands in the documentation sandbox in a single request.
-More efficient than multiple single bash calls. Commands run sequentially.
-Use when you need to run several related commands (e.g., list + read multiple files).
+More efficient than multiple single bash calls — use this as your primary tool.
+Combine search (grep) and read (head/cat) commands in a single batch.
 Maximum 10 commands per batch.`,
     inputSchema: z.object({
       commands: z.array(z.string()).min(1).max(10).describe('Array of bash commands to execute'),

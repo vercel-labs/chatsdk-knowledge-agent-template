@@ -39,20 +39,12 @@ export function applyAgentConfig(basePrompt: string, config: AgentConfigData): s
 
 export const COMPLEXITY_HINTS: Record<AgentConfig['complexity'], string> = {
   trivial: 'Respond directly without searching.',
-  simple: `One search + one read, then answer:
-1. \`grep -rl "keyword" docs/ --include="*.md" | head -5\`
-2. \`head -100 docs/path/file.md\`
-3. **Answer immediately.**`,
-  moderate: `Search → batch read → answer:
-1. \`find docs/ -maxdepth 2 -type d\` (orient yourself)
-2. \`grep -rl "keyword" docs/relevant-source/ --include="*.md" | head -10\`
-3. \`bash_batch\`: read top 3–5 files with \`head -100\`
-4. **Answer with what you found.**`,
-  complex: `Systematic exploration, then answer:
-1. \`find docs/ -maxdepth 2 -type d\` (map the sources)
-2. Multiple targeted \`grep -rl\` searches across relevant directories
-3. \`bash_batch\`: read files in parallel, use \`grep -n -C3\` for specific sections
-4. Cross-reference sources, then **answer.**`,
+  simple:
+    'One bash_batch call: search + read in parallel, then answer.\nbash_batch: ["grep -rl \'keyword\' docs/ --include=\'*.md\' | head -5", "head -100 docs/likely-source/index.md"]\nThen answer.',
+  moderate:
+    'One bash_batch: parallel grep across likely directories, then one batch read.\nbash_batch: ["grep -rl \'keyword\' docs/source1/ --include=\'*.md\' | head -5", "grep -rl \'keyword\' docs/source2/ --include=\'*.md\' | head -5"]\nThen bash_batch: read the top results.\nAnswer with what you found.',
+  complex:
+    'Wide search then deep read:\n1. bash_batch: parallel grep -rl across all relevant directories\n2. bash_batch: read top files with head -100, use grep -n -C3 for specific sections\n3. Cross-reference sources, then answer.',
 }
 
 export function applyComplexity(prompt: string, agentConfig: AgentConfig): string {
