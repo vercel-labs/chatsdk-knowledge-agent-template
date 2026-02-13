@@ -36,14 +36,11 @@ function onGitHub() {
 
 <template>
   <div class="login-page bg-default min-h-dvh flex flex-col items-center justify-center px-4 overflow-hidden relative">
-    <!-- Dot grid background -->
     <div class="dot-grid absolute inset-0 pointer-events-none select-none" />
 
-    <!-- Glow effects -->
     <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-primary-500/15 rounded-full blur-[250px] pointer-events-none select-none animate-glow" />
     <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-[300px] h-[250px] bg-primary-400/10 rounded-full blur-[180px] pointer-events-none select-none" />
 
-    <!-- Logo + heading -->
     <div class="relative z-10 flex flex-col items-center gap-3 mb-10">
       <div class="relative">
         <div class="absolute inset-0 bg-primary-500/20 rounded-full blur-xl scale-150" />
@@ -57,19 +54,15 @@ function onGitHub() {
       </p>
     </div>
 
-    <!-- Card with crosshair decorations -->
     <div class="relative z-10 w-full max-w-sm">
-      <!-- Cross marks at corners -->
       <span class="cross absolute -top-px -left-px size-px" />
       <span class="cross absolute -top-px -right-px size-px" />
       <span class="cross absolute -bottom-px -left-px size-px" />
       <span class="cross absolute -bottom-px -right-px size-px" />
 
       <div class="relative overflow-hidden ring ring-default bg-elevated/50 backdrop-blur-md p-8 space-y-5">
-        <!-- Inner subtle top border glow -->
         <div class="absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-primary-500/40 to-transparent" />
 
-        <!-- Sign in / Sign up toggle -->
         <div class="flex bg-default/80 p-1 gap-1">
           <button
             class="flex-1 text-sm font-medium py-2 transition-all duration-200 cursor-pointer relative"
@@ -87,7 +80,6 @@ function onGitHub() {
           </button>
         </div>
 
-        <!-- Error alert -->
         <UAlert
           v-if="error"
           color="error"
@@ -98,7 +90,6 @@ function onGitHub() {
           @close="error = ''"
         />
 
-        <!-- GitHub -->
         <UButton
           label="Continue with GitHub"
           icon="i-simple-icons-github"
@@ -115,9 +106,7 @@ function onGitHub() {
           <div class="flex-1 h-px bg-accented" />
         </div>
 
-        <!-- Email / Password form -->
         <form class="space-y-4" @submit.prevent="onSubmit">
-          <!-- Name field with smooth expand/collapse -->
           <div class="name-field-wrapper" :class="mode === 'signup' ? 'expanded' : 'collapsed'">
             <div class="name-field-inner">
               <UFormField label="Name">
@@ -165,7 +154,6 @@ function onGitHub() {
       </div>
     </div>
 
-    <!-- Footer -->
     <p class="relative z-10 mt-8 text-xs text-muted/60">
       By continuing, you agree to our terms of service.
     </p>
@@ -173,14 +161,12 @@ function onGitHub() {
 </template>
 
 <style scoped>
-/* Dot grid pattern */
 .dot-grid {
   background-image: radial-gradient(circle, var(--ui-border-muted) 1px, transparent 1px);
   background-size: 24px 24px;
   mask-image: radial-gradient(ellipse 50% 60% at 50% 40%, black 20%, transparent 70%);
 }
 
-/* Crosshair marks at corners */
 .cross::before,
 .cross::after {
   content: '';
@@ -229,7 +215,6 @@ function onGitHub() {
   padding-bottom: 0;
 }
 
-/* Glow pulse animation */
 @keyframes glow-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }

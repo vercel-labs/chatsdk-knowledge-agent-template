@@ -18,19 +18,16 @@ export default defineEventHandler(async (event) => {
   const sourcesFilter = typeof query.sources === 'string' && query.sources ? query.sources.split(',') : null
   const modelsFilter = typeof query.models === 'string' && query.models ? query.models.split(',') : null
 
-  // Current period
   const endDate = new Date()
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  // Previous period (for trends comparison)
+  // Previous period for trends comparison
   const prevEndDate = new Date(startDate)
   const prevStartDate = new Date(startDate)
   prevStartDate.setDate(prevStartDate.getDate() - days)
 
-  // Fetch all three independent data sources in parallel
   const [messagesWithStats, prevMessagesWithStats, apiUsageDataRaw] = await Promise.all([
-    // Current period messages
     db
       .select({
         chatId: schema.messages.chatId,
@@ -49,7 +46,6 @@ export default defineEventHandler(async (event) => {
         ),
       )
       .orderBy(desc(schema.messages.createdAt)),
-    // Previous period messages (for trends)
     db
       .select({
         chatId: schema.messages.chatId,
@@ -64,7 +60,6 @@ export default defineEventHandler(async (event) => {
           lt(schema.messages.createdAt, prevEndDate),
         ),
       ),
-    // API usage data
     db
       .select({
         source: schema.apiUsage.source,
@@ -79,12 +74,9 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(schema.apiUsage.createdAt)),
   ])
 
-  // Get chat -> user mapping for user stats (depends on messagesWithStats)
   const chatIds = [...new Set(messagesWithStats.map(m => m.chatId))]
-  // Get prev chat IDs for trend (depends on prevMessagesWithStats)
   const prevChatIds = [...new Set(prevMessagesWithStats.map(m => m.chatId))]
 
-  // Fetch chats and prev chats in parallel (both independent from each other)
   const [chatsData, prevChatsData] = await Promise.all([
     chatIds.length > 0
       ? db.select({ id: schema.chats.id, userId: schema.chats.userId }).from(schema.chats)
@@ -108,7 +100,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Get user info for top users
   const userIds = [...new Set(chatUserMap.values())]
   const usersData = userIds.length > 0
     ? await db
@@ -128,7 +119,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Collect available sources and models from unfiltered data (for dropdown options)
+  // Collect from unfiltered data so dropdown options include all values
   const allSources = new Set<string>(['web'])
   const allModels = new Set<string>()
   for (const msg of messagesWithStats) {
@@ -141,7 +132,6 @@ export default defineEventHandler(async (event) => {
   const availableSources = Array.from(allSources).sort()
   const availableModels = Array.from(allModels).sort()
 
-  // Apply filters
   const filteredMessages = messagesWithStats.filter((msg) => {
     if (sourcesFilter && !sourcesFilter.includes('web')) return false
     if (modelsFilter && !modelsFilter.includes(msg.model ?? 'unknown')) return false
@@ -184,7 +174,6 @@ export default defineEventHandler(async (event) => {
     totalDurationMs: number
   }>()
 
-  // User stats aggregation
   const byUserMap = new Map<string, {
     messageCount: number
     inputTokens: number
@@ -192,10 +181,7 @@ export default defineEventHandler(async (event) => {
     totalDurationMs: number
   }>()
 
-  // Daily by source aggregation
   const dailyBySourceMap = new Map<string, Map<string, { messageCount: number, inputTokens: number, outputTokens: number }>>()
-
-  // Hourly distribution (0-23)
   const hourlyBuckets: Array<{ messageCount: number, totalTokens: number }> = Array.from({ length: 24 }, () => ({ messageCount: 0, totalTokens: 0 }))
 
   bySourceMap.set('web', { requests: 0, inputTokens: 0, outputTokens: 0, totalDurationMs: 0 })
@@ -246,7 +232,6 @@ export default defineEventHandler(async (event) => {
     webStats.outputTokens += msg.outputTokens ?? 0
     webStats.totalDurationMs += msg.durationMs ?? 0
 
-    // Daily by source
     if (!dailyBySourceMap.has(dateStr)) dailyBySourceMap.set(dateStr, new Map())
     const daySourceMap = dailyBySourceMap.get(dateStr)!
     const daySourceStats = daySourceMap.get('web') ?? { messageCount: 0, inputTokens: 0, outputTokens: 0 }
@@ -255,12 +240,10 @@ export default defineEventHandler(async (event) => {
     daySourceStats.outputTokens += msg.outputTokens ?? 0
     daySourceMap.set('web', daySourceStats)
 
-    // Hourly distribution
     const hour = msg.createdAt.getUTCHours()
     hourlyBuckets[hour]!.messageCount++
     hourlyBuckets[hour]!.totalTokens += (msg.inputTokens ?? 0) + (msg.outputTokens ?? 0)
 
-    // Aggregate by user
     const userId = chatUserMap.get(msg.chatId)
     if (userId) {
       const userStats = byUserMap.get(userId) ?? { messageCount: 0, inputTokens: 0, outputTokens: 0, totalDurationMs: 0 }
@@ -315,7 +298,6 @@ export default defineEventHandler(async (event) => {
     dayModelStats.totalDurationMs += usage.durationMs ?? 0
     dayModelMap.set(modelKey, dayModelStats)
 
-    // Daily by source for API usage
     if (!dailyBySourceMap.has(dateStr)) dailyBySourceMap.set(dateStr, new Map())
     const daySourceMap2 = dailyBySourceMap.get(dateStr)!
     const daySourceStats2 = daySourceMap2.get(source) ?? { messageCount: 0, inputTokens: 0, outputTokens: 0 }
@@ -324,20 +306,17 @@ export default defineEventHandler(async (event) => {
     daySourceStats2.outputTokens += usage.outputTokens ?? 0
     daySourceMap2.set(source, daySourceStats2)
 
-    // Hourly distribution for API usage
     const hour = usage.createdAt.getUTCHours()
     hourlyBuckets[hour]!.messageCount++
     hourlyBuckets[hour]!.totalTokens += (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
   }
 
-  // Calculate previous period totals for trends
   const prevTotalMessages = prevMessagesWithStats.length
   let prevTotalTokens = 0
   for (const msg of prevMessagesWithStats) {
     prevTotalTokens += (msg.inputTokens ?? 0) + (msg.outputTokens ?? 0)
   }
 
-  // Calculate trend percentages
   function calcTrend(current: number, previous: number): number | null {
     if (previous === 0) return current > 0 ? 100 : null
     return Math.round(((current - previous) / previous) * 100)
@@ -368,7 +347,6 @@ export default defineEventHandler(async (event) => {
     }))
     .sort((a, b) => b.requests - a.requests)
 
-  // Top users by message count
   const topUsers = Array.from(byUserMap.entries())
     .map(([userId, stats]) => {
       const userInfo = userInfoMap.get(userId)
@@ -458,14 +436,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Hourly distribution
   const hourlyDistribution = hourlyBuckets.map((bucket, hour) => ({
     hour,
     messageCount: bucket.messageCount,
     totalTokens: bucket.totalTokens,
   }))
 
-  // Estimated cost from byModel using dynamic gateway pricing
   const pricingMap = await getModelPricingMap()
   const estimatedCost = computeEstimatedCost(byModel, pricingMap)
 

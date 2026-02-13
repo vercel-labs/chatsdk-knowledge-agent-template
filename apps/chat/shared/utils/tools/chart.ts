@@ -21,7 +21,6 @@ function fillDateGaps(options: {
   const { data, xKey, seriesKeys, startDate, endDate } = options
   if (data.length === 0) return data
 
-  // Check if xKey values look like dates
   const allDates = data.every(d => DATE_REGEX.test(String(d[xKey])))
   if (!allDates) return data
 

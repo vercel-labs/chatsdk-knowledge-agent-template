@@ -82,7 +82,6 @@ function copyKey(key: string) {
     </header>
 
     <div class="space-y-6">
-      <!-- Revealed key banner -->
       <div v-if="revealedKey" class="rounded-lg border border-primary/30 bg-primary/5 p-4">
         <div class="flex items-center gap-2 mb-2">
           <UIcon name="i-lucide-alert-triangle" class="size-4 text-primary" />
@@ -112,7 +111,6 @@ function copyKey(key: string) {
         </div>
       </div>
 
-      <!-- Create admin key -->
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           Create admin key
@@ -135,7 +133,6 @@ function copyKey(key: string) {
         </div>
       </section>
 
-      <!-- All keys -->
       <section>
         <h2 class="text-[10px] text-muted uppercase tracking-wide mb-3 font-pixel">
           All keys

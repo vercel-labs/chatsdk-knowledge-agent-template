@@ -17,11 +17,9 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
   log.info('stats', `[${stepId}] Computing stats for ${date} (attempt ${attempt})`)
 
   try {
-    // Parse date boundaries
     const startDate = new Date(`${date}T00:00:00.000Z`)
     const endDate = new Date(`${date}T23:59:59.999Z`)
 
-    // Get all assistant messages with stats for this date
     const messagesWithStats = await db
       .select({
         chatId: schema.messages.chatId,
@@ -52,7 +50,6 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
 
     log.info('stats', `[${stepId}] Found ${messagesWithStats.length} messages to aggregate`)
 
-    // Get chat -> user mapping
     const chatIds = [...new Set(messagesWithStats.map(m => m.chatId))]
     const chats = await db
       .select({ id: schema.chats.id, userId: schema.chats.userId })
@@ -70,7 +67,6 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
       }
     }
 
-    // Aggregate by userId + model
     const userModelMap = new Map<string, AggregatedStats>()
     const globalModelMap = new Map<string, AggregatedStats>()
 
@@ -83,7 +79,6 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
       const outputTokens = msg.outputTokens ?? 0
       const durationMs = msg.durationMs ?? 0
 
-      // User stats
       if (userId) {
         const userKey = `${userId}:${msg.model}`
         const userStats = userModelMap.get(userKey) ?? {
@@ -118,11 +113,9 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
       globalModelMap.set(globalKey, globalStats)
     }
 
-    // Upsert into usage_stats table
     const allStats = [...userModelMap.values(), ...globalModelMap.values()]
 
     for (const stats of allStats) {
-      // Check if record exists
       const existing = await db
         .select()
         .from(schema.usageStats)
@@ -138,7 +131,6 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
         .limit(1)
 
       if (existing.length > 0) {
-        // Update existing record
         await db
           .update(schema.usageStats)
           .set({
@@ -149,7 +141,6 @@ export async function stepAggregateStats(date: string): Promise<ComputeStatsResu
           })
           .where(eq(schema.usageStats.id, existing[0]!.id))
       } else {
-        // Insert new record
         await db.insert(schema.usageStats).values({
           date,
           userId: stats.userId,

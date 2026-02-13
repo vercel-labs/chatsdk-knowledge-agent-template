@@ -29,7 +29,6 @@ export default defineCachedEventHandler(
       })
     }
 
-    // Fetch user info from Better Auth's user table
     const user = await db.select({
       name: schema.user.name,
       image: schema.user.image,

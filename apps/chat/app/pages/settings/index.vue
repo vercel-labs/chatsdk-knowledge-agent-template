@@ -7,7 +7,6 @@ const toast = useToast()
 const overlay = useOverlay()
 const { client, user, session, signOut, fetchSession } = useUserSession()
 
-// Profile
 const nameInput = ref(user.value?.name ?? '')
 const isSavingProfile = ref(false)
 
@@ -28,7 +27,6 @@ async function saveProfile() {
   }
 }
 
-// Security
 const currentPassword = ref('')
 const newPassword = ref('')
 const isChangingPassword = ref(false)
@@ -47,7 +45,6 @@ async function changePassword() {
   }
 }
 
-// Connected accounts
 const { data: accounts, refresh: refreshAccounts, status: accountsStatus } = useLazyAsyncData('user-accounts', () => client!.listAccounts(), { server: false })
 const isLinkingGithub = ref(false)
 const isUnlinking = ref(false)
@@ -79,7 +76,6 @@ async function unlinkGithub() {
   }
 }
 
-// Sessions
 const { data: sessions, refresh: refreshSessions, status: sessionsStatus } = useLazyAsyncData('user-sessions', () => client!.listSessions(), { server: false })
 const revokingSession = ref<string | null>(null)
 const isRevokingAll = ref(false)
@@ -110,7 +106,6 @@ async function revokeOtherSessions() {
   }
 }
 
-// Delete account
 const deleteAccountModal = overlay.create(LazyModalConfirm, {
   props: {
     title: 'Delete account',

@@ -116,7 +116,6 @@ export class SavoirClient {
         })
       }
 
-      // Update session ID from response
       if (data.sessionId) {
         this.sessionId = data.sessionId
       }

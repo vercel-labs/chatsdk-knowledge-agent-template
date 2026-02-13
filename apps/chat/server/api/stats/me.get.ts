@@ -10,7 +10,6 @@ export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
   const userId = user.id
 
-  // Get all chats for this user
   const userChats = await db
     .select({ id: schema.chats.id })
     .from(schema.chats)
@@ -28,7 +27,6 @@ export default defineEventHandler(async (event) => {
 
   const chatIds = userChats.map(c => c.id)
 
-  // Get all assistant messages with stats for user's chats
   const messagesWithStats = await db
     .select({
       model: schema.messages.model,
@@ -40,7 +38,6 @@ export default defineEventHandler(async (event) => {
     .where(
       and(
         isNotNull(schema.messages.model),
-        // Filter by chat IDs - using SQL IN
         chatIds.length === 1
           ? eq(schema.messages.chatId, chatIds[0]!)
           : undefined // Will need to handle multiple chats differently
@@ -62,7 +59,6 @@ export default defineEventHandler(async (event) => {
       .then(msgs => msgs.filter(m => chatIds.includes(m.chatId)))
     : messagesWithStats
 
-  // Calculate totals
   let totalMessages = 0
   let totalInputTokens = 0
   let totalOutputTokens = 0
