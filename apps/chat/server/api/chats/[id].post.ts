@@ -1,4 +1,4 @@
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { kv } from '@nuxthub/kv'
@@ -299,6 +299,24 @@ export default defineEventHandler(async (event) => {
           abortSignal: abortController.signal,
         })
         writer.merge(result.toUIMessageStream())
+
+        // Fallback: if the agent exhausted all steps on tool calls without
+        // producing any text, do one final call with NO tools to force a response.
+        const agentText = await result.text
+        if (!agentText?.trim()) {
+          log.info('chat', `[${requestId}] Agent produced no text, forcing fallback response`)
+          const agentResponse = await result.response
+          const convertedMessages = await convertToModelMessages(messages)
+          const fallback = streamText({
+            model: effectiveModel,
+            messages: [
+              ...convertedMessages,
+              ...agentResponse.messages,
+            ],
+            abortSignal: abortController.signal,
+          })
+          writer.merge(fallback.toUIMessageStream())
+        }
       },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()

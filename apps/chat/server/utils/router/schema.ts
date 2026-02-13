@@ -12,9 +12,9 @@ export const agentConfigSchema = z.object({
 
   model: z.enum([
     'google/gemini-3-flash',
-    'google/gemini-2.5-flash-lite',
-    'anthropic/claude-opus-4.5',
-  ]).describe('flash-lite for trivial/simple, flash for moderate, opus for complex'),
+    'anthropic/claude-sonnet-4.5',
+    'anthropic/claude-opus-4.6',
+  ]).describe('flash for trivial/simple, sonnet for moderate, opus for complex'),
 
   reasoning: z.string().max(200)
     .describe('Brief explanation of the classification'),
@@ -26,7 +26,7 @@ export function getDefaultConfig(): AgentConfig {
   return {
     complexity: 'moderate',
     maxSteps: 15,
-    model: 'google/gemini-3-flash',
+    model: 'anthropic/claude-sonnet-4.5',
     reasoning: 'Default fallback configuration',
   }
 }

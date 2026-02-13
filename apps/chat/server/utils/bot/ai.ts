@@ -1,6 +1,6 @@
 import { generateText, Output } from 'ai'
 import { log } from 'evlog'
-import { type AgentConfig, agentConfigSchema, getDefaultConfig, ROUTER_MODEL } from '../router/schema'
+import { type AgentConfig, agentConfigSchema, DEFAULT_MODEL, getDefaultConfig, ROUTER_MODEL } from '../router/schema'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
 import { buildBotSystemPrompt, buildBotUserMessage } from '../prompts/bot'
 import { createAgent } from '../create-agent'
@@ -93,8 +93,23 @@ export async function generateAIResponse(
       metadata: context ? { source: context.source } : undefined,
     }).catch(() => {})
 
-    if (!result.text) {
-      return `I searched the documentation but couldn't generate a helpful response for:
+    // If the agent exhausted all steps on tool calls without producing text,
+    // do one final call with NO tools to force a text response.
+    if (!result.text?.trim()) {
+      log.info('bot', 'Agent produced no text, forcing fallback generation')
+      const fallback = await generateText({
+        model: DEFAULT_MODEL,
+        messages: [
+          { role: 'user', content: buildBotUserMessage(question, context) },
+          ...result.response.messages,
+        ],
+      })
+      if (fallback.text?.trim()) {
+        return fallback.text
+      }
+    }
+
+    return result.text || `I searched the documentation but couldn't generate a helpful response for:
 
 > ${question}
 
@@ -102,9 +117,6 @@ export async function generateAIResponse(
 - Try rephrasing your question with different keywords
 - Check the official documentation directly
 - Open a discussion for more complex questions`
-    }
-
-    return result.text
   } catch (error) {
     const durationMs = Date.now() - startTime
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
