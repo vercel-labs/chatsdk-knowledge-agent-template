@@ -19,8 +19,7 @@ function sanitizeToolCallInputs(messages: ModelMessage[]): ModelMessage[] {
         log.warn('agent', `Sanitizing tool-call input for ${part.toolName}: input was a string, parsing to object`)
         try {
           part.input = JSON.parse(part.input)
-        }
-        catch {
+        } catch {
           part.input = {}
         }
       }

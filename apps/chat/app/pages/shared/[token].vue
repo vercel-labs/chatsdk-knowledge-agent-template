@@ -119,45 +119,45 @@ onMounted(() => {
         <div ref="scrollRef" class="flex-1 overflow-y-auto">
           <UContainer class="flex flex-col">
             <UChatMessages
-            :messages="data?.messages || []"
-            status="ready"
-            class="pt-4 sm:pt-6 pb-4 sm:pb-6"
-          >
-            <template #content="{ message }">
-              <template v-for="(part, index) in message.parts.filter(p => p.type !== 'data-sources')" :key="`${message.id}-${part.type}-${index}-${part.type.startsWith('tool-') ? (part as any).state ?? '' : ''}`">
-                <Reasoning
-                  v-if="part.type === 'reasoning'"
-                  :text="part.text"
-                  :is-streaming="false"
-                />
-                <MDCCached
-                  v-else-if="part.type === 'text' && message.role === 'assistant'"
-                  :value="part.text"
-                  :cache-key="`${message.id}-${index}`"
-                  :components
-                  :parser-options="{ highlight: false }"
-                  class="*:first:mt-0 *:last:mb-0"
-                />
-                <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
-                  {{ part.text }}
-                </p>
-                <ToolChart
-                  v-else-if="part.type === 'tool-chart'"
-                  :invocation="(part as ChartUIToolInvocation)"
-                />
-                <FileAvatar
-                  v-else-if="part.type === 'file'"
-                  :name="getFileName(part.url)"
-                  :type="part.mediaType"
-                  :preview-url="part.url"
-                />
+              :messages="data?.messages || []"
+              status="ready"
+              class="pt-4 sm:pt-6 pb-4 sm:pb-6"
+            >
+              <template #content="{ message }">
+                <template v-for="(part, index) in message.parts.filter(p => p.type !== 'data-sources')" :key="`${message.id}-${part.type}-${index}-${part.type.startsWith('tool-') ? (part as any).state ?? '' : ''}`">
+                  <Reasoning
+                    v-if="part.type === 'reasoning'"
+                    :text="part.text"
+                    :is-streaming="false"
+                  />
+                  <MDCCached
+                    v-else-if="part.type === 'text' && message.role === 'assistant'"
+                    :value="part.text"
+                    :cache-key="`${message.id}-${index}`"
+                    :components
+                    :parser-options="{ highlight: false }"
+                    class="*:first:mt-0 *:last:mb-0"
+                  />
+                  <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
+                    {{ part.text }}
+                  </p>
+                  <ToolChart
+                    v-else-if="part.type === 'tool-chart'"
+                    :invocation="(part as ChartUIToolInvocation)"
+                  />
+                  <FileAvatar
+                    v-else-if="part.type === 'file'"
+                    :name="getFileName(part.url)"
+                    :type="part.mediaType"
+                    :preview-url="part.url"
+                  />
+                </template>
+                <template v-for="(part, index) in (message.parts.filter(p => p.type === 'data-sources') as DataSourcesPart[])" :key="`${message.id}-sources-${index}`">
+                  <SourceChips
+                    :sources="part.data.sources"
+                  />
+                </template>
               </template>
-              <template v-for="(part, index) in (message.parts.filter(p => p.type === 'data-sources') as DataSourcesPart[])" :key="`${message.id}-sources-${index}`">
-                <SourceChips
-                  :sources="part.data.sources"
-                />
-              </template>
-            </template>
             </UChatMessages>
           </UContainer>
         </div>
