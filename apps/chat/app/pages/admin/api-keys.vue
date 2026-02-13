@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { LazyModalConfirm } from '#components'
 
+useSeoMeta({ title: 'API Keys - Admin' })
+
 interface ApiKeyRow {
   id: string
   name: string | null

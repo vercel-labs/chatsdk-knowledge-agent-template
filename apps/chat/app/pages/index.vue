@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ auth: 'user' })
 
+useSeoMeta({ title: 'New chat' })
+
 const input = ref('')
 const loading = ref(false)
 const chatId = crypto.randomUUID()

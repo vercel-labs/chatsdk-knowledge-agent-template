@@ -3,6 +3,8 @@ import type { DefineComponent } from 'vue'
 import PreStream from '../../../components/prose/PreStream.vue'
 import content from '../../../content/docs/getting-started.md?raw'
 
+useSeoMeta({ title: 'Getting Started - Admin' })
+
 const components = {
   pre: PreStream as unknown as DefineComponent,
 }

@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
-import type { ToolCallCallback, ToolCallInfo, GenerateResult, ReportUsageOptions } from '@savoir/sdk'
+import type { ToolCallCallback, GenerateResult, ReportUsageOptions } from '@savoir/sdk'
 import { getOrCreateSandbox } from '../sandbox/manager'
 import { getAgentConfig, type AgentConfigData } from '../agent-config'
 

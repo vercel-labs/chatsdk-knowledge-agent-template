@@ -1,4 +1,6 @@
 <script setup lang="ts">
+useSeoMeta({ title: 'Assistant - Admin' })
+
 const toast = useToast()
 
 interface AgentConfig {

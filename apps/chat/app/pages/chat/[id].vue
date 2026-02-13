@@ -58,6 +58,8 @@ if (data.value.mode) {
   setMode(data.value.mode as 'chat' | 'admin')
 }
 
+useSeoMeta({ title: () => data.value?.title || 'Chat' })
+
 const input = ref('')
 const isNewChat = (data.value?.messages.length ?? 0) <= 1
 

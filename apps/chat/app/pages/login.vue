@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: false, auth: 'guest' })
 
+useSeoMeta({ title: 'Sign in' })
+
 const mode = ref<'signin' | 'signup'>('signin')
 const loading = ref(false)
 const error = ref('')

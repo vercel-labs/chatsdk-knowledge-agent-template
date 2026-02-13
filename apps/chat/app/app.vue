@@ -17,13 +17,16 @@ useHead({
   }
 })
 
-const title = 'Savoir'
-const description = 'Savoir - Your intelligent AI assistant for knowledge and insights.'
+const description = 'Your intelligent AI assistant for knowledge and insights.'
+
+useHead({
+  titleTemplate: '%s - Savoir'
+})
 
 useSeoMeta({
-  title,
+  title: 'Savoir',
   description,
-  ogTitle: title,
+  ogTitle: 'Savoir',
   ogDescription: description,
   ogImage: '/og-image.png',
   twitterImage: '/og-image.png',

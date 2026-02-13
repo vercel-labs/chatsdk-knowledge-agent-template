@@ -1,4 +1,5 @@
 <script setup lang="ts">
+useSeoMeta({ title: 'Statistics - Admin' })
 
 const periodOptions = [
   { label: '7 days', value: 7 },

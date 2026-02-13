@@ -3,6 +3,8 @@ import type { DefineComponent } from 'vue'
 import PreStream from '../../../components/prose/PreStream.vue'
 import content from '../../../content/docs/api-keys.md?raw'
 
+useSeoMeta({ title: 'API Keys Docs - Admin' })
+
 const components = {
   pre: PreStream as unknown as DefineComponent,
 }

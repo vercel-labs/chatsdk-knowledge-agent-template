@@ -2,6 +2,8 @@
 import { formatDistanceToNow } from 'date-fns'
 import { LazyModalConfirm } from '#components'
 
+useSeoMeta({ title: 'Sources - Admin' })
+
 const SYNC_REMINDER_DAYS = 7
 const SYNC_REMINDER_MS = SYNC_REMINDER_DAYS * 24 * 60 * 60 * 1000
 const ITEMS_PER_PAGE = 5

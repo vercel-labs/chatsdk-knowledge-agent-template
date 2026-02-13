@@ -3,6 +3,8 @@ import { LazyModalConfirm } from '#components'
 
 definePageMeta({ auth: 'user' })
 
+useSeoMeta({ title: 'Settings' })
+
 const toast = useToast()
 const overlay = useOverlay()
 const { client, user, session, signOut, fetchSession } = useUserSession()

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { formatDistanceToNow } from 'date-fns'
 
+useSeoMeta({ title: 'Sandbox - Admin' })
+
 const {
   status,
   needsSync,

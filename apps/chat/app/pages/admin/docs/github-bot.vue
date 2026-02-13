@@ -3,6 +3,8 @@ import type { DefineComponent } from 'vue'
 import PreStream from '../../../components/prose/PreStream.vue'
 import content from '../../../content/docs/bot-setup.md?raw'
 
+useSeoMeta({ title: 'GitHub Bot - Admin' })
+
 const components = {
   pre: PreStream as unknown as DefineComponent,
 }

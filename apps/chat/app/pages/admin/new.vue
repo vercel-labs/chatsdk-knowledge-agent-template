@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SourceOcrItem } from '#shared/utils/source-ocr'
 
+useSeoMeta({ title: 'New Source - Admin' })
+
 interface PendingFile {
   id: string
   file: File

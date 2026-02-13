@@ -41,60 +41,84 @@ if (error.value) {
   })
 }
 
-useHead({
-  title: data.value?.title || 'Shared Chat | Savoir'
+useSeoMeta({
+  title: data.value?.title || 'Shared Chat'
 })
 
 definePageMeta({
   layout: false
 })
+
+const scrollRef = ref<HTMLElement>()
+const showTopFade = ref(false)
+const showBottomFade = ref(true)
+
+function updateFades() {
+  const el = scrollRef.value
+  if (!el) return
+  showTopFade.value = el.scrollTop > 8
+  showBottomFade.value = el.scrollTop + el.clientHeight < el.scrollHeight - 8
+}
+
+onMounted(() => {
+  const el = scrollRef.value
+  if (!el) return
+  el.addEventListener('scroll', updateFades, { passive: true })
+  const ro = new ResizeObserver(updateFades)
+  ro.observe(el)
+  nextTick(() => requestAnimationFrame(updateFades))
+
+  onUnmounted(() => {
+    el.removeEventListener('scroll', updateFades)
+    ro.disconnect()
+  })
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-default">
-    <UDashboardPanel id="shared-chat" class="relative" :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <UDashboardNavbar>
-          <template #leading>
-            <div class="flex items-center gap-3">
-              <NuxtLink to="/" class="flex items-end gap-0.5">
-                <Logo class="h-8 w-auto shrink-0" />
-                <span class="text-xl font-bold text-highlighted">Savoir</span>
-              </NuxtLink>
-            </div>
-          </template>
+  <div class="h-dvh bg-default flex flex-col overflow-hidden">
+    <!-- Fixed navbar -->
+    <header class="shrink-0 z-20 bg-default border-b border-default">
+      <div class="max-w-5xl mx-auto flex items-center justify-between px-4 h-12">
+        <NuxtLink to="/" class="flex items-center gap-2">
+          <UIcon name="i-custom-savoir" class="size-6 text-primary" />
+          <span class="text-lg font-bold font-pixel tracking-wide text-highlighted">Savoir</span>
+        </NuxtLink>
 
-          <template #center>
-            <div class="flex items-center gap-2">
-              <UAvatar
-                v-if="data?.author.image"
-                :src="data.author.image"
-                :alt="data.author.name"
-                size="xs"
-              />
-              <span class="text-sm text-muted">
-                {{ data?.title || 'Untitled' }}
-                <template v-if="data?.author.name">
-                  by {{ data.author.name }}
-                </template>
-              </span>
-            </div>
-          </template>
+        <div v-if="data?.title" class="hidden sm:flex items-center gap-2 text-sm text-muted truncate max-w-sm">
+          <UAvatar
+            v-if="data.author?.image"
+            :src="data.author.image"
+            :alt="data.author?.name"
+            size="2xs"
+          />
+          <span class="truncate">{{ data.title }}</span>
+        </div>
 
-          <template #trailing>
-            <UButton
-              label="Start your own chat"
-              to="/"
-              color="primary"
-              size="sm"
-            />
-          </template>
-        </UDashboardNavbar>
-      </template>
+        <UButton
+          label="Start your own chat"
+          to="/"
+          color="primary"
+          size="xs"
+        />
+      </div>
+    </header>
 
-      <template #body>
-        <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
-          <UChatMessages
+    <!-- Main content panel — fixed container, internal scroll -->
+    <div class="flex-1 flex flex-col m-2 min-h-0">
+      <div class="flex-1 flex flex-col rounded-xl ring ring-default bg-muted shadow-sm min-h-0 overflow-hidden relative">
+        <!-- Scroll fade indicators -->
+        <div
+          class="pointer-events-none absolute top-0 inset-x-0 h-12 bg-linear-to-b from-muted to-transparent z-10"
+        />
+        <div
+          class="pointer-events-none absolute bottom-10 inset-x-0 h-16 bg-linear-to-t from-muted to-transparent z-10 transition-opacity duration-150"
+          :class="showBottomFade ? 'opacity-100' : 'opacity-0'"
+        />
+
+        <div ref="scrollRef" class="flex-1 overflow-y-auto">
+          <UContainer class="flex flex-col">
+            <UChatMessages
             :messages="data?.messages || []"
             status="ready"
             class="pt-4 sm:pt-6 pb-4 sm:pb-6"
@@ -134,18 +158,20 @@ definePageMeta({
                 />
               </template>
             </template>
-          </UChatMessages>
+            </UChatMessages>
+          </UContainer>
+        </div>
 
-          <div class="sticky bottom-0 bg-default/75 backdrop-blur p-4 text-center border-t border-muted/20">
-            <p class="text-sm text-muted">
-              This is a shared chat in read-only mode.
-              <NuxtLink to="/" class="text-primary hover:underline">
-                Start your own conversation
-              </NuxtLink>
-            </p>
-          </div>
-        </UContainer>
-      </template>
-    </UDashboardPanel>
+        <!-- Bottom CTA — fixed at bottom of card -->
+        <div class="shrink-0 border-t border-default px-4 py-3">
+          <p class="text-center text-sm text-muted">
+            Read-only shared chat.
+            <NuxtLink to="/" class="text-primary hover:underline font-medium">
+              Start your own conversation
+            </NuxtLink>
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

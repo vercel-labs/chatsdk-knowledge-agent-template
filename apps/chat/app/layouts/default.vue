@@ -182,6 +182,9 @@ defineShortcuts({
       collapsible
       resizable
       class="border-e-0"
+      :ui="{
+        header: 'h-auto shrink-0 flex flex-col items-stretch gap-3 px-4 py-3'
+      }"
     >
       <template #header="{ collapsed }">
         <template v-if="isAdminRoute">
