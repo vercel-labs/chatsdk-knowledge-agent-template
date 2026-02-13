@@ -10,7 +10,7 @@ const providerIcons: Record<string, string> = {
 
 function getProviderIcon(modelId: string) {
   const [provider = ''] = modelId.split('/')
-  return providerIcons[provider] || 'i-lucide-bot'
+  return providerIcons[provider] || 'i-custom-bot'
 }
 
 const items = computed(() => models.map(m => ({

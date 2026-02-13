@@ -71,7 +71,7 @@ const chatQuickChats = [
   },
   {
     label: 'What are Nitro cache options and how to use them with Nuxt routeRules?',
-    icon: 'i-lucide-database'
+    icon: 'i-custom-docs'
   },
   {
     label: 'How does ofetch work and what\'s the difference with Nuxt useFetch?',
@@ -82,7 +82,7 @@ const chatQuickChats = [
 const adminQuickChats = [
   {
     label: 'Chart the daily token usage by model over the last 30 days',
-    icon: 'i-lucide-bar-chart-3'
+    icon: 'i-custom-chart'
   },
   {
     label: 'Show app health: error rate, latency p95, and slowest endpoints',

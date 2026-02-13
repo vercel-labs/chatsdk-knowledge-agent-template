@@ -324,7 +324,7 @@ async function deleteAccount() {
         <div class="rounded-lg border border-default divide-y divide-default">
           <NuxtLink to="/settings/api-keys" class="flex items-center justify-between gap-4 px-4 py-3 hover:bg-elevated/50 transition-colors">
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-key" class="size-5 text-highlighted" />
+              <UIcon name="i-custom-api-access" class="size-5 text-highlighted" />
               <div>
                 <p class="text-sm text-highlighted">
                   API Keys

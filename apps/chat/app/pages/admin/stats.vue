@@ -634,7 +634,7 @@ function getModelCost(modelId: string): number | null {
 
     <div v-else class="flex flex-col items-center py-16 border border-dashed border-default rounded-lg">
       <div class="size-10 rounded-lg bg-elevated flex items-center justify-center mb-4">
-        <UIcon name="i-lucide-bar-chart-3" class="size-5 text-muted" aria-hidden="true" />
+        <UIcon name="i-custom-chart" class="size-5 text-muted" aria-hidden="true" />
       </div>
       <p class="text-sm font-medium text-highlighted mb-1">
         No statistics available

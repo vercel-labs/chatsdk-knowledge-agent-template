@@ -34,7 +34,7 @@ const { data: chats, refresh: refreshChats } = await useFetch('/api/chats', {
     label: chat.title || 'Generating title…',
     generating: !chat.title,
     to: `/chat/${chat.id}`,
-    icon: chat.mode === 'admin' ? 'i-lucide-shield' : 'i-lucide-message-circle',
+    icon: chat.mode === 'admin' ? 'i-custom-shield' : 'i-custom-chat',
     mode: chat.mode,
     createdAt: chat.createdAt,
     isPublic: chat.isPublic,
@@ -80,24 +80,24 @@ function chatContextItems(chat: UIChat) {
 const adminNavigation = [
   [
     { label: 'General', type: 'label' as const },
-    { label: 'Sources', icon: 'i-lucide-database', to: '/admin', exact: true },
-    { label: 'Assistant', icon: 'i-lucide-bot', to: '/admin/agent' },
+    { label: 'Sources', icon: 'i-custom-docs', to: '/admin', exact: true },
+    { label: 'Assistant', icon: 'i-custom-bot', to: '/admin/agent' },
   ],
   [
     { label: 'System', type: 'label' as const },
-    { label: 'Sandbox', icon: 'i-lucide-box', to: '/admin/sandbox' },
-    { label: 'Statistics', icon: 'i-lucide-bar-chart-3', to: '/admin/stats' },
-    { label: 'Logs', icon: 'i-lucide-scroll-text', to: '/admin/logs' },
-    { label: 'API Keys', icon: 'i-lucide-key', to: '/admin/api-keys' },
+    { label: 'Sandbox', icon: 'i-custom-box', to: '/admin/sandbox' },
+    { label: 'Statistics', icon: 'i-custom-chart', to: '/admin/stats' },
+    { label: 'Logs', icon: 'i-custom-terminal', to: '/admin/logs' },
+    { label: 'API Keys', icon: 'i-custom-api-access', to: '/admin/api-keys' },
   ],
   [
     { label: 'Documentation', type: 'label' as const },
     { label: 'Getting Started', icon: 'i-lucide-rocket', to: '/admin/docs/getting-started' },
-    { label: 'API Keys', icon: 'i-lucide-key', to: '/admin/docs/api-keys' },
-    { label: 'SDK', icon: 'i-lucide-code', to: '/admin/docs/sdk' },
+    { label: 'API Keys', icon: 'i-custom-api-access', to: '/admin/docs/api-keys' },
+    { label: 'SDK', icon: 'i-custom-sdk', to: '/admin/docs/sdk' },
     { label: 'GitHub Bot', icon: 'i-simple-icons-github', to: '/admin/docs/github-bot' },
     { label: 'Discord Bot', icon: 'i-simple-icons-discord', to: '/admin/docs/discord-bot' },
-    { label: 'Admin Mode', icon: 'i-lucide-shield', to: '/admin/docs/admin-mode' },
+    { label: 'Admin Mode', icon: 'i-custom-shield', to: '/admin/docs/admin-mode' },
   ],
 ]
 
@@ -311,7 +311,7 @@ defineShortcuts({
                       ]"
                       @click="open = false"
                     >
-                      <UIcon v-if="(chat as any).mode === 'admin'" name="i-lucide-shield" class="size-4 shrink-0" />
+                      <UIcon v-if="(chat as any).mode === 'admin'" name="i-custom-shield" class="size-4 shrink-0" />
                       <TextScramble v-if="chat.generating" />
                       <span v-else class="truncate">{{ chat.label }}</span>
                     </NuxtLink>
