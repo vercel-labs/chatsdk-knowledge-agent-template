@@ -55,8 +55,7 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         top10Busiest: (busiest.rows ?? []).map((r: any) => ({ method: r.method, path: r.path, count: r.count })),
         top10ErrorPaths: (errorPaths.rows ?? []).map((r: any) => ({ method: r.method, path: r.path, count: r.count })),
       }
-    }
-    catch (error) {
+    } catch (error) {
       return { error: error instanceof Error ? error.message : 'Query failed' }
     }
   },
