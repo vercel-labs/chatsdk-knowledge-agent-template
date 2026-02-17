@@ -8,6 +8,8 @@ useSeoMeta({ title: 'API Keys Docs - Admin' })
 const components = {
   pre: PreStream as unknown as DefineComponent,
 }
+
+const tocLinks = useMarkdownToc(content)
 </script>
 
 <template>
@@ -21,4 +23,10 @@ const components = {
       />
     </div>
   </div>
+
+  <Teleport to="#doc-toc-target" defer>
+    <div class="w-56 py-8 pl-5 pr-8">
+      <DocToc :links="tocLinks" />
+    </div>
+  </Teleport>
 </template>

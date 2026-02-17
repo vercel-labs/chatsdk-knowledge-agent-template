@@ -19,7 +19,8 @@ For the full setup, see [Getting Started > GitHub App Setup](/admin/docs/getting
 
 | Variable | Description |
 |----------|-------------|
-| `NUXT_PUBLIC_GITHUB_BOT_TRIGGER` | The mention trigger for the bot (e.g. `@savoir-bot`). This must match the GitHub App name. |
+| `NUXT_PUBLIC_GITHUB_APP_NAME` | The GitHub App name (e.g. `savoir-bot`). Used to build the install URL and as the default bot username. |
+| `NUXT_PUBLIC_GITHUB_BOT_TRIGGER` | Optional override for the bot mention trigger. Defaults to the app name. |
 | `NUXT_GITHUB_APP_ID` | The App ID from your [GitHub App settings](https://github.com/settings/apps) |
 | `NUXT_GITHUB_APP_PRIVATE_KEY` | The private key (PEM format). Generate one from your app's settings page. Can be base64-encoded. |
 | `NUXT_GITHUB_WEBHOOK_SECRET` | The webhook secret you set when creating the app |
@@ -29,6 +30,8 @@ For the full setup, see [Getting Started > GitHub App Setup](/admin/docs/getting
 1. From your [GitHub App settings](https://github.com/settings/apps), click **Install App**
 2. Select the repositories where the bot should be active
 3. Confirm the installation
+
+Users can also install the app from the sidebar suggestion card or from the **Settings > Integrations** page.
 
 The app uses [installation access tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation) to interact with repositories -- no personal access token needed for the bot.
 
@@ -47,6 +50,15 @@ The bot will:
 4. React with a "thumbs up" emoji when done
 
 The bot only responds when explicitly mentioned. It ignores its own comments to prevent loops.
+
+## Custom Trigger Name
+
+By default, the bot responds to mentions matching the GitHub App name. If you want a different mention trigger, set `NUXT_PUBLIC_GITHUB_BOT_TRIGGER`:
+
+```bash
+NUXT_PUBLIC_GITHUB_APP_NAME=my-company-bot
+NUXT_PUBLIC_GITHUB_BOT_TRIGGER=ask-ai    # Users will @ask-ai instead of @my-company-bot
+```
 
 ## Auto-Reply to New Issues
 

@@ -60,7 +60,6 @@ function onMouseLeave() {
         @mouseenter="onMouseEnter"
         @mouseleave="onMouseLeave"
       >
-        <!-- Animated border glow -->
         <div
           class="holo-border-shine"
           :style="{
@@ -69,9 +68,7 @@ function onMouseLeave() {
           }"
         />
 
-        <!-- Inner card -->
         <div class="holo-inner p-3 relative overflow-hidden">
-          <!-- Surface shine -->
           <div
             class="holo-shine"
             :style="{

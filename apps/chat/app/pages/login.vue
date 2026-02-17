@@ -79,7 +79,9 @@ function onGitHub() {
 
 <template>
   <div class="flex min-h-dvh bg-default">
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
+      <UColorModeButton class="absolute top-4 right-4" />
+
       <div class="w-full max-w-sm">
         <div class="text-center mb-8">
           <div class="inline-flex items-center justify-center mb-4">
@@ -171,7 +173,7 @@ function onGitHub() {
       </div>
     </div>
 
-    <div class="hidden lg:block w-1/2 m-2 rounded-lg relative overflow-hidden">
+    <div class="hidden lg:block w-1/2 m-2 rounded-lg border border-muted/50 relative overflow-hidden">
       <ClientOnly>
         <Shader class="absolute inset-0 size-full">
           <Glow :intensity="2.69" :size="27.5" :threshold="0.37">
@@ -200,6 +202,7 @@ function onGitHub() {
           </Glow>
         </Shader>
       </ClientOnly>
+      <div class="absolute inset-0 rounded-lg shadow-[inset_0_4px_30px_rgba(0,0,0,0.5),inset_0_0_80px_rgba(0,0,0,0.35),inset_0_-2px_20px_rgba(0,0,0,0.25)] pointer-events-none" />
     </div>
   </div>
 </template>

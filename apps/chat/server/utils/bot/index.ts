@@ -91,16 +91,16 @@ ${error instanceof Error ? error.message : 'Unknown error'}
 function createBot(): Chat {
   const config = useRuntimeConfig()
 
-  const botTrigger = config.public.github?.botTrigger as string
-  if (!botTrigger) {
+  const appName = (config.public.github?.appName as string)?.replace(/^@/, '')
+  if (!appName) {
     throw createError({
-      message: 'Bot trigger not configured',
-      why: 'NUXT_PUBLIC_GITHUB_BOT_TRIGGER is not set',
-      fix: 'Set NUXT_PUBLIC_GITHUB_BOT_TRIGGER to the bot mention trigger (e.g. @nuxt-agent)',
+      message: 'GitHub App name not configured',
+      why: 'NUXT_PUBLIC_GITHUB_APP_NAME is not set',
+      fix: 'Set NUXT_PUBLIC_GITHUB_APP_NAME to the GitHub App name (e.g. savoir-bot)',
     })
   }
 
-  const botUserName = botTrigger.replace('@', '')
+  const botUserName = (config.public.github?.botTrigger as string)?.replace(/^@/, '') || appName
 
   const adapters: Record<string, Adapter> = {}
 

@@ -369,8 +369,11 @@ defineShortcuts({
           <div class="shrink-0 flex items-center justify-end sm:px-4 h-12">
             <UColorModeButton />
           </div>
-          <div ref="adminContentArea" class="flex-1 overflow-y-auto">
-            <slot />
+          <div class="flex-1 flex min-h-0">
+            <div ref="adminContentArea" class="flex-1 overflow-y-auto min-w-0">
+              <slot />
+            </div>
+            <div id="doc-toc-target" class="hidden xl:block shrink-0 overflow-y-auto" />
           </div>
         </template>
         <slot v-else />

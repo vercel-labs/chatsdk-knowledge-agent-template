@@ -25,7 +25,7 @@ cp apps/chat/.env.example apps/chat/.env
 
 | Variable | Description |
 |----------|-------------|
-| `NUXT_PUBLIC_GITHUB_BOT_TRIGGER` | Bot mention trigger (e.g. `@nuxt-agent`) |
+| `NUXT_PUBLIC_GITHUB_APP_NAME` | GitHub App name (e.g. `savoir-bot`) |
 | `NUXT_GITHUB_APP_ID` | GitHub App ID (same app as OAuth, see [GitHub App Setup](#github-app-setup)) |
 | `NUXT_GITHUB_APP_PRIVATE_KEY` | GitHub App private key (PEM format) |
 | `NUXT_GITHUB_WEBHOOK_SECRET` | Webhook secret for the GitHub App |

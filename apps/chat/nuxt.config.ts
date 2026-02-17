@@ -82,17 +82,21 @@ export default defineNuxtConfig({
     blob: true
   },
 
+  ssr: false,
+
   routeRules: {
-    // Shared chats are read-only, great ISR candidate
-    '/shared/**': { isr: { expiration: 300 } },
+    // Login page: SSR for fast first paint
+    '/login': { ssr: true },
+    // Shared chats: SSR + ISR for public access and SEO
+    '/shared/**': { ssr: true, isr: { expiration: 300 } },
     // Auth API routes should never be cached
     '/api/auth/**': { isr: false, cache: false },
     // Chat API responses are user-specific
     '/api/chats/**': { isr: false, cache: false },
     // Webhook routes should never be cached
     '/api/webhooks/**': { isr: false, cache: false },
-    // Admin pages are behind auth, skip ISR
-    '/admin/**': { isr: false, cache: false, auth: { user: { role: 'admin' } } },
+    // Admin pages are behind auth
+    '/admin/**': { auth: { user: { role: 'admin' } } },
   },
 
   runtimeConfig: {
@@ -119,8 +123,8 @@ export default defineNuxtConfig({
     public: {
       siteUrl: '',
       github: {
+        appName: '',
         botTrigger: '',
-        appSlug: '',
       },
       discordBotUrl: '',
     },
