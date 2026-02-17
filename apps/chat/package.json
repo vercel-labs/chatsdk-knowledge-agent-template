@@ -37,6 +37,7 @@
     "@onmax/nuxt-better-auth": "0.0.2-alpha.21",
     "@shelve/cli": "^4.1.7",
     "@upstash/redis": "^1.36.2",
+    "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.2.0",
     "@vercel/functions": "^3.4.1",
     "@vercel/sandbox": "^1.4.1",
