@@ -89,6 +89,7 @@ const adminNavigation = [
     { label: 'Statistics', icon: 'i-custom-chart', to: '/admin/stats' },
     { label: 'Logs', icon: 'i-custom-terminal', to: '/admin/logs' },
     { label: 'API Keys', icon: 'i-custom-api-access', to: '/admin/api-keys' },
+    { label: 'Users', icon: 'i-lucide-users', to: '/admin/users' },
   ],
   [
     { label: 'Documentation', type: 'label' as const },
@@ -219,13 +220,16 @@ defineShortcuts({
           <template v-if="!collapsed">
             <UserStats v-if="loggedIn" />
 
-            <UButton
-              label="New chat"
-              variant="soft"
-              block
+            <NuxtLink
               to="/"
+              class="block rounded-md p-px bg-linear-to-b from-[#e0dfe3] to-[#d8d7dc] dark:from-[#353539] dark:to-[#2a2a2e] shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3)] hover:brightness-110 active:scale-[0.98] transition-[filter,transform] duration-150"
               @click="open = false"
-            />
+            >
+              <div class="flex items-center gap-1.5 rounded-[calc(var(--radius-md)-1px)] px-2.5 py-1.5 text-sm text-highlighted bg-linear-to-b from-[#f8f7fa] to-[#f2f1f5] dark:from-[#222226] dark:to-[#1f1f23]">
+                <UIcon name="i-lucide-plus" class="size-3.5 shrink-0 text-muted" />
+                New chat
+              </div>
+            </NuxtLink>
           </template>
         </template>
       </template>
@@ -258,13 +262,15 @@ defineShortcuts({
 
         <template v-else>
           <template v-if="collapsed">
-            <UButton
-              icon="i-lucide-plus"
-              variant="soft"
-              block
+            <NuxtLink
               to="/"
+              class="flex items-center justify-center rounded-md p-px bg-linear-to-b from-[#e0dfe3] to-[#d8d7dc] dark:from-[#353539] dark:to-[#2a2a2e] shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3)] hover:brightness-110 active:scale-[0.98] transition-[filter,transform] duration-150"
               @click="open = false"
-            />
+            >
+              <div class="flex items-center justify-center rounded-[calc(var(--radius-md)-1px)] p-1.5 text-highlighted bg-linear-to-b from-[#f8f7fa] to-[#f2f1f5] dark:from-[#222226] dark:to-[#1f1f23]">
+                <UIcon name="i-lucide-plus" class="size-4" />
+              </div>
+            </NuxtLink>
             <UserMenu v-if="loggedIn" collapsed />
             <UTooltip v-else text="Sign in">
               <UButton

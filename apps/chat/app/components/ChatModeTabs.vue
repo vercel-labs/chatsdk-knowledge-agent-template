@@ -50,11 +50,11 @@ function onUpdate(value: string) {
       v-for="item in items"
       :key="item.value"
       ref="tabRefs"
-      class="relative flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors"
+      class="relative flex items-center gap-0.5 px-2 py-1 rounded-md text-xs transition-colors"
       :class="mode === item.value ? 'text-highlighted' : 'text-muted hover:text-highlighted'"
       @click="onUpdate(item.value)"
     >
-      <UIcon :name="item.icon" class="size-3" />
+      <UIcon :name="item.icon" class="size-4" />
       {{ item.label }}
     </button>
   </div>

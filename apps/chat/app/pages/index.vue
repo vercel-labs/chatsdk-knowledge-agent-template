@@ -118,7 +118,7 @@ const quickChats = computed(() => mode.value === 'admin' ? adminQuickChats : cha
     <template #body>
       <DragDropOverlay :show="isDragging" />
       <UContainer ref="dropzoneRef" class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
-        <h1 class="text-3xl sm:text-4xl text-highlighted font-bold font-pixel tracking-wide">
+        <h1 class="text-3xl sm:text-4xl text-highlighted font-semibold tracking-wide">
           How can I help you today?
         </h1>
 

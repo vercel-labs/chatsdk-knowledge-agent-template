@@ -64,7 +64,7 @@ function onMouseLeave() {
           class="holo-border-shine"
           :style="{
             opacity: isHovering ? 1 : 0.3,
-            background: `radial-gradient(circle at ${shineX}% ${shineY}%, white 0%, oklch(90% 0 0 / 0.5) 30%, transparent 70%)`,
+            background: `radial-gradient(circle at ${shineX}% ${shineY}%, var(--holo-border-center) 0%, var(--holo-border-mid) 30%, transparent 70%)`,
           }"
         />
 
@@ -73,7 +73,7 @@ function onMouseLeave() {
             class="holo-shine"
             :style="{
               opacity: isHovering ? 1 : 0,
-              background: `radial-gradient(circle at ${shineX}% ${shineY}%, oklch(100% 0 0 / 0.12) 0%, oklch(95% 0 0 / 0.06) 35%, transparent 70%)`,
+              background: `radial-gradient(circle at ${shineX}% ${shineY}%, var(--holo-shine-center) 0%, var(--holo-shine-mid) 35%, transparent 70%)`,
             }"
           />
 
@@ -125,9 +125,23 @@ function onMouseLeave() {
 
 <style scoped>
 .holo-border {
-  background: oklch(30% 0 0 / 0.6);
+  --holo-border-center: oklch(98% 0 0);
+  --holo-border-mid: oklch(90% 0 0 / 0.4);
+  --holo-shine-center: oklch(100% 0 0 / 0.6);
+  --holo-shine-mid: oklch(98% 0 0 / 0.3);
+
+  background: oklch(82% 0 0 / 0.6);
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+:root.dark .holo-border {
+  --holo-border-center: white;
+  --holo-border-mid: oklch(90% 0 0 / 0.5);
+  --holo-shine-center: oklch(100% 0 0 / 0.12);
+  --holo-shine-mid: oklch(95% 0 0 / 0.06);
+
+  background: oklch(30% 0 0 / 0.6);
 }
 
 .holo-border-shine {
