@@ -20,22 +20,33 @@ defineRouteMeta({
   },
 })
 
-/** Build a human-readable label for an admin tool call (used as `command`). */
-function adminToolLabel(toolName: string, args: Record<string, unknown>): string {
+/** Build a short title for the collapsed tool call header. */
+function adminToolTitle(toolName: string, args: Record<string, unknown>): string {
   switch (toolName) {
-    case 'run_sql': {
-      const q = String(args?.query || '').trim()
-      return q.length > 80 ? `${q.slice(0, 80)}…` : q || 'SQL query'
-    }
+    case 'run_sql': return 'SQL query'
     case 'query_stats': return 'Query stats'
     case 'list_users': return 'List users'
     case 'list_sources': return 'List sources'
     case 'query_chats': return 'Query chats'
     case 'get_agent_config': return 'Get agent config'
-    case 'query_logs': return 'Query logs'
-    case 'log_stats': return 'Log stats'
-    case 'query_errors': return 'Query errors'
+    case 'query_logs': {
+      const filters = [args.level, args.method, args.path, args.status].filter(Boolean)
+      return filters.length ? `Query logs (${filters.join(', ')})` : 'Query logs'
+    }
+    case 'log_stats': return `Log stats (${args.hours || 24}h)`
+    case 'query_errors': return `Query errors (${args.hours || 24}h)`
     default: return toolName.replace(/_/g, ' ')
+  }
+}
+
+/** Build a detailed command string shown in the expanded tool call. */
+function adminToolCommand(toolName: string, args: Record<string, unknown>): string {
+  switch (toolName) {
+    case 'run_sql': {
+      const q = String(args?.query || '').trim()
+      return q.length > 120 ? `${q.slice(0, 120)}…` : q || 'SQL query'
+    }
+    default: return Object.entries(args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ') || toolName.replace(/_/g, ' ')
   }
 }
 
@@ -154,7 +165,8 @@ export default defineEventHandler(async (event) => {
             {
               ...(t as Record<string, unknown>),
               execute: (args: Record<string, unknown>, options: { toolCallId: string }) => {
-                const label = adminToolLabel(name, args)
+                const title = adminToolTitle(name, args)
+                const command = adminToolCommand(name, args)
 
                 // Emit loading event (same shape as SDK tools)
                 if (streamWriter) {
@@ -164,7 +176,7 @@ export default defineEventHandler(async (event) => {
                     data: {
                       toolCallId: options.toolCallId,
                       toolName: name,
-                      args: { command: label },
+                      args: { command: title },
                       state: 'loading',
                     },
                   })
@@ -182,14 +194,14 @@ export default defineEventHandler(async (event) => {
                       data: {
                         toolCallId: options.toolCallId,
                         toolName: name,
-                        args: { command: label },
+                        args: { command: title },
                         state: 'done',
                         result: {
                           success: true,
                           durationMs: Date.now() - start,
                           commands: [
                             {
-                              command: label,
+                              command,
                               stdout: JSON.stringify(output, null, 2),
                               stderr: '',
                               exitCode: 0,

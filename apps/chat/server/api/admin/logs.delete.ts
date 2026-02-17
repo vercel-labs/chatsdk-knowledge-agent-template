@@ -1,5 +1,5 @@
 import { db, schema } from '@nuxthub/db'
-import { lt } from 'drizzle-orm'
+import { lt, count } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
@@ -9,9 +9,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing "before" field (ISO date)' })
   }
 
-  const result = await db.delete(schema.evlogEvents).where(lt(schema.evlogEvents.timestamp, before))
+  const [countResult] = await db.select({ count: count() }).from(schema.evlogEvents).where(lt(schema.evlogEvents.timestamp, before))
+  const deletedCount = Number(countResult?.count ?? 0)
 
-  return {
-    deletedCount: result.rows.length ?? 0,
-  }
+  await db.delete(schema.evlogEvents).where(lt(schema.evlogEvents.timestamp, before))
+
+  return { deletedCount }
 })

@@ -171,7 +171,7 @@ function onGitHub() {
       </div>
     </div>
 
-    <div class="hidden lg:block w-1/2 relative overflow-hidden">
+    <div class="hidden lg:block w-1/2 m-2 rounded-lg relative overflow-hidden">
       <ClientOnly>
         <Shader class="absolute inset-0 size-full">
           <Glow :intensity="2.69" :size="27.5" :threshold="0.37">

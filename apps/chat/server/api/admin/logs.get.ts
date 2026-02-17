@@ -1,16 +1,16 @@
-import { db } from '@nuxthub/db'
-import { sql } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
+import { count, min } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
 
   const [total, oldest] = await Promise.all([
-    db.run(sql.raw(`SELECT COUNT(*) as count FROM evlog_events`)),
-    db.run(sql.raw(`SELECT MIN(timestamp) as oldest FROM evlog_events`)),
+    db.select({ count: count() }).from(schema.evlogEvents),
+    db.select({ oldest: min(schema.evlogEvents.timestamp) }).from(schema.evlogEvents),
   ])
 
   return {
-    totalCount: (total.rows[0] as any)?.count ?? 0,
-    oldestLog: (oldest.rows[0] as any)?.oldest ?? null,
+    totalCount: Number(total[0]?.count ?? 0),
+    oldestLog: oldest[0]?.oldest ?? null,
   }
 })

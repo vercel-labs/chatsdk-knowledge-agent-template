@@ -1,10 +1,12 @@
 import type { UIToolInvocation } from 'ai'
 import { tool } from 'ai'
 import { z } from 'zod'
-import { db } from '@nuxthub/db'
-import { sql } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
+import { and, gte, eq, or, like, isNotNull, count, max, sql, desc } from 'drizzle-orm'
 
 export type QueryErrorsUIToolInvocation = UIToolInvocation<typeof queryErrorsTool>
+
+const e = schema.evlogEvents
 
 export const queryErrorsTool = tool({
   description: `Error-focused log analysis. Returns recent errors with details, error groups by path or error message, and an error trend (count per hour).
@@ -17,36 +19,59 @@ Use this to investigate production errors and identify patterns.`,
   execute: async ({ hours, path, groupBy }) => {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
 
-    const conditions: string[] = [`timestamp >= '${cutoff}'`, `(status >= 500 OR level = 'error')`]
-    if (path) conditions.push(`path LIKE '${path}'`)
-    const where = conditions.join(' AND ')
+    const conditions = [
+      gte(e.timestamp, cutoff),
+      or(gte(e.status, 500), eq(e.level, 'error'))!,
+    ]
+    if (path) conditions.push(like(e.path, path))
+    const where = and(...conditions)
+
+    const hourExpr = sql<string>`left(${e.timestamp}, 13)`
 
     try {
       const [recentErrors, groups, trend] = await Promise.all([
-        db.run(sql.raw(`SELECT timestamp, method, path, status, duration_ms, error, data, request_id FROM evlog_events WHERE ${where} ORDER BY timestamp DESC LIMIT 20`)),
+        db.select({
+          timestamp: e.timestamp,
+          method: e.method,
+          path: e.path,
+          status: e.status,
+          durationMs: e.durationMs,
+          error: e.error,
+          data: e.data,
+          requestId: e.requestId,
+        }).from(e).where(where).orderBy(desc(e.timestamp)).limit(20),
+
         groupBy === 'path'
-          ? db.run(sql.raw(`SELECT method, path, COUNT(*) as count, MAX(timestamp) as last_seen FROM evlog_events WHERE ${where} GROUP BY method, path ORDER BY count DESC LIMIT 20`))
-          : db.run(sql.raw(`SELECT error, COUNT(*) as count, MAX(timestamp) as last_seen FROM evlog_events WHERE ${where} AND error IS NOT NULL GROUP BY error ORDER BY count DESC LIMIT 20`)),
-        db.run(sql.raw(`SELECT to_char(timestamp, 'YYYY-MM-DD HH24":00"') as hour, COUNT(*) as count FROM evlog_events WHERE ${where} GROUP BY hour ORDER BY hour`)),
+          ? db.select({
+            method: e.method,
+            path: e.path,
+            count: count(),
+            lastSeen: max(e.timestamp),
+          }).from(e).where(where).groupBy(e.method, e.path).orderBy(desc(sql`count(*)`)).limit(20)
+          : db.select({
+            error: e.error,
+            count: count(),
+            lastSeen: max(e.timestamp),
+          }).from(e).where(and(where, isNotNull(e.error))).groupBy(e.error).orderBy(desc(sql`count(*)`)).limit(20),
+
+        db.select({
+          hour: hourExpr,
+          count: count(),
+        }).from(e).where(where).groupBy(hourExpr).orderBy(hourExpr),
       ])
 
       return {
         period: `Last ${hours}h`,
-        recentErrors: (recentErrors.rows ?? []).map((r: any) => ({
-          timestamp: r.timestamp,
-          method: r.method,
-          path: r.path,
-          status: r.status,
-          durationMs: r.duration_ms,
+        recentErrors: recentErrors.map(r => ({
+          ...r,
           error: r.error ? truncate(String(r.error), 300) : null,
           data: r.data ? truncate(String(r.data), 200) : null,
-          requestId: r.request_id,
         })),
-        errorGroups: (groups.rows ?? []).map((r: any) => groupBy === 'path'
-          ? { method: r.method, path: r.path, count: r.count, lastSeen: r.last_seen }
-          : { error: truncate(String(r.error), 200), count: r.count, lastSeen: r.last_seen },
+        errorGroups: groups.map((r: any) => groupBy === 'path'
+          ? { method: r.method, path: r.path, count: Number(r.count), lastSeen: r.lastSeen }
+          : { error: truncate(String(r.error), 200), count: Number(r.count), lastSeen: r.lastSeen },
         ),
-        errorTrend: (trend.rows ?? []).map((r: any) => ({ hour: r.hour, count: r.count })),
+        errorTrend: trend.map(r => ({ hour: r.hour, count: Number(r.count) })),
       }
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Query failed' }
@@ -55,5 +80,5 @@ Use this to investigate production errors and identify patterns.`,
 })
 
 function truncate(str: string, max: number): string {
-  return str.length > max ? `${str.slice(0, max) }...` : str
+  return str.length > max ? `${str.slice(0, max)}...` : str
 }

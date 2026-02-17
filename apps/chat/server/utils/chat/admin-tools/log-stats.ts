@@ -1,10 +1,12 @@
 import type { UIToolInvocation } from 'ai'
 import { tool } from 'ai'
 import { z } from 'zod'
-import { db } from '@nuxthub/db'
-import { sql } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
+import { count, avg, max, sql, gte, and, isNotNull, desc } from 'drizzle-orm'
 
 export type LogStatsUIToolInvocation = UIToolInvocation<typeof logStatsTool>
+
+const e = schema.evlogEvents
 
 export const logStatsTool = tool({
   description: `Get aggregated log statistics for a dashboard-style overview of application health.
@@ -14,24 +16,58 @@ Returns total requests, error rate, status distribution, latency percentiles, to
   }),
   execute: async ({ hours }) => {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
-    const where = `timestamp >= '${cutoff}'`
+    const timeFilter = gte(e.timestamp, cutoff)
+
+    const statusBucket = sql<string>`case when ${e.status} >= 500 then '5xx' when ${e.status} >= 400 then '4xx' when ${e.status} >= 300 then '3xx' when ${e.status} >= 200 then '2xx' else 'other' end`
 
     try {
       const [overview, statusDist, levelDist, slowest, busiest, errorPaths, latencyRows] = await Promise.all([
-        db.run(sql.raw(`SELECT COUNT(*) as total, SUM(CASE WHEN status >= 500 THEN 1 ELSE 0 END) as errors, AVG(duration_ms) as avg_duration FROM evlog_events WHERE ${where}`)),
-        db.run(sql.raw(`SELECT CASE WHEN status >= 500 THEN '5xx' WHEN status >= 400 THEN '4xx' WHEN status >= 300 THEN '3xx' WHEN status >= 200 THEN '2xx' ELSE 'other' END as bucket, COUNT(*) as count FROM evlog_events WHERE ${where} AND status IS NOT NULL GROUP BY bucket ORDER BY bucket`)),
-        db.run(sql.raw(`SELECT level, COUNT(*) as count FROM evlog_events WHERE ${where} GROUP BY level ORDER BY count DESC`)),
-        db.run(sql.raw(`SELECT method, path, AVG(duration_ms) as avg_ms, MAX(duration_ms) as max_ms, COUNT(*) as count FROM evlog_events WHERE ${where} AND duration_ms IS NOT NULL GROUP BY method, path ORDER BY avg_ms DESC LIMIT 10`)),
-        db.run(sql.raw(`SELECT method, path, COUNT(*) as count FROM evlog_events WHERE ${where} GROUP BY method, path ORDER BY count DESC LIMIT 10`)),
-        db.run(sql.raw(`SELECT method, path, COUNT(*) as count FROM evlog_events WHERE ${where} AND status >= 500 GROUP BY method, path ORDER BY count DESC LIMIT 10`)),
-        db.run(sql.raw(`SELECT duration_ms FROM evlog_events WHERE ${where} AND duration_ms IS NOT NULL ORDER BY duration_ms`)),
+        db.select({
+          total: count(),
+          errors: sql<number>`coalesce(sum(case when ${e.status} >= 500 then 1 else 0 end), 0)`,
+          avgDuration: avg(e.durationMs),
+        }).from(e).where(timeFilter),
+
+        db.select({
+          bucket: statusBucket,
+          count: count(),
+        }).from(e).where(and(timeFilter, isNotNull(e.status))).groupBy(statusBucket).orderBy(statusBucket),
+
+        db.select({
+          level: e.level,
+          count: count(),
+        }).from(e).where(timeFilter).groupBy(e.level).orderBy(desc(sql`count(*)`)),
+
+        db.select({
+          method: e.method,
+          path: e.path,
+          avgMs: sql<number>`round(avg(${e.durationMs}))`,
+          maxMs: max(e.durationMs),
+          count: count(),
+        }).from(e).where(and(timeFilter, isNotNull(e.durationMs))).groupBy(e.method, e.path).orderBy(desc(sql`avg(${e.durationMs})`)).limit(10),
+
+        db.select({
+          method: e.method,
+          path: e.path,
+          count: count(),
+        }).from(e).where(timeFilter).groupBy(e.method, e.path).orderBy(desc(sql`count(*)`)).limit(10),
+
+        db.select({
+          method: e.method,
+          path: e.path,
+          count: count(),
+        }).from(e).where(and(timeFilter, gte(e.status, 500))).groupBy(e.method, e.path).orderBy(desc(sql`count(*)`)).limit(10),
+
+        db.select({
+          durationMs: e.durationMs,
+        }).from(e).where(and(timeFilter, isNotNull(e.durationMs))).orderBy(e.durationMs),
       ])
 
-      const total = (overview.rows[0] as any)?.total ?? 0
-      const errors = (overview.rows[0] as any)?.errors ?? 0
-      const avgDuration = Math.round((overview.rows[0] as any)?.avg_duration ?? 0)
+      const total = Number(overview[0]?.total ?? 0)
+      const errors = Number(overview[0]?.errors ?? 0)
+      const avgDuration = Math.round(Number(overview[0]?.avgDuration ?? 0))
 
-      const durations = (latencyRows.rows ?? []).map((r: any) => r.duration_ms as number)
+      const durations = latencyRows.map(r => r.durationMs as number)
       const percentile = (arr: number[], p: number) => {
         if (arr.length === 0) return 0
         const idx = Math.ceil((p / 100) * arr.length) - 1
@@ -43,17 +79,17 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         totalRequests: total,
         errorCount: errors,
         errorRate: total > 0 ? `${((errors / total) * 100).toFixed(1)}%` : '0%',
-        statusDistribution: (statusDist.rows ?? []).map((r: any) => ({ bucket: r.bucket, count: r.count })),
+        statusDistribution: statusDist.map(r => ({ bucket: r.bucket, count: Number(r.count) })),
         latency: {
           avgMs: avgDuration,
           p50Ms: percentile(durations, 50),
           p95Ms: percentile(durations, 95),
           p99Ms: percentile(durations, 99),
         },
-        levelBreakdown: (levelDist.rows ?? []).map((r: any) => ({ level: r.level, count: r.count })),
-        top10Slowest: (slowest.rows ?? []).map((r: any) => ({ method: r.method, path: r.path, avgMs: Math.round(r.avg_ms), maxMs: r.max_ms, count: r.count })),
-        top10Busiest: (busiest.rows ?? []).map((r: any) => ({ method: r.method, path: r.path, count: r.count })),
-        top10ErrorPaths: (errorPaths.rows ?? []).map((r: any) => ({ method: r.method, path: r.path, count: r.count })),
+        levelBreakdown: levelDist.map(r => ({ level: r.level, count: Number(r.count) })),
+        top10Slowest: slowest.map(r => ({ method: r.method, path: r.path, avgMs: Number(r.avgMs), maxMs: Number(r.maxMs), count: Number(r.count) })),
+        top10Busiest: busiest.map(r => ({ method: r.method, path: r.path, count: Number(r.count) })),
+        top10ErrorPaths: errorPaths.map(r => ({ method: r.method, path: r.path, count: Number(r.count) })),
       }
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Query failed' }
