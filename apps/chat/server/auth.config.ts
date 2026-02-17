@@ -1,5 +1,6 @@
 import { admin, apiKey } from 'better-auth/plugins'
-import { sql } from 'drizzle-orm'
+import { schema } from '@nuxthub/db'
+import { eq } from 'drizzle-orm'
 
 export default defineServerAuth(({ runtimeConfig, db }) => {
   const adminUsers = runtimeConfig.adminUsers?.split(',').map((s: string) => s.trim().toLowerCase()).filter(Boolean) || []
@@ -43,7 +44,7 @@ export default defineServerAuth(({ runtimeConfig, db }) => {
         create: {
           after: async (user: { id: string, email?: string, username?: string }) => {
             if ((user.email && adminUsers.includes(user.email.toLowerCase())) || (user.username && adminUsers.includes(user.username.toLowerCase()))) {
-              await db.run(sql`UPDATE user SET role = 'admin' WHERE id = ${user.id}`)
+              await db.update(schema.user).set({ role: 'admin' }).where(eq(schema.user.id, user.id))
             }
           },
         },

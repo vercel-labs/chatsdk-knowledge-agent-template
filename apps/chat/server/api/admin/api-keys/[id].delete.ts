@@ -1,5 +1,5 @@
-import { db } from '@nuxthub/db'
-import { sql } from 'drizzle-orm'
+import { db, schema } from '@nuxthub/db'
+import { eq } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing API key ID' })
   }
 
-  await db.run(sql`DELETE FROM "apikey" WHERE id = ${id}`)
+  await db.delete(schema.apikey).where(eq(schema.apikey.id, id))
 
   return { deleted: true }
 })

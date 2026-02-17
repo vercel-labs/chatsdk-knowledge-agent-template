@@ -27,7 +27,7 @@ Use this to investigate production errors and identify patterns.`,
         groupBy === 'path'
           ? db.run(sql.raw(`SELECT method, path, COUNT(*) as count, MAX(timestamp) as last_seen FROM evlog_events WHERE ${where} GROUP BY method, path ORDER BY count DESC LIMIT 20`))
           : db.run(sql.raw(`SELECT error, COUNT(*) as count, MAX(timestamp) as last_seen FROM evlog_events WHERE ${where} AND error IS NOT NULL GROUP BY error ORDER BY count DESC LIMIT 20`)),
-        db.run(sql.raw(`SELECT strftime('%Y-%m-%d %H:00', timestamp) as hour, COUNT(*) as count FROM evlog_events WHERE ${where} GROUP BY hour ORDER BY hour`)),
+        db.run(sql.raw(`SELECT to_char(timestamp, 'YYYY-MM-DD HH24":00"') as hour, COUNT(*) as count FROM evlog_events WHERE ${where} GROUP BY hour ORDER BY hour`)),
       ])
 
       return {

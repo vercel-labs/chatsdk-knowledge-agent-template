@@ -1,17 +1,17 @@
-import { sqliteTable, text, integer, index, uniqueIndex, real } from 'drizzle-orm/sqlite-core'
+import { pgTable, text, integer, index, uniqueIndex, real, boolean, timestamp, jsonb } from 'drizzle-orm/pg-core'
 // Better Auth manages user/session/account tables automatically via hub:db
 import { relations } from 'drizzle-orm'
 
 const timestamps = {
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date())
+  createdAt: timestamp('created_at').notNull().defaultNow()
 }
 
-export const chats = sqliteTable('chats', {
+export const chats = pgTable('chats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text('title'),
   userId: text('user_id').notNull(),
   mode: text('mode', { enum: ['chat', 'admin'] }).notNull().default('chat'),
-  isPublic: integer('is_public', { mode: 'boolean' }).notNull().default(false),
+  isPublic: boolean('is_public').notNull().default(false),
   shareToken: text('share_token'),
   ...timestamps
 }, table => [
@@ -23,11 +23,11 @@ export const chatsRelations = relations(chats, ({ many }) => ({
   messages: many(messages),
 }))
 
-export const messages = sqliteTable('messages', {
+export const messages = pgTable('messages', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
-  parts: text('parts', { mode: 'json' }),
+  parts: jsonb('parts'),
   feedback: text('feedback', { enum: ['positive', 'negative'] }),
   // Stats fields (for assistant messages only)
   model: text('model'),
@@ -45,7 +45,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   })
 }))
 
-export const sources = sqliteTable('sources', {
+export const sources = pgTable('sources', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   type: text('type', { enum: ['github', 'youtube'] }).notNull(),
   label: text('label').notNull(),
@@ -54,15 +54,15 @@ export const sources = sqliteTable('sources', {
   branch: text('branch'),
   contentPath: text('content_path'),
   outputPath: text('output_path'),
-  readmeOnly: integer('readme_only', { mode: 'boolean' }).default(false),
+  readmeOnly: boolean('readme_only').default(false),
   channelId: text('channel_id'),
   handle: text('handle'),
   maxVideos: integer('max_videos').default(50),
   ...timestamps,
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, table => [index('sources_type_idx').on(table.type)])
 
-export const agentConfig = sqliteTable('agent_config', {
+export const agentConfig = pgTable('agent_config', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull().default('default'),
   additionalPrompt: text('additional_prompt'),
@@ -73,12 +73,12 @@ export const agentConfig = sqliteTable('agent_config', {
   temperature: real('temperature').default(0.7),
   searchInstructions: text('search_instructions'),
   citationFormat: text('citation_format', { enum: ['inline', 'footnote', 'none'] }).default('inline'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
   ...timestamps,
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const apiUsage = sqliteTable('api_usage', {
+export const apiUsage = pgTable('api_usage', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   source: text('source').notNull(), // 'github-bot', 'sdk', 'discord-bot', etc.
   sourceId: text('source_id'), // Optional: issue number, PR number, etc.
@@ -86,14 +86,14 @@ export const apiUsage = sqliteTable('api_usage', {
   inputTokens: integer('input_tokens'),
   outputTokens: integer('output_tokens'),
   durationMs: integer('duration_ms'),
-  metadata: text('metadata', { mode: 'json' }), // Additional context (repo, user, etc.)
+  metadata: jsonb('metadata'), // Additional context (repo, user, etc.)
   ...timestamps
 }, table => [
   index('api_usage_source_idx').on(table.source),
   index('api_usage_created_at_idx').on(table.createdAt)
 ])
 
-export const usageStats = sqliteTable('usage_stats', {
+export const usageStats = pgTable('usage_stats', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   date: text('date').notNull(), // Format: YYYY-MM-DD
   userId: text('user_id'), // null = global stats
