@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { useLogger } from 'evlog'
+import { validateShellCommand } from '@savoir/sdk'
 import { getOrCreateSandbox } from '../../utils/sandbox/manager'
 
 const bodySchema = z.object({
@@ -11,95 +12,17 @@ const bodySchema = z.object({
   { message: 'Provide either "command" or "commands", not both' },
 )
 
-const ALLOWED_COMMANDS = new Set([
-  // File discovery
-  'find',
-  'ls',
-  'tree',
-  // Content search
-  'grep',
-  'egrep',
-  'fgrep',
-  // File reading
-  'cat',
-  'head',
-  'tail',
-  'less',
-  'more',
-  // Text processing (output filtering)
-  'wc',
-  'sort',
-  'uniq',
-  'cut',
-  'awk',
-  'sed',
-  'tr',
-  'column',
-  // Utilities
-  'echo',
-  'printf',
-  'test',
-  '[',
-  'true',
-  'false',
-  'basename',
-  'dirname',
-  'realpath',
-  'file',
-  'stat',
-  'du',
-  'diff',
-  'comm',
-  'xargs',
-  'tee',
-  // String/path helpers
-  'md5sum',
-  'sha256sum',
-])
-
-const BLOCKED_SHELL_PATTERNS = [
-  /\$\(/, // command substitution $(...)
-  /`[^`]+`/, // backtick substitution
-  /\beval\b/, // eval
-  /\bexec\b/, // exec
-  /\bsource\b/, // source
-  /\bbash\b/, // nested bash
-  /\bsh\b/, // nested sh
-  /\bzsh\b/, // nested zsh
-  /\benv\b/, // env (can run arbitrary commands)
-  />\s*[^\s|]/, // write redirection (> file)
-  /\bpython\b/, // interpreter
-  /\bnode\b/, // interpreter
-  /\bperl\b/, // interpreter
-  /\bruby\b/, // interpreter
-]
-
 const MAX_OUTPUT = 50000
 
 function validateCommand(command: string): void {
-  for (const pattern of BLOCKED_SHELL_PATTERNS) {
-    if (pattern.test(command)) {
-      throw createError({
-        statusCode: 400,
-        message: `Command contains blocked pattern: ${command.slice(0, 50)}`,
-      })
-    }
-  }
-
-  // Split by pipe, &&, ||, ; to get individual command segments
-  const segments = command.split(/\s*(?:\|(?!\|)|\|\||&&|;)\s*/)
-  for (const segment of segments) {
-    const trimmed = segment.trim()
-    if (!trimmed) continue
-    // Extract the command name (first word, ignoring env-style VAR=val prefixes)
-    const words = trimmed.split(/\s+/)
-    const cmdName = words.find(w => !w.includes('=')) || words[0]!
-    if (!ALLOWED_COMMANDS.has(cmdName)) {
-      throw createError({
-        statusCode: 400,
-        message: `Command not allowed: ${cmdName}`,
-      })
-    }
+  const validation = validateShellCommand(command, {
+    allowedBaseDirectory: '/vercel/sandbox',
+  })
+  if (!validation.ok) {
+    throw createError({
+      statusCode: 400,
+      message: validation.reason,
+    })
   }
 }
 

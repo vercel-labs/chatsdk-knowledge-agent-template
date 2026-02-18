@@ -92,6 +92,10 @@ bash_batch: [
 
 - **ALWAYS provide a text answer.** If you run out of relevant search results, answer with what you have. Never end on a tool call without a final response.
 - Do NOT output text between tool calls. Search silently, then provide your complete answer at the end.
+- Keep tool usage bounded: after a few tool calls, switch to synthesis and answer with the best available evidence.
+- Do not chase exhaustive search near the step limit. Prioritize delivering a clear final answer.
+- Never answer with placeholder text like "Done", "Finished", or "Complete". Provide a real answer or explicitly state what is missing.
+- If a tool fails, adapt once with a different command. Do not repeat the same failing command in a loop.
 - Use \`| head -N\` on all search output to keep context small.
 - Use \`grep -rlE "term1\\|term2"\` for multi-keyword search in one command.
 - Prefer \`grep -rl\` over \`grep -r\` — file paths are more useful than content dumps.

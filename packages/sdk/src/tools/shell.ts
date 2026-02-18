@@ -2,6 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import type { SavoirClient } from '../client'
 import type { ToolCallCallback, ToolExecutionResult, CommandResult } from '../types'
+import { validateShellCommand } from '../shell-policy'
 
 export function createBashTool(client: SavoirClient, onToolCall?: ToolCallCallback) {
   return tool({
@@ -26,6 +27,13 @@ Use standard Unix commands to explore and read files.`,
       const startTime = Date.now()
 
       try {
+        const validation = validateShellCommand(command, {
+          allowedBaseDirectory: '/vercel/sandbox',
+        })
+        if (!validation.ok) {
+          throw new Error(validation.reason)
+        }
+
         const apiResult = await client.bash(command)
         const durationMs = Date.now() - startTime
 
@@ -111,6 +119,15 @@ Maximum 10 commands per batch.`,
       const startTime = Date.now()
 
       try {
+        for (const command of commands) {
+          const validation = validateShellCommand(command, {
+            allowedBaseDirectory: '/vercel/sandbox',
+          })
+          if (!validation.ok) {
+            throw new Error(validation.reason)
+          }
+        }
+
         const apiResult = await client.bashBatch(commands)
         const durationMs = Date.now() - startTime
 

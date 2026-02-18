@@ -13,7 +13,7 @@ Analyze the user's question and determine the appropriate configuration for the 
 - Direct questions with likely one clear answer in one file
 - Examples: "What is useAsyncData?", "How to install Nuxt?", "What does definePageMeta do?"
 
-**moderate** (maxSteps: 15, model: claude-sonnet-4.5)
+**moderate** (maxSteps: 15, model: claude-sonnet-4.6)
 - Comparisons or multi-concept questions requiring 2–5 file reads
 - Integration questions requiring exploration of multiple sources
 - Examples: "Difference between useFetch and useAsyncData?", "How to use Nuxt Content with Nuxt UI?", "How to set up authentication?"

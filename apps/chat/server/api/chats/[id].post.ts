@@ -1,4 +1,4 @@
-import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { kv } from '@nuxthub/kv'
@@ -11,7 +11,8 @@ import { KV_KEYS } from '../../utils/sandbox/types'
 import { adminTools } from '../../utils/chat/admin-tools'
 import { ADMIN_SYSTEM_PROMPT, buildChatSystemPrompt } from '../../utils/prompts/chat'
 import { applyComplexity } from '../../utils/prompts/shared'
-import { createAgent, type RoutingResult } from '../../utils/create-agent'
+import { createAgent } from '../../utils/agent/create-agent'
+import type { RoutingResult } from '../../utils/agent/types'
 
 defineRouteMeta({
   openAPI: {
@@ -308,27 +309,10 @@ export default defineEventHandler(async (event) => {
 
         const result = await agent.stream({
           messages: await convertToModelMessages(messages),
+          options: {},
           abortSignal: abortController.signal,
         })
         writer.merge(result.toUIMessageStream())
-
-        // Fallback: if the agent exhausted all steps on tool calls without
-        // producing any text, do one final call with NO tools to force a response.
-        const agentText = await result.text
-        if (!agentText?.trim()) {
-          log.info('chat', `[${requestId}] Agent produced no text, forcing fallback response`)
-          const agentResponse = await result.response
-          const convertedMessages = await convertToModelMessages(messages)
-          const fallback = streamText({
-            model: effectiveModel,
-            messages: [
-              ...convertedMessages,
-              ...agentResponse.messages,
-            ],
-            abortSignal: abortController.signal,
-          })
-          writer.merge(fallback.toUIMessageStream())
-        }
       },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()

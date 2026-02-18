@@ -12,7 +12,7 @@ export const agentConfigSchema = z.object({
 
   model: z.enum([
     'google/gemini-3-flash',
-    'anthropic/claude-sonnet-4.5',
+    'anthropic/claude-sonnet-4.6',
     'anthropic/claude-opus-4.6',
   ]).describe('flash for trivial/simple, sonnet for moderate, opus for complex'),
 
@@ -26,7 +26,7 @@ export function getDefaultConfig(): AgentConfig {
   return {
     complexity: 'moderate',
     maxSteps: 15,
-    model: 'anthropic/claude-sonnet-4.5',
+    model: 'anthropic/claude-sonnet-4.6',
     reasoning: 'Default fallback configuration',
   }
 }
