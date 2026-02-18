@@ -14,8 +14,8 @@ ALWAYS prefer \`bash_batch\` over sequential \`bash\` calls. Combine search and 
 
 | Task | Command |
 |------|---------|
-| Find files by content | \`grep -rl "keyword" docs/ --include="*.md" \| head -5\` |
-| Multi-keyword search | \`grep -rlE "term1\|term2" docs/ --include="*.md" \| head -5\` |
+| Find files by content | \`grep -rl "keyword" docs/ --include="*.md" | head -5\` |
+| Multi-keyword search | \`grep -rlE "term1|term2" docs/ --include="*.md" | head -5\` |
 | Find files by name | \`find docs/ -name "*routing*" -name "*.md"\` |
 | Read file (partial) | \`head -100 docs/path/file.md\` |
 | Read file (full) | \`cat docs/path/file.md\` |
@@ -32,7 +32,7 @@ bash_batch: [
 ]
 \`\`\`
 
-Use \`| head -N\` on all search output. Use \`grep -rlE "term1\|term2"\` for multi-keyword search.
+Use \`| head -N\` on all search output. Use \`grep -rlE "term1|term2"\` for multi-keyword search.
 1–2 batched calls beats 5 sequential ones.
 
 **ALWAYS provide a text answer.** If you run out of relevant search results, answer with what you have. Never end on a tool call without a final response.

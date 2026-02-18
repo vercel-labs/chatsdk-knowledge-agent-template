@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
-import type { ToolCallCallback, GenerateResult, ReportUsageOptions } from '@savoir/sdk'
+import type { GenerateResult, ReportUsageOptions } from '@savoir/sdk'
 import { getOrCreateSandbox } from '../sandbox/manager'
 import { getAgentConfig, type AgentConfigData } from '../agent-config'
 
@@ -44,7 +44,6 @@ function truncateOutput(output: string): string {
 interface InternalSavoirConfig {
   source?: string
   sourceId?: string
-  onToolCall?: ToolCallCallback
 }
 
 export interface InternalSavoir {
@@ -56,7 +55,7 @@ export interface InternalSavoir {
   reportUsage: (result: GenerateResult, options?: ReportUsageOptions) => Promise<void>
 }
 
-function createInternalBashTool(onToolCall?: ToolCallCallback) {
+function createInternalBashTool() {
   let sessionId: string | undefined
 
   return tool({
@@ -65,69 +64,40 @@ Use standard Unix commands to explore and read files.`,
     inputSchema: z.object({
       command: z.string().describe('Bash command to execute'),
     }),
-    onInputAvailable: ({ toolCallId, input }) => {
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash',
-        args: input,
-        state: 'loading',
-      })
-    },
-    execute: async ({ command }, { toolCallId }) => {
+    execute: async function* ({ command }) {
+      yield { status: 'loading' as const }
+      const start = Date.now()
+
       validateCommand(command)
-      const startTime = Date.now()
 
-      try {
-        const active = await getOrCreateSandbox(sessionId)
-        ;({ sessionId } = active)
+      const active = await getOrCreateSandbox(sessionId)
+      ;({ sessionId } = active)
 
-        const result = await active.sandbox.runCommand({
-          cmd: 'bash',
-          args: ['-c', command],
-          cwd: '/vercel/sandbox',
-        })
+      const result = await active.sandbox.runCommand({
+        cmd: 'bash',
+        args: ['-c', command],
+        cwd: '/vercel/sandbox',
+      })
 
-        const stdout = truncateOutput(await result.stdout())
-        const stderr = truncateOutput(await result.stderr())
-        const durationMs = Date.now() - startTime
+      const stdout = truncateOutput(await result.stdout())
+      const stderr = truncateOutput(await result.stderr())
+      const durationMs = Date.now() - start
+      const success = result.exitCode === 0
 
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash',
-          args: { command },
-          state: 'done',
-          result: {
-            commands: [{ command, stdout, stderr, exitCode: result.exitCode, success: result.exitCode === 0 }],
-            success: result.exitCode === 0,
-            durationMs,
-          },
-        })
-
-        return { stdout, stderr, exitCode: result.exitCode }
-      } catch (error) {
-        const durationMs = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash',
-          args: { command },
-          state: 'error',
-          result: {
-            commands: [{ command, stdout: '', stderr: errorMessage, exitCode: 1, success: false }],
-            success: false,
-            durationMs,
-            error: errorMessage,
-          },
-        })
-
-        throw error
+      yield {
+        status: 'done' as const,
+        success,
+        durationMs,
+        stdout,
+        stderr,
+        exitCode: result.exitCode,
+        commands: [{ command, stdout, stderr, exitCode: result.exitCode, success }],
       }
     },
   })
 }
 
-function createInternalBashBatchTool(onToolCall?: ToolCallCallback) {
+function createInternalBashBatchTool() {
   let sessionId: string | undefined
 
   return tool({
@@ -138,80 +108,40 @@ Maximum 10 commands per batch.`,
     inputSchema: z.object({
       commands: z.array(z.string()).min(1).max(10).describe('Array of bash commands to execute'),
     }),
-    onInputAvailable: ({ toolCallId, input }) => {
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash_batch',
-        args: input,
-        state: 'loading',
-      })
-    },
-    execute: async ({ commands }, { toolCallId }) => {
-      const startTime = Date.now()
+    execute: async function* ({ commands }) {
+      yield { status: 'loading' as const }
+      const start = Date.now()
 
-      try {
-        for (const cmd of commands) validateCommand(cmd)
+      for (const cmd of commands) validateCommand(cmd)
 
-        const active = await getOrCreateSandbox(sessionId)
-        ;({ sessionId } = active)
+      const active = await getOrCreateSandbox(sessionId)
+      ;({ sessionId } = active)
 
-        const results = []
-        for (const command of commands) {
-          const result = await active.sandbox.runCommand({
-            cmd: 'bash',
-            args: ['-c', command],
-            cwd: '/vercel/sandbox',
-          })
-
-          results.push({
-            command,
-            stdout: truncateOutput(await result.stdout()),
-            stderr: truncateOutput(await result.stderr()),
-            exitCode: result.exitCode,
-            success: result.exitCode === 0,
-          })
-        }
-
-        const durationMs = Date.now() - startTime
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash_batch',
-          args: { commands },
-          state: 'done',
-          result: {
-            commands: results,
-            success: results.every(r => r.success),
-            durationMs,
-          },
+      const results = []
+      for (const command of commands) {
+        const result = await active.sandbox.runCommand({
+          cmd: 'bash',
+          args: ['-c', command],
+          cwd: '/vercel/sandbox',
         })
 
-        return {
-          results: results.map(r => ({
-            command: r.command,
-            stdout: r.stdout,
-            stderr: r.stderr,
-            exitCode: r.exitCode,
-          })),
-        }
-      } catch (error) {
-        const durationMs = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash_batch',
-          args: { commands },
-          state: 'error',
-          result: {
-            commands: commands.map(cmd => ({ command: cmd, stdout: '', stderr: '', exitCode: 1, success: false })),
-            success: false,
-            durationMs,
-            error: errorMessage,
-          },
+        results.push({
+          command,
+          stdout: truncateOutput(await result.stdout()),
+          stderr: truncateOutput(await result.stderr()),
+          exitCode: result.exitCode,
+          success: result.exitCode === 0,
         })
+      }
 
-        throw error
+      const durationMs = Date.now() - start
+
+      yield {
+        status: 'done' as const,
+        success: results.every(r => r.success),
+        durationMs,
+        results: results.map(r => ({ command: r.command, stdout: r.stdout, stderr: r.stderr, exitCode: r.exitCode })),
+        commands: results,
       }
     },
   })
@@ -237,12 +167,12 @@ async function reportUsageInternal(
 }
 
 export function createInternalSavoir(config: InternalSavoirConfig = {}): InternalSavoir {
-  const { onToolCall, source, sourceId } = config
+  const { source, sourceId } = config
 
   return {
     tools: {
-      bash: createInternalBashTool(onToolCall),
-      bash_batch: createInternalBashBatchTool(onToolCall),
+      bash: createInternalBashTool(),
+      bash_batch: createInternalBashBatchTool(),
     },
     getAgentConfig,
     reportUsage: (result, options) => reportUsageInternal(source || 'bot', sourceId, result, options),

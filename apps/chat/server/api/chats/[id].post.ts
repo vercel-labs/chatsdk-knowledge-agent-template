@@ -5,7 +5,7 @@ import { kv } from '@nuxthub/kv'
 import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
-import { createDocAgent, createAdminAgent } from '@savoir/agent'
+import { createSourceAgent, createAdminAgent } from '@savoir/agent'
 import type { RoutingResult } from '@savoir/agent'
 import { generateTitle } from '../../utils/chat/generate-title'
 import { getAgentConfig } from '../../utils/agent-config'
@@ -84,7 +84,6 @@ export default defineEventHandler(async (event) => {
     const stepDurations: number[] = []
     let routingResult: RoutingResult | undefined
     const effectiveModel = model
-    let streamWriter: ((event: unknown) => void) | null = null
 
     const existingSessionId = await kv.get<string>(KV_KEYS.ACTIVE_SANDBOX_SESSION)
     if (existingSessionId) {
@@ -97,13 +96,6 @@ export default defineEventHandler(async (event) => {
       apiKey: config.savoir?.apiKey || undefined,
       headers: cookie ? { cookie } : undefined,
       sessionId: existingSessionId || undefined,
-      onToolCall: (info) => {
-        const resultSummary = info.result
-          ? ` [${info.result.success ? 'OK' : 'FAIL'}] (${info.result.durationMs}ms)`
-          : ''
-        log.info('chat', `[${requestId}] Tool call [${info.state}]: ${info.toolName}${resultSummary}`)
-        streamWriter?.({ type: 'data-tool-call', id: info.toolCallId, data: info })
-      },
     })
 
     const onStepFinish = (stepResult: { usage?: { inputTokens?: number; outputTokens?: number }; toolCalls?: { toolName: string }[] }) => {
@@ -155,7 +147,7 @@ export default defineEventHandler(async (event) => {
         onStepFinish,
         onFinish,
       })
-      : createDocAgent({
+      : createSourceAgent({
         tools: savoir.tools,
         getAgentConfig,
         messages,
@@ -181,20 +173,28 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    const titleTask = (!chat.title && messages[0])
+      ? generateTitle({
+        firstMessage: messages[0],
+        chatId: id as string,
+        requestId,
+        apiKey: config.savoir?.apiKey ?? '',
+      })
+      : null
+
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        streamWriter = (e) => writer.write(e as Parameters<typeof writer.write>[0])
-
-        if (!chat.title && messages[0]) {
-          generateTitle({ firstMessage: messages[0], chatId: id as string, requestId, writer })
-        }
-
         const result = await agent.stream({
           messages: await convertToModelMessages(messages),
           options: {},
           abortSignal: abortController.signal,
         })
         writer.merge(result.toUIMessageStream())
+
+        const title = await titleTask
+        if (title) {
+          writer.write({ type: 'data-chat-title', data: { title }, transient: true })
+        }
       },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()

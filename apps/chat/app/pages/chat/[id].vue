@@ -185,40 +185,71 @@ function partKey(messageId: string, part: { type: string, [k: string]: unknown }
   return `${messageId}-${part.type}-${index}`
 }
 
-interface ToolInvocationPart {
-  type: 'tool-invocation'
+interface NativeToolPart {
+  type: string // 'tool-${name}', e.g. 'tool-run_sql', 'tool-bash'
   toolCallId: string
-  toolName: string
-  input: Record<string, unknown>
-  state: string
-  output?: { status?: string; label?: string; durationMs?: number; [key: string]: unknown }
+  state: string // 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+  input?: Record<string, unknown>
+  output?: {
+    status?: string
+    durationMs?: number
+    commands?: Array<{ command: string; stdout: string; stderr: string; exitCode: number; success: boolean }>
+    success?: boolean
+    [key: string]: unknown
+  }
 }
 
 function getMessageToolCalls(message: UIMessage): ToolCall[] {
   if (!message?.parts) return []
   const calls: ToolCall[] = []
 
+  // Backward-compat: old messages stored data-tool-call parts (SDK tools pre-yield migration)
+  const coveredIds = new Set<string>()
   for (const part of message.parts as Array<{ type: string; [key: string]: unknown }>) {
     if (part.type === 'data-tool-call') {
       const data = part.data as ToolCall | undefined
-      if (data) calls.push({ ...data })
-    } else if (part.type === 'tool-invocation') {
-      const inv = part as unknown as ToolInvocationPart
-      const { output } = inv
-      const isDone = inv.state === 'result' && output?.status === 'done'
-      const label = output?.label ?? inv.toolName
-      calls.push({
-        toolCallId: inv.toolCallId,
-        toolName: inv.toolName,
-        args: { command: label },
-        state: isDone ? 'done' : 'loading',
-        result: isDone ? {
-          success: true,
-          durationMs: output?.durationMs ?? 0,
-          commands: [],
-        } : undefined,
-      })
+      if (data) {
+        calls.push({ ...data })
+        coveredIds.add(data.toolCallId)
+      }
     }
+  }
+
+  // Native tool parts: 'tool-${name}'
+  for (const part of message.parts as Array<{ type: string; [key: string]: unknown }>) {
+    if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) continue
+    const toolName = part.type.slice('tool-'.length)
+    if (toolName === 'chart') continue
+
+    const inv = part as unknown as NativeToolPart
+    if (coveredIds.has(inv.toolCallId)) continue // already shown via data-tool-call (old messages)
+
+    // AI SDK may use 'input' (streaming) or 'args' (stored), and 'output' or 'result' field names
+    const rawInv = inv as unknown as Record<string, unknown>
+    const output = (inv.output ?? rawInv['result']) as NativeToolPart['output']
+    const input = (inv.input ?? rawInv['args']) as Record<string, unknown> | undefined
+
+    // Accept any "done-ish" state — AI SDK uses 'output-available' during streaming
+    // but stored/historical messages may have different state representations
+    const outputPresent = output !== null && output !== undefined
+    const isDone = (
+      inv.state === 'output-available' ||
+      inv.state === 'result' ||
+      inv.state === 'done'
+    ) && (output?.status === 'done' || (output?.status === undefined && outputPresent))
+    const outputCommands = output?.commands as Array<{ command: string; stdout: string; stderr: string; exitCode: number; success: boolean }> | undefined
+
+    calls.push({
+      toolCallId: inv.toolCallId,
+      toolName,
+      args: (input ?? {}) as Record<string, unknown>,
+      state: isDone || outputPresent ? 'done' : 'loading',
+      result: (isDone || outputCommands?.length) ? {
+        success: (output?.success as boolean | undefined) ?? true,
+        durationMs: (output?.durationMs as number | undefined) ?? 0,
+        commands: outputCommands ?? [],
+      } : undefined,
+    })
   }
 
   return calls
@@ -229,15 +260,16 @@ function getMessageToolCalls(message: UIMessage): ToolCall[] {
 function getContentParts(message: UIMessage) {
   let lastToolIdx = -1
   for (let i = message.parts.length - 1; i >= 0; i--) {
-    const { type } = (message.parts[i] as { type: string })
-    if (type === 'data-tool-call' || type === 'tool-invocation') {
+    const { type } = message.parts[i] as { type: string }
+    if (type === 'data-tool-call' || (type.startsWith('tool-') && type !== 'tool-chart')) {
       lastToolIdx = i
       break
     }
   }
   return message.parts.filter((p, i) => {
     const { type } = p as { type: string }
-    if (type === 'data-sources' || type === 'data-tool-call' || type === 'tool-invocation') return false
+    if (type === 'data-sources' || type === 'data-tool-call') return false
+    if (type.startsWith('tool-') && type !== 'tool-chart') return false
     if (type === 'text' && message.role === 'assistant' && i <= lastToolIdx) return false
     return true
   })
@@ -347,6 +379,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
               v-if="message.role === 'assistant' && (chat.status === 'streaming' || getMessageToolCalls(message).length > 0)"
               :tool-calls="getMessageToolCalls(message)"
               :is-loading="chat.status === 'streaming'"
+              :animated="chat.status === 'streaming'"
             />
             <template v-for="(part, index) in getContentParts(message)" :key="partKey(message.id, part, index)">
               <!-- Markdown only for assistant (XSS prevention) -->

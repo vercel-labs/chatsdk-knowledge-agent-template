@@ -1,6 +1,6 @@
 // Agents
-export { createDocAgent } from './agents/doc'
-export type { DocAgentOptions } from './agents/doc'
+export { createSourceAgent } from './agents/source'
+export type { SourceAgentOptions } from './agents/source'
 export { createAdminAgent } from './agents/admin'
 export type { AdminAgentOptions } from './agents/admin'
 export { createAgent } from './agents/base'

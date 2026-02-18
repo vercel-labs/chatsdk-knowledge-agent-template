@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { desc, eq, and, sql } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type QueryChatsUIToolInvocation = UIToolInvocation<typeof queryChatsTool>
 
@@ -14,7 +15,8 @@ Use this to find popular topics, identify common questions, or debug user issues
     userId: z.string().optional().describe('Filter chats by a specific user ID'),
   }),
   execute: async function* ({ limit, userId }) {
-    yield { status: 'loading' as const, label: 'Query chats' }
+    const label = 'Query chats'
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
     const start = Date.now()
 
     const conditions = userId
@@ -33,9 +35,17 @@ Use this to find popular topics, identify common questions, or debug user issues
       },
     })
 
+    const chatsData = chats.map(c => ({
+      id: c.id,
+      title: c.title,
+      mode: c.mode,
+      userId: c.userId,
+      createdAt: c.createdAt,
+      messageCount: c.messages?.length ?? 0,
+    }))
     yield {
       status: 'done' as const,
-      label: 'Query chats',
+      commands: [cmd(label, preview(chatsData))],
       durationMs: Date.now() - start,
       chats: chats.map(c => ({
         id: c.id,

@@ -9,7 +9,7 @@ import { sanitizeToolCallInputs } from '../core/sanitize'
 import { countConsecutiveToolSteps, shouldForceTextOnlyStep } from '../core/policy'
 import type { AgentConfigData, AgentCallOptions, AgentExecutionContext, RoutingResult } from '../types'
 
-export interface DocAgentOptions {
+export interface SourceAgentOptions {
   tools: Record<string, unknown>
   getAgentConfig: () => Promise<AgentConfigData>
   messages: UIMessage[]
@@ -24,7 +24,7 @@ export interface DocAgentOptions {
   onFinish?: (result: any) => void
 }
 
-export function createDocAgent({
+export function createSourceAgent({
   tools,
   getAgentConfig,
   messages,
@@ -34,7 +34,7 @@ export function createDocAgent({
   onRouted,
   onStepFinish,
   onFinish,
-}: DocAgentOptions) {
+}: SourceAgentOptions) {
   const id = requestId ?? crypto.randomUUID().slice(0, 8)
   let maxSteps = 15
 

@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { and, gte, eq, like, sql, desc } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type QueryLogsUIToolInvocation = UIToolInvocation<typeof queryLogsTool>
 
@@ -24,7 +25,7 @@ Use this to inspect recent requests, find specific errors, or filter by path/sta
     const filters = [level, method, path, status].filter(Boolean)
     const label = filters.length ? `Query logs (${filters.join(', ')})` : 'Query logs'
 
-    yield { status: 'loading' as const, label }
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
     const start = Date.now()
 
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
@@ -55,9 +56,10 @@ Use this to inspect recent requests, find specific errors, or filter by path/sta
         error: row.error ? truncate(String(row.error), 200) : null,
       }))
 
-      yield { status: 'done' as const, label, durationMs: Date.now() - start, entries, count: entries.length, period: `Last ${hours}h` }
+      yield { status: 'done' as const, commands: [cmd(label, preview(entries.slice(0, 5)))], durationMs: Date.now() - start, entries, count: entries.length, period: `Last ${hours}h` }
     } catch (error) {
-      yield { status: 'done' as const, label, durationMs: Date.now() - start, error: error instanceof Error ? error.message : 'Query failed' }
+      const err = error instanceof Error ? error.message : 'Query failed'
+      yield { status: 'done' as const, commands: [cmd(label, '', err, false)], durationMs: Date.now() - start, error: err }
     }
   },
 })

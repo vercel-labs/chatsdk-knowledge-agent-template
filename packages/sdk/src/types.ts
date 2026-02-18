@@ -11,36 +11,7 @@ export interface SavoirConfig {
   source?: string
   /** Optional tracking ID (e.g. 'issue-123'). Can be overridden per reportUsage() call. */
   sourceId?: string
-  /** Callback fired on tool execution (loading/done/error states). */
-  onToolCall?: ToolCallCallback
 }
-
-export type ToolCallState = 'loading' | 'done' | 'error'
-
-export interface CommandResult {
-  command: string
-  stdout: string
-  stderr: string
-  exitCode: number
-  success: boolean
-}
-
-export interface ToolExecutionResult {
-  commands: CommandResult[]
-  success: boolean
-  durationMs: number
-  error?: string
-}
-
-export interface ToolCallInfo {
-  toolCallId: string
-  toolName: string
-  args: Record<string, unknown>
-  state: ToolCallState
-  result?: ToolExecutionResult
-}
-
-export type ToolCallCallback = (info: ToolCallInfo) => void
 
 export interface SearchResult {
   path: string

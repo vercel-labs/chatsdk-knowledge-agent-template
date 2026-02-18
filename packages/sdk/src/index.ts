@@ -4,7 +4,7 @@ import type { AgentConfig, GenerateResult, ReportUsageOptions, SavoirConfig } fr
 
 export { ALLOWED_BASH_COMMANDS, BLOCKED_SHELL_PATTERNS, isPathWithinDirectory, pathMatchesGlob, validateShellCommand } from './shell-policy'
 
-export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, ToolCallInfo, ToolCallCallback, ToolCallState, ToolExecutionResult, CommandResult, AgentConfig, GenerateResult, ReportUsageOptions } from './types'
+export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, AgentConfig, GenerateResult, ReportUsageOptions } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 
@@ -37,9 +37,6 @@ export interface Savoir {
  *   apiUrl: process.env.SAVOIR_API_URL!, // Required
  *   apiKey: process.env.SAVOIR_API_KEY,  // Optional if API doesn't require auth
  *   sessionId: 'optional-session-id',    // For sandbox reuse
- *   onToolCall: (info) => {              // Optional tool call callback
- *     console.log(`Tool ${info.toolName} called with:`, info.args)
- *   },
  * })
  *
  * const { text } = await generateText({
@@ -50,14 +47,13 @@ export interface Savoir {
  * ```
  */
 export function createSavoir(config: SavoirConfig): Savoir {
-  const { onToolCall } = config
   const client = new SavoirClient(config)
 
   return {
     client,
     tools: {
-      bash: createBashTool(client, onToolCall),
-      bash_batch: createBashBatchTool(client, onToolCall),
+      bash: createBashTool(client),
+      bash_batch: createBashBatchTool(client),
     },
     getSessionId: () => client.getSessionId(),
     setSessionId: (sessionId: string) => client.setSessionId(sessionId),

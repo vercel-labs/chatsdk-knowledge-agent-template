@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { eq } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type GetAgentConfigUIToolInvocation = UIToolInvocation<typeof getAgentConfigTool>
 
@@ -11,7 +12,8 @@ export const getAgentConfigTool = tool({
 Use this to check how the assistant is configured.`,
   inputSchema: z.object({}),
   execute: async function* () {
-    yield { status: 'loading' as const, label: 'Get agent config' }
+    const label = 'Get agent config'
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
     const start = Date.now()
 
     const config = await db.query.agentConfig.findFirst({
@@ -19,13 +21,14 @@ Use this to check how the assistant is configured.`,
     })
 
     if (!config) {
-      yield { status: 'done' as const, label: 'Get agent config', durationMs: Date.now() - start, message: 'No active agent configuration found. Using defaults.' }
+      yield { status: 'done' as const, commands: [cmd(label, 'No active configuration')], durationMs: Date.now() - start, message: 'No active agent configuration found. Using defaults.' }
       return
     }
 
+    const configData = { name: config.name, responseStyle: config.responseStyle, language: config.language, defaultModel: config.defaultModel, temperature: config.temperature }
     yield {
       status: 'done' as const,
-      label: 'Get agent config',
+      commands: [cmd(label, preview(configData))],
       durationMs: Date.now() - start,
       name: config.name,
       responseStyle: config.responseStyle,

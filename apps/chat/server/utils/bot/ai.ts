@@ -72,11 +72,6 @@ export async function generateAIResponse(
     const savoir = createInternalSavoir({
       source: context?.platform ? `${context.platform}-bot` : 'bot',
       sourceId: context?.number ? `issue-${context.number}` : undefined,
-      onToolCall: (info) => {
-        if (info.state === 'loading') {
-          log.info('bot', `bash: ${JSON.stringify(info.args).slice(0, 150)}`)
-        }
-      },
     })
 
     const agent = createAgent({

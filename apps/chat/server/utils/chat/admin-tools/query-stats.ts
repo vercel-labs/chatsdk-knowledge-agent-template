@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { eq, gte, and, count } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type QueryStatsUIToolInvocation = UIToolInvocation<typeof queryStatsTool>
 
@@ -13,7 +14,8 @@ Use this to answer questions about app usage, costs, activity trends, and popula
     days: z.number().min(1).max(365).default(30).describe('Number of days to look back'),
   }),
   execute: async function* ({ days }) {
-    yield { status: 'loading' as const, label: `Query stats (${days}d)` }
+    const label = `Query stats (${days}d)`
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
     const start = Date.now()
 
     const startDate = new Date()
@@ -68,9 +70,11 @@ Use this to answer questions about app usage, costs, activity trends, and popula
       .map(([model, stats]) => ({ model, ...stats }))
       .sort((a, b) => b.count - a.count)
 
+    const totalTokens = totalInputTokens + totalOutputTokens
+    const statsData = { totalMessages, totalChats: chatCount[0]?.count ?? 0, totalUsers: userCount[0]?.count ?? 0, totalTokens, avgDurationMs: totalMessages > 0 ? Math.round(totalDurationMs / totalMessages) : 0, modelBreakdown }
     yield {
       status: 'done' as const,
-      label: `Query stats (${days}d)`,
+      commands: [cmd(label, preview(statsData))],
       durationMs: Date.now() - start,
       period: `Last ${days} days`,
       totalMessages,
@@ -78,7 +82,7 @@ Use this to answer questions about app usage, costs, activity trends, and popula
       totalUsers: userCount[0]?.count ?? 0,
       totalInputTokens,
       totalOutputTokens,
-      totalTokens: totalInputTokens + totalOutputTokens,
+      totalTokens,
       avgDurationMs: totalMessages > 0 ? Math.round(totalDurationMs / totalMessages) : 0,
       feedback: { positive: positiveFeedback, negative: negativeFeedback },
       modelBreakdown,

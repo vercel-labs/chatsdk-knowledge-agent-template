@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { eq, isNotNull } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type ListUsersUIToolInvocation = UIToolInvocation<typeof listUsersTool>
 
@@ -14,7 +15,8 @@ Use this to find active users, check who is using the app, and see per-user toke
     sortBy: z.enum(['messages', 'tokens', 'recent']).default('messages').describe('Sort users by message count, token usage, or recent activity'),
   }),
   execute: async function* ({ limit, sortBy }) {
-    yield { status: 'loading' as const, label: 'List users' }
+    const label = 'List users'
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
     const start = Date.now()
 
     const users = await db
@@ -75,11 +77,22 @@ Use this to find active users, check who is using the app, and see per-user toke
       userStats.sort((a, b) => b.messageCount - a.messageCount)
     }
 
+    const sliced = userStats.slice(0, limit)
+    const usersData = sliced.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      createdAt: u.createdAt,
+      chatCount: u.chatCount,
+      messageCount: u.messageCount,
+      totalTokens: u.totalInputTokens + u.totalOutputTokens,
+    }))
     yield {
       status: 'done' as const,
-      label: 'List users',
+      commands: [cmd(label, preview(usersData))],
       durationMs: Date.now() - start,
-      users: userStats.slice(0, limit).map(u => ({
+      users: sliced.map(u => ({
         id: u.id,
         name: u.name,
         email: u.email,

@@ -7,6 +7,7 @@ const props = defineProps<{
   text?: string
   toolCalls?: ToolCall[]
   isLoading?: boolean
+  animated?: boolean
 }>()
 
 const messages = [
@@ -121,6 +122,7 @@ watch(() => props.isLoading, (isLoading) => {
         v-for="tool in toolCalls"
         :key="tool.toolCallId"
         :tool
+        :animated
       />
     </div>
   </div>

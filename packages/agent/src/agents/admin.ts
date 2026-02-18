@@ -27,7 +27,7 @@ export function createAdminAgent({
   return new ToolLoopAgent({
     model: DEFAULT_MODEL,
     callOptionsSchema,
-    prepareCall: async ({ options, ...settings }) => {
+    prepareCall: ({ options, ...settings }) => {
       const modelOverride = (options as AgentCallOptions | undefined)?.model
       const customContext = (options as AgentCallOptions | undefined)?.context
       const effectiveModel = modelOverride ?? DEFAULT_MODEL

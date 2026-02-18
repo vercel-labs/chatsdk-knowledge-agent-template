@@ -1,5 +1,8 @@
 export interface CommandResult {
+  /** Shell command shown with $ prompt. Empty string hides the prompt line. */
   command: string
+  /** Display title for the bullet point label (used instead of command when set). */
+  title?: string
   stdout: string
   stderr: string
   exitCode: number

@@ -5,14 +5,22 @@ import type { ToolCall } from '#shared/types/tool-call'
 
 const props = defineProps<{
   tool: ToolCall
+  animated?: boolean
 }>()
 
 const isExpanded = ref(false)
 const displayedLabel = ref('')
 
 const fullLabel = computed(() => {
-  const { toolName, args, state } = props.tool
-  const commands = args?.commands as string[] || (args?.command ? [args.command as string] : [])
+  const { toolName, args, state, result } = props.tool
+
+  // Bash tools: args.command / args.commands drives the title.
+  // Admin tools: no command in args — fall back to result.commands[0].title (set in yield output).
+  // The `command` field drives the $ prompt line; `title` drives the bullet label.
+  const firstResultCmd = result?.commands?.[0]
+  const commands = (args?.commands as string[] | undefined)
+    || (args?.command ? [args.command as string] : undefined)
+    || (firstResultCmd?.title ? [firstResultCmd.title] : firstResultCmd?.command ? [firstResultCmd.command] : [])
 
   if (toolName === 'search_and_read') {
     const query = args?.query || '...'
@@ -26,7 +34,14 @@ const fullLabel = computed(() => {
   }
 
   if (!commands.length) {
-    return state === 'loading' ? 'Running...' : 'Done'
+    if (state === 'loading') return 'Running...'
+    // Tool-specific fallback from args when result.commands isn't available (historical messages)
+    if (toolName === 'run_sql') {
+      const q = args?.query as string | undefined
+      return q ? (q.length > 80 ? `${q.slice(0, 80)}…` : q) : 'SQL query'
+    }
+    // Generic fallback: humanize the tool name (e.g. 'log_stats' → 'Log stats')
+    return toolName.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
   }
 
   const summaries = commands.slice(0, 2).map(summarizeCommand)
@@ -72,6 +87,10 @@ function typewrite(text: string, index = 0) {
 }
 
 watch(fullLabel, (newLabel) => {
+  if (!props.animated) {
+    displayedLabel.value = newLabel
+    return
+  }
   if (typewriterTimeout) clearTimeout(typewriterTimeout)
   if (newLabel.length > displayedLabel.value.length) {
     typewrite(newLabel, displayedLabel.value.length)
@@ -80,9 +99,33 @@ watch(fullLabel, (newLabel) => {
   }
 }, { immediate: true })
 
+const commandsToShow = computed(() => {
+  const { args, result, toolName } = props.tool
+
+  if (result?.commands?.length) {
+    return result.commands
+  }
+
+  // Bash tools: fall back to args.command / args.commands
+  const bashCmds = args?.commands as string[] || (args?.command ? [args.command as string] : [])
+  if (bashCmds.length) {
+    return bashCmds.map(cmd => ({ command: cmd, stdout: '', stderr: '', exitCode: 0, success: true }))
+  }
+
+  // Admin tools: synthesize from call args so the expand button is still useful
+  const entries = Object.entries(args ?? {}).filter(([, v]) => v !== undefined && v !== null)
+  if (entries.length) {
+    const stdout = entries.map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`).join('\n')
+    return [{ command: '', title: toolName.replace(/_/g, ' '), stdout, stderr: '', exitCode: 0, success: true }]
+  }
+
+  return []
+})
+
 const canExpand = computed(() => {
-  const { args, result } = props.tool
-  return args?.commands || args?.command || result?.commands?.length
+  const { args, state } = props.tool
+  if (state === 'loading') return !!(args?.commands || args?.command)
+  return commandsToShow.value.length > 0
 })
 
 const { start: startExpand, stop: stopExpand } = useTimeoutFn(() => {
@@ -94,7 +137,7 @@ const { start: startCollapse, stop: stopCollapse } = useTimeoutFn(() => {
 }, 2000, { immediate: false })
 
 watch(() => props.tool.state, (newState, oldState) => {
-  if (!canExpand.value) return
+  if (!canExpand.value || !props.animated) return
 
   stopExpand()
   stopCollapse()
@@ -120,23 +163,6 @@ onUnmounted(() => {
   stopCollapse()
 })
 
-const commandsToShow = computed(() => {
-  const { args, result } = props.tool
-
-  if (result?.commands?.length) {
-    return result.commands
-  }
-
-  const cmds = args?.commands as string[] || (args?.command ? [args.command as string] : [])
-  return cmds.map(cmd => ({
-    command: cmd,
-    stdout: '',
-    stderr: '',
-    exitCode: 0,
-    success: true,
-  }))
-})
-
 function truncateOutput(text: string, maxLines = 8): string {
   const lines = text.split('\n').filter(l => l.trim())
   if (lines.length <= maxLines) return lines.join('\n')
@@ -146,7 +172,7 @@ function truncateOutput(text: string, maxLines = 8): string {
 
 <template>
   <motion.div
-    :initial="{ opacity: 0, x: -4 }"
+    :initial="animated ? { opacity: 0, x: -4 } : false"
     :animate="{ opacity: 1, x: 0 }"
     :transition="{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }"
   >
@@ -206,7 +232,7 @@ function truncateOutput(text: string, maxLines = 8): string {
             :key="idx"
             class="space-y-0.5"
           >
-            <div class="flex items-start gap-1 text-[10px]">
+            <div v-if="cmd.command" class="flex items-start gap-1 text-[10px]">
               <span class="text-muted/50 font-mono shrink-0">$</span>
               <code class="text-muted/70 font-mono break-all leading-tight">{{ cmd.command }}</code>
             </div>
@@ -224,13 +250,6 @@ function truncateOutput(text: string, maxLines = 8): string {
               class="text-[9px] text-muted/40 italic"
             >
               running...
-            </div>
-
-            <div
-              v-else-if="tool.state === 'done' && tool.result"
-              class="text-[9px] text-muted/25 italic"
-            >
-              (no output)
             </div>
           </div>
         </div>
