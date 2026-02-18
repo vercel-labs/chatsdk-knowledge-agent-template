@@ -77,7 +77,7 @@ function onMouseLeave() {
             }"
           />
 
-          <div class="relative">
+          <div class="relative z-[1]">
             <div class="flex items-center justify-between mb-1.5">
               <p class="text-xs font-medium text-highlighted leading-tight">
                 Install our bots
@@ -165,6 +165,6 @@ function onMouseLeave() {
   inset: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  z-index: 2;
+  z-index: 0;
 }
 </style>

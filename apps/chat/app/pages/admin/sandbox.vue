@@ -12,6 +12,8 @@ const {
   syncNow,
 } = useSnapshotSync()
 
+const { data: sources } = useLazyFetch('/api/sources')
+
 const createdAgo = computed(() => {
   if (!status.value?.latestCreatedAt) return null
   return formatDistanceToNow(status.value.latestCreatedAt, { addSuffix: true })
@@ -51,6 +53,18 @@ const isInitialLoading = computed(() => status.value === null)
           <p class="text-xs text-muted font-mono">
             {{ status.currentSnapshotId }}
           </p>
+          <UButton
+            v-if="sources?.snapshotRepoUrl"
+            icon="i-simple-icons-github"
+            color="neutral"
+            variant="link"
+            size="xs"
+            class="-ml-1.5"
+            :to="sources.snapshotRepoUrl"
+            target="_blank"
+          >
+            Open Repository
+          </UButton>
         </div>
         <div v-else class="text-sm text-muted">
           No snapshot configured. Sync to the latest snapshot to get started.

@@ -232,6 +232,13 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
       >
         <div class="flex items-center gap-2">
           <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            to="/admin/new"
+          >
+            Add Source
+          </UButton>
+          <UButton
             icon="i-lucide-refresh-cw"
             color="neutral"
             variant="ghost"
@@ -242,22 +249,15 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
             Sync All
           </UButton>
           <UButton
-            icon="i-lucide-plus"
-            size="xs"
-            to="/admin/new"
-          >
-            Add Source
-          </UButton>
-          <UButton
             v-if="sources?.snapshotRepoUrl"
-            icon="i-lucide-external-link"
+            icon="i-simple-icons-github"
             color="neutral"
             variant="ghost"
             size="xs"
             :to="sources.snapshotRepoUrl"
             target="_blank"
           >
-            View Repository
+            Open Repository
           </UButton>
           <span v-if="lastSyncAgo && !needsSync" class="text-xs text-muted ml-2">
             Last synced {{ lastSyncAgo }}

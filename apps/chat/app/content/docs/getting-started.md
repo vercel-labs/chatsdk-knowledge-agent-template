@@ -84,13 +84,39 @@ For more details on the bot behavior, see the [GitHub Bot documentation](/admin/
 
 ## First Launch
 
-```bash
-# Install dependencies
-bun install
+Install dependencies:
 
-# Start the development server
+::code-group
+```bash [bun]
+bun install
+```
+```bash [pnpm]
+pnpm install
+```
+```bash [yarn]
+yarn install
+```
+```bash [npm]
+npm install
+```
+::
+
+Start the development server:
+
+::code-group
+```bash [bun]
 bun run dev
 ```
+```bash [pnpm]
+pnpm dev
+```
+```bash [yarn]
+yarn dev
+```
+```bash [npm]
+npm run dev
+```
+::
 
 The app will be available at `http://localhost:3000`. Sign in with GitHub using one of the admin emails or usernames defined in `NUXT_ADMIN_USERS` to access the admin panel.
 

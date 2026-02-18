@@ -4,11 +4,20 @@ The [`@savoir/sdk`](https://github.com/vercel-labs/savoir/tree/main/packages/sdk
 
 ## Installation
 
-```bash
-npm install @savoir/sdk
-# or
+::code-group
+```bash [bun]
 bun add @savoir/sdk
 ```
+```bash [pnpm]
+pnpm add @savoir/sdk
+```
+```bash [yarn]
+yarn add @savoir/sdk
+```
+```bash [npm]
+npm install @savoir/sdk
+```
+::
 
 ## Configuration
 
