@@ -23,15 +23,11 @@ describe('compactContext', () => {
       { role: 'user', content: [{ type: 'text', text: 'first' }] },
       {
         role: 'assistant',
-        content: [
-          { type: 'tool-call', toolName: 'bash', input: { command: 'ls -la' }, toolCallId: '1' },
-        ],
+        content: [{ type: 'tool-call', toolName: 'bash', input: { command: 'ls -la' }, toolCallId: '1' }],
       },
       {
         role: 'tool',
-        content: [
-          { type: 'tool-result', toolName: 'bash', output: 'x'.repeat(120_000), toolCallId: '1' },
-        ],
+        content: [{ type: 'tool-result', toolName: 'bash', output: 'x'.repeat(120_000), toolCallId: '1' }],
       },
       { role: 'user', content: [{ type: 'text', text: 'second' }] },
       { role: 'assistant', content: [{ type: 'text', text: 'done' }] },

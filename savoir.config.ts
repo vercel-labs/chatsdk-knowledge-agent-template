@@ -58,4 +58,4 @@ export default {
       { id: 'learn-vue', label: 'LearnVue', channelId: 'UCGwuxdEeCf0TIA2RbPOj-8g', handle: '@LearnVue', maxVideos: 50 },
     ],
   },
-})
+}
