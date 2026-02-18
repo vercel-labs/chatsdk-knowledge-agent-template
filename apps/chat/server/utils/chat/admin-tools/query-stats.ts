@@ -12,7 +12,10 @@ Use this to answer questions about app usage, costs, activity trends, and popula
   inputSchema: z.object({
     days: z.number().min(1).max(365).default(30).describe('Number of days to look back'),
   }),
-  execute: async ({ days }) => {
+  execute: async function* ({ days }) {
+    yield { status: 'loading' as const, label: `Query stats (${days}d)` }
+    const start = Date.now()
+
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
@@ -65,7 +68,10 @@ Use this to answer questions about app usage, costs, activity trends, and popula
       .map(([model, stats]) => ({ model, ...stats }))
       .sort((a, b) => b.count - a.count)
 
-    return {
+    yield {
+      status: 'done' as const,
+      label: `Query stats (${days}d)`,
+      durationMs: Date.now() - start,
       period: `Last ${days} days`,
       totalMessages,
       totalChats: chatCount[0]?.count ?? 0,

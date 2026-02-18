@@ -1,23 +1,7 @@
 import type { Adapter } from 'chat'
+import type { ThreadContext } from '@savoir/agent'
 
-/**
- * Platform-agnostic thread context for AI enrichment.
- * Each adapter provides this via `fetchThreadContext()`.
- */
-export interface ThreadContext {
-  platform: string
-  title: string
-  body: string
-  labels: string[]
-  state: string
-  source: string // e.g. "owner/repo" for GitHub, "workspace/channel" for Slack
-  number?: number // issue/ticket number (GitHub, Linear, etc.)
-  previousComments?: Array<{
-    author: string
-    body: string
-    isBot: boolean
-  }>
-}
+export type { ThreadContext }
 
 /**
  * Interface for adapters that can provide enriched context for AI.

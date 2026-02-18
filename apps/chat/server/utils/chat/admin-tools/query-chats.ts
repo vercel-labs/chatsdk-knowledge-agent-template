@@ -13,7 +13,10 @@ Use this to find popular topics, identify common questions, or debug user issues
     limit: z.number().min(1).max(50).default(20).describe('Number of recent chats to return'),
     userId: z.string().optional().describe('Filter chats by a specific user ID'),
   }),
-  execute: async ({ limit, userId }) => {
+  execute: async function* ({ limit, userId }) {
+    yield { status: 'loading' as const, label: 'Query chats' }
+    const start = Date.now()
+
     const conditions = userId
       ? and(eq(schema.chats.userId, userId))
       : undefined
@@ -30,16 +33,21 @@ Use this to find popular topics, identify common questions, or debug user issues
       },
     })
 
-    return chats.map(c => ({
-      id: c.id,
-      title: c.title,
-      mode: c.mode,
-      userId: c.userId,
-      createdAt: c.createdAt,
-      messageCount: c.messages?.length ?? 0,
-      firstMessage: c.messages?.[0]?.parts
-        ? JSON.stringify(c.messages[0].parts).slice(0, 200)
-        : null,
-    }))
+    yield {
+      status: 'done' as const,
+      label: 'Query chats',
+      durationMs: Date.now() - start,
+      chats: chats.map(c => ({
+        id: c.id,
+        title: c.title,
+        mode: c.mode,
+        userId: c.userId,
+        createdAt: c.createdAt,
+        messageCount: c.messages?.length ?? 0,
+        firstMessage: c.messages?.[0]?.parts
+          ? JSON.stringify(c.messages[0].parts).slice(0, 200)
+          : null,
+      })),
+    }
   },
 })

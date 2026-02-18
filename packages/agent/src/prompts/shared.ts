@@ -1,4 +1,4 @@
-import type { AgentConfigData } from '../agent-config'
+import type { AgentConfigData } from '../types'
 import type { AgentConfig } from '../router/schema'
 
 export const STYLE_INSTRUCTIONS: Record<AgentConfigData['responseStyle'], string> = {

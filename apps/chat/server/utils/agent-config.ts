@@ -1,21 +1,10 @@
 import { kv } from '@nuxthub/kv'
 import { db, schema } from '@nuxthub/db'
 import { eq } from 'drizzle-orm'
+import type { AgentConfigData } from '@savoir/agent'
 import { KV_KEYS } from './sandbox/types'
 
-export interface AgentConfigData {
-  id: string
-  name: string
-  additionalPrompt: string | null
-  responseStyle: 'concise' | 'detailed' | 'technical' | 'friendly'
-  language: string
-  defaultModel: string | null
-  maxStepsMultiplier: number
-  temperature: number
-  searchInstructions: string | null
-  citationFormat: 'inline' | 'footnote' | 'none'
-  isActive: boolean
-}
+export type { AgentConfigData }
 
 const DEFAULT_CONFIG: AgentConfigData = {
   id: 'default',

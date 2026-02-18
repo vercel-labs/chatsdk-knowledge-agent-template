@@ -13,7 +13,10 @@ Use this to find active users, check who is using the app, and see per-user toke
     limit: z.number().min(1).max(50).default(20).describe('Maximum number of users to return'),
     sortBy: z.enum(['messages', 'tokens', 'recent']).default('messages').describe('Sort users by message count, token usage, or recent activity'),
   }),
-  execute: async ({ limit, sortBy }) => {
+  execute: async function* ({ limit, sortBy }) {
+    yield { status: 'loading' as const, label: 'List users' }
+    const start = Date.now()
+
     const users = await db
       .select({
         id: schema.user.id,
@@ -72,15 +75,20 @@ Use this to find active users, check who is using the app, and see per-user toke
       userStats.sort((a, b) => b.messageCount - a.messageCount)
     }
 
-    return userStats.slice(0, limit).map(u => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      createdAt: u.createdAt,
-      chatCount: u.chatCount,
-      messageCount: u.messageCount,
-      totalTokens: u.totalInputTokens + u.totalOutputTokens,
-    }))
+    yield {
+      status: 'done' as const,
+      label: 'List users',
+      durationMs: Date.now() - start,
+      users: userStats.slice(0, limit).map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt,
+        chatCount: u.chatCount,
+        messageCount: u.messageCount,
+        totalTokens: u.totalInputTokens + u.totalOutputTokens,
+      })),
+    }
   },
 })

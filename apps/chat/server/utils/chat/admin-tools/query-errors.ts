@@ -16,7 +16,10 @@ Use this to investigate production errors and identify patterns.`,
     path: z.string().optional().describe('Filter to a specific path (supports SQL LIKE patterns)'),
     groupBy: z.enum(['path', 'error']).default('path').describe('Group errors by path or error message'),
   }),
-  execute: async ({ hours, path, groupBy }) => {
+  execute: async function* ({ hours, path, groupBy }) {
+    yield { status: 'loading' as const, label: `Query errors (${hours}h)` }
+    const start = Date.now()
+
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
 
     const conditions = [
@@ -60,13 +63,17 @@ Use this to investigate production errors and identify patterns.`,
         }).from(e).where(where).groupBy(hourExpr).orderBy(hourExpr),
       ])
 
-      return {
+      yield {
+        status: 'done' as const,
+        label: `Query errors (${hours}h)`,
+        durationMs: Date.now() - start,
         period: `Last ${hours}h`,
         recentErrors: recentErrors.map(r => ({
           ...r,
           error: r.error ? truncate(String(r.error), 300) : null,
           data: r.data ? truncate(String(r.data), 200) : null,
         })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         errorGroups: groups.map((r: any) => groupBy === 'path'
           ? { method: r.method, path: r.path, count: Number(r.count), lastSeen: r.lastSeen }
           : { error: truncate(String(r.error), 200), count: Number(r.count), lastSeen: r.lastSeen },
@@ -74,7 +81,12 @@ Use this to investigate production errors and identify patterns.`,
         errorTrend: trend.map(r => ({ hour: r.hour, count: Number(r.count) })),
       }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Query failed' }
+      yield {
+        status: 'done' as const,
+        label: `Query errors (${hours}h)`,
+        durationMs: Date.now() - start,
+        error: error instanceof Error ? error.message : 'Query failed',
+      }
     }
   },
 })

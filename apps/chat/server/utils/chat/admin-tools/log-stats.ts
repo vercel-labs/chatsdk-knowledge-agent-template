@@ -14,7 +14,10 @@ Returns total requests, error rate, status distribution, latency percentiles, to
   inputSchema: z.object({
     hours: z.number().min(1).max(168).default(24).describe('Number of hours to look back'),
   }),
-  execute: async ({ hours }) => {
+  execute: async function* ({ hours }) {
+    yield { status: 'loading' as const, label: `Log stats (${hours}h)` }
+    const start = Date.now()
+
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
     const timeFilter = gte(e.timestamp, cutoff)
 
@@ -74,7 +77,10 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         return arr[Math.max(0, idx)]
       }
 
-      return {
+      yield {
+        status: 'done' as const,
+        label: `Log stats (${hours}h)`,
+        durationMs: Date.now() - start,
         period: `Last ${hours}h`,
         totalRequests: total,
         errorCount: errors,
@@ -92,7 +98,12 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         top10ErrorPaths: errorPaths.map(r => ({ method: r.method, path: r.path, count: Number(r.count) })),
       }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Query failed' }
+      yield {
+        status: 'done' as const,
+        label: `Log stats (${hours}h)`,
+        durationMs: Date.now() - start,
+        error: error instanceof Error ? error.message : 'Query failed',
+      }
     }
   },
 })

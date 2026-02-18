@@ -185,12 +185,43 @@ function partKey(messageId: string, part: { type: string, [k: string]: unknown }
   return `${messageId}-${part.type}-${index}`
 }
 
+interface ToolInvocationPart {
+  type: 'tool-invocation'
+  toolCallId: string
+  toolName: string
+  input: Record<string, unknown>
+  state: string
+  output?: { status?: string; label?: string; durationMs?: number; [key: string]: unknown }
+}
+
 function getMessageToolCalls(message: UIMessage): ToolCall[] {
   if (!message?.parts) return []
-  return (message.parts as Array<{ type: string, data?: ToolCall }>)
-    .filter(p => p.type === 'data-tool-call')
-    .map(p => ({ ...p.data! }))
-    .filter(Boolean)
+  const calls: ToolCall[] = []
+
+  for (const part of message.parts as Array<{ type: string; [key: string]: unknown }>) {
+    if (part.type === 'data-tool-call') {
+      const data = part.data as ToolCall | undefined
+      if (data) calls.push({ ...data })
+    } else if (part.type === 'tool-invocation') {
+      const inv = part as unknown as ToolInvocationPart
+      const { output } = inv
+      const isDone = inv.state === 'result' && output?.status === 'done'
+      const label = output?.label ?? inv.toolName
+      calls.push({
+        toolCallId: inv.toolCallId,
+        toolName: inv.toolName,
+        args: { command: label },
+        state: isDone ? 'done' : 'loading',
+        result: isDone ? {
+          success: true,
+          durationMs: output?.durationMs ?? 0,
+          commands: [],
+        } : undefined,
+      })
+    }
+  }
+
+  return calls
 }
 
 // Filter out intermediate "thinking out loud" text between tool calls.
@@ -198,14 +229,15 @@ function getMessageToolCalls(message: UIMessage): ToolCall[] {
 function getContentParts(message: UIMessage) {
   let lastToolIdx = -1
   for (let i = message.parts.length - 1; i >= 0; i--) {
-    if ((message.parts[i] as { type: string }).type === 'data-tool-call') {
+    const { type } = (message.parts[i] as { type: string })
+    if (type === 'data-tool-call' || type === 'tool-invocation') {
       lastToolIdx = i
       break
     }
   }
   return message.parts.filter((p, i) => {
     const { type } = p as { type: string }
-    if (type === 'data-sources' || type === 'data-tool-call') return false
+    if (type === 'data-sources' || type === 'data-tool-call' || type === 'tool-invocation') return false
     if (type === 'text' && message.role === 'assistant' && i <= lastToolIdx) return false
     return true
   })

@@ -1,4 +1,4 @@
-import type { AgentConfigData } from '../agent-config'
+import type { AgentConfigData } from '../types'
 import { applyAgentConfig, applyTemporalContext } from './shared'
 
 export const ADMIN_SYSTEM_PROMPT = `You are an admin assistant for the Savoir application. You help administrators understand app usage, monitor performance, manage users, and debug issues.
@@ -57,8 +57,8 @@ ALWAYS prefer \`bash_batch\` over sequential \`bash\` calls. Combine search and 
 ### Quick reference
 | Task | Command |
 |------|---------|
-| Find files by content | \`grep -rl "keyword" docs/ --include="*.md" \\| head -5\` |
-| Multi-keyword search | \`grep -rlE "term1\\|term2" docs/ --include="*.md" \\| head -5\` |
+| Find files by content | \`grep -rl "keyword" docs/ --include="*.md" \| head -5\` |
+| Multi-keyword search | \`grep -rlE "term1\|term2" docs/ --include="*.md" \| head -5\` |
 | Find files by name | \`find docs/ -name "*routing*" -name "*.md"\` |
 | Read file (partial) | \`head -100 docs/path/file.md\` |
 | Read file (full) | \`cat docs/path/file.md\` |
@@ -97,7 +97,7 @@ bash_batch: [
 - Never answer with placeholder text like "Done", "Finished", or "Complete". Provide a real answer or explicitly state what is missing.
 - If a tool fails, adapt once with a different command. Do not repeat the same failing command in a loop.
 - Use \`| head -N\` on all search output to keep context small.
-- Use \`grep -rlE "term1\\|term2"\` for multi-keyword search in one command.
+- Use \`grep -rlE "term1\|term2"\` for multi-keyword search in one command.
 - Prefer \`grep -rl\` over \`grep -r\` — file paths are more useful than content dumps.
 - 1–2 batched calls beats 5 sequential ones.
 

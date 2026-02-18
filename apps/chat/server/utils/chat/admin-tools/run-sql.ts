@@ -32,24 +32,32 @@ Note: Use double quotes for reserved table names like "user". This is PostgreSQL
   inputSchema: z.object({
     query: z.string().describe('SQL SELECT query to execute'),
   }),
-  execute: async ({ query }) => {
-    const normalized = query.trim().toLowerCase()
+  execute: async function* ({ query }) {
+    const q = query.trim()
+    const label = q.length > 120 ? `${q.slice(0, 120)}…` : q || 'SQL query'
+
+    yield { status: 'loading' as const, label }
+    const start = Date.now()
+
+    const normalized = q.toLowerCase()
     if (!normalized.startsWith('select')) {
-      return { error: 'Only SELECT queries are allowed.' }
+      yield { status: 'done' as const, label, durationMs: Date.now() - start, error: 'Only SELECT queries are allowed.' }
+      return
     }
 
     const blocked = ['insert', 'update', 'delete', 'drop', 'alter', 'create', 'truncate', 'replace']
     for (const keyword of blocked) {
       if (new RegExp(`\\b${keyword}\\b`, 'i').test(query)) {
-        return { error: `Query contains blocked keyword: ${keyword}` }
+        yield { status: 'done' as const, label, durationMs: Date.now() - start, error: `Query contains blocked keyword: ${keyword}` }
+        return
       }
     }
 
     try {
-      const result = await db.execute(sql.raw(query)) as unknown as any[]
-      return { rows: result, rowCount: result.length }
+      const result = await db.execute(sql.raw(query)) as unknown as unknown[]
+      yield { status: 'done' as const, label, durationMs: Date.now() - start, rows: result, rowCount: result.length }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Query failed' }
+      yield { status: 'done' as const, label, durationMs: Date.now() - start, error: error instanceof Error ? error.message : 'Query failed' }
     }
   },
 })
