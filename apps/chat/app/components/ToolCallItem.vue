@@ -22,6 +22,11 @@ const fullLabel = computed(() => {
     || (args?.command ? [args.command as string] : undefined)
     || (firstResultCmd?.title ? [firstResultCmd.title] : firstResultCmd?.command ? [firstResultCmd.command] : [])
 
+  if (toolName === 'search_web') {
+    const query = args?.query || '...'
+    return state === 'loading' ? `Web search: "${query}"` : `Web search: "${query}"`
+  }
+
   if (toolName === 'search_and_read') {
     const query = args?.query || '...'
     return state === 'loading' ? `Searching "${query}"` : `Searched "${query}"`

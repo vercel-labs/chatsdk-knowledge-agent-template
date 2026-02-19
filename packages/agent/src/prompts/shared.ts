@@ -42,9 +42,9 @@ export const COMPLEXITY_HINTS: Record<AgentConfig['complexity'], string> = {
   simple:
     'One bash_batch call: search + read in parallel, then answer.\nbash_batch: ["grep -rl \'keyword\' docs/ --include=\'*.md\' | head -5", "head -100 docs/likely-source/index.md"]\nThen answer.',
   moderate:
-    'One bash_batch: parallel grep across likely directories, then one batch read.\nbash_batch: ["grep -rl \'keyword\' docs/source1/ --include=\'*.md\' | head -5", "grep -rl \'keyword\' docs/source2/ --include=\'*.md\' | head -5"]\nThen bash_batch: read the top results.\nAnswer with what you found.',
+    'One bash_batch: parallel grep across likely directories, then one batch read.\nbash_batch: ["grep -rl \'keyword\' docs/source1/ --include=\'*.md\' | head -5", "grep -rl \'keyword\' docs/source2/ --include=\'*.md\' | head -5"]\nThen bash_batch: read the top results.\nIf sandbox results are insufficient, use `search_web` for supplementary information.\nAnswer with what you found.',
   complex:
-    'Wide search then deep read:\n1. bash_batch: parallel grep -rl across all relevant directories\n2. bash_batch: read top files with head -100, use grep -n -C3 for specific sections\n3. Cross-reference sources, then answer.',
+    'Wide search then deep read:\n1. bash_batch: parallel grep -rl across all relevant directories\n2. bash_batch: read top files with head -100, use grep -n -C3 for specific sections\n3. If needed, `search_web` for external context or recent information\n4. Cross-reference sources, then answer.',
 }
 
 export function applyComplexity(prompt: string, agentConfig: AgentConfig): string {
