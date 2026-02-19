@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
     let stepStartTime = Date.now()
     const stepDurations: number[] = []
     let routingResult: RoutingResult | undefined
-    const effectiveModel = model
+    let effectiveModel = model
 
     const existingSessionId = await kv.get<string>(KV_KEYS.ACTIVE_SANDBOX_SESSION)
     if (existingSessionId) {
@@ -154,9 +154,9 @@ export default defineEventHandler(async (event) => {
         apiKey: config.savoir?.apiKey ?? '',
         defaultModel: model,
         requestId,
-        onRouted: ({ routerConfig, agentConfig, effectiveModel, effectiveMaxSteps }) => {
-          routingResult = { routerConfig, agentConfig, effectiveModel, effectiveMaxSteps }
-          effectiveModel = effectiveModel
+        onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }) => {
+          effectiveModel = routedModel
+          routingResult = { routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }
           log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfig.maxStepsMultiplier}x)`)
         },
         onStepFinish,
