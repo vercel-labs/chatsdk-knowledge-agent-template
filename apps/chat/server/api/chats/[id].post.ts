@@ -5,14 +5,12 @@ import { kv } from '@nuxthub/kv'
 import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
+import { createSourceAgent, createAdminAgent } from '@savoir/agent'
+import type { RoutingResult } from '@savoir/agent'
 import { generateTitle } from '../../utils/chat/generate-title'
-import { routeQuestion } from '../../utils/router/route-question'
+import { getAgentConfig } from '../../utils/agent-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { adminTools } from '../../utils/chat/admin-tools'
-import { ADMIN_SYSTEM_PROMPT, buildChatSystemPrompt } from '../../utils/prompts/chat'
-import { applyComplexity } from '../../utils/prompts/shared'
-import { createAgent } from '../../utils/agent/create-agent'
-import type { RoutingResult } from '../../utils/agent/types'
 
 defineRouteMeta({
   openAPI: {
@@ -20,36 +18,6 @@ defineRouteMeta({
     tags: ['ai'],
   },
 })
-
-/** Build a short title for the collapsed tool call header. */
-function adminToolTitle(toolName: string, args: Record<string, unknown>): string {
-  switch (toolName) {
-    case 'run_sql': return 'SQL query'
-    case 'query_stats': return 'Query stats'
-    case 'list_users': return 'List users'
-    case 'list_sources': return 'List sources'
-    case 'query_chats': return 'Query chats'
-    case 'get_agent_config': return 'Get agent config'
-    case 'query_logs': {
-      const filters = [args.level, args.method, args.path, args.status].filter(Boolean)
-      return filters.length ? `Query logs (${filters.join(', ')})` : 'Query logs'
-    }
-    case 'log_stats': return `Log stats (${args.hours || 24}h)`
-    case 'query_errors': return `Query errors (${args.hours || 24}h)`
-    default: return toolName.replace(/_/g, ' ')
-  }
-}
-
-/** Build a detailed command string shown in the expanded tool call. */
-function adminToolCommand(toolName: string, args: Record<string, unknown>): string {
-  switch (toolName) {
-    case 'run_sql': {
-      const q = String(args?.query || '').trim()
-      return q.length > 120 ? `${q.slice(0, 120)}…` : q || 'SQL query'
-    }
-    default: return Object.entries(args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ') || toolName.replace(/_/g, ' ')
-  }
-}
 
 export default defineEventHandler(async (event) => {
   const requestLog = useLogger(event)
@@ -81,9 +49,7 @@ export default defineEventHandler(async (event) => {
         eq(schema.chats.id, id as string),
         eq(schema.chats.userId, user.id),
       ),
-      with: {
-        messages: true,
-      },
+      with: { messages: true },
     })
     if (!chat) {
       requestLog.error(new Error('Chat not found'))
@@ -116,8 +82,8 @@ export default defineEventHandler(async (event) => {
     let totalOutputTokens = 0
     let stepStartTime = Date.now()
     const stepDurations: number[] = []
-
-    let streamWriter: any = null
+    let routingResult: RoutingResult | undefined
+    let effectiveModel = model
 
     const existingSessionId = await kv.get<string>(KV_KEYS.ACTIVE_SANDBOX_SESSION)
     if (existingSessionId) {
@@ -130,189 +96,105 @@ export default defineEventHandler(async (event) => {
       apiKey: config.savoir?.apiKey || undefined,
       headers: cookie ? { cookie } : undefined,
       sessionId: existingSessionId || undefined,
-      onToolCall: (info) => {
-        const resultSummary = info.result
-          ? ` [${info.result.success ? 'OK' : 'FAIL'}] (${info.result.durationMs}ms)`
-          : ''
-        log.info('chat', `[${requestId}] Tool call [${info.state}]: ${info.toolName}${resultSummary}`)
-
-        if (streamWriter) {
-          streamWriter.write({
-            type: 'data-tool-call',
-            id: info.toolCallId,
-            data: {
-              toolCallId: info.toolCallId,
-              toolName: info.toolName,
-              args: info.args,
-              state: info.state,
-              result: info.result,
-            },
-          })
-        }
-      },
     })
 
-    let routingResult: RoutingResult | undefined
-    let effectiveModel = model
+    const onStepFinish = (stepResult: { usage?: { inputTokens?: number; outputTokens?: number }; toolCalls?: { toolName: string }[] }) => {
+      const stepDurationMs = Date.now() - stepStartTime
+      stepDurations.push(stepDurationMs)
+      stepCount++
 
-    // Wrap admin tools to emit loading/done events using the same format as SDK tools.
-    // Exclude 'chart' which has its own native UI via tool-chart parts.
-    const wrappedAdminTools = isAdminChat
-      ? Object.fromEntries(
-        Object.entries(adminTools).map(([name, t]) => {
-          if (name === 'chart') return [name, t]
-          return [
-            name,
-            {
-              ...(t as Record<string, unknown>),
-              execute: (args: Record<string, unknown>, options: { toolCallId: string }) => {
-                const title = adminToolTitle(name, args)
-                const command = adminToolCommand(name, args)
+      if (stepResult.usage) {
+        totalInputTokens += stepResult.usage.inputTokens ?? 0
+        totalOutputTokens += stepResult.usage.outputTokens ?? 0
+      }
 
-                // Emit loading event (same shape as SDK tools)
-                if (streamWriter) {
-                  streamWriter.write({
-                    type: 'data-tool-call',
-                    id: options.toolCallId,
-                    data: {
-                      toolCallId: options.toolCallId,
-                      toolName: name,
-                      args: { command: title },
-                      state: 'loading',
-                    },
-                  })
-                }
+      if (stepResult.toolCalls?.length) {
+        toolCallCount += stepResult.toolCalls.length
+        const tools = stepResult.toolCalls.map(c => c.toolName).join(', ')
+        log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
+      } else {
+        log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
+      }
 
-                const start = Date.now()
-                const promise = (t as any).execute(args, options) as Promise<unknown>
+      stepStartTime = Date.now()
+    }
 
-                // Emit done event with result as stdout (same shape as SDK tools)
-                return promise.then((output: unknown) => {
-                  if (streamWriter) {
-                    streamWriter.write({
-                      type: 'data-tool-call',
-                      id: options.toolCallId,
-                      data: {
-                        toolCallId: options.toolCallId,
-                        toolName: name,
-                        args: { command: title },
-                        state: 'done',
-                        result: {
-                          success: true,
-                          durationMs: Date.now() - start,
-                          commands: [
-                            {
-                              command,
-                              stdout: JSON.stringify(output, null, 2),
-                              stderr: '',
-                              exitCode: 0,
-                              success: true,
-                            },
-                          ],
-                        },
-                      },
-                    })
-                  }
-                  return output
-                })
-              },
-            },
-          ]
+    const onFinish = (result: { finishReason: string }) => {
+      const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
+      requestLog.set({
+        finishReason: result.finishReason,
+        totalInputTokens,
+        totalOutputTokens,
+        totalTokens: totalInputTokens + totalOutputTokens,
+        stepCount,
+        toolCallCount,
+        stepDurations,
+        totalAgentMs: totalDurationMs,
+        ...(routingResult && {
+          routerComplexity: routingResult.routerConfig.complexity,
+          routerMaxSteps: routingResult.routerConfig.maxSteps,
+          effectiveMaxSteps: routingResult.effectiveMaxSteps,
+          stepsMultiplier: routingResult.agentConfig.maxStepsMultiplier,
+          routerReasoning: routingResult.routerConfig.reasoning,
         }),
-      )
-      : undefined
+      })
+      log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
+    }
 
-    const agent = createAgent({
-      tools: savoir.tools,
-      route: () => routeQuestion(messages, requestId),
-      buildPrompt: (routerConfig, agentConfig) => applyComplexity(buildChatSystemPrompt(agentConfig), routerConfig),
-      resolveModel: (_, agentConfig) => agentConfig.defaultModel || model,
-      admin: wrappedAdminTools
-        ? { tools: wrappedAdminTools, systemPrompt: ADMIN_SYSTEM_PROMPT }
-        : undefined,
-      onRouted: (routed) => {
-        routingResult = routed
-        const { effectiveModel: routedModel, effectiveMaxSteps, routerConfig, agentConfig } = routed
-        effectiveModel = routedModel
-        log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${routedModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfig.maxStepsMultiplier}x)`)
-      },
-      onStepFinish: (stepResult) => {
-        const stepDurationMs = Date.now() - stepStartTime
-        stepDurations.push(stepDurationMs)
-        stepCount++
-
-        if (stepResult.usage) {
-          totalInputTokens += stepResult.usage.inputTokens ?? 0
-          totalOutputTokens += stepResult.usage.outputTokens ?? 0
-        }
-
-        if (stepResult.toolCalls && stepResult.toolCalls.length > 0) {
-          toolCallCount += stepResult.toolCalls.length
-          const tools = stepResult.toolCalls.map((c: { toolName: string }) => c.toolName).join(', ')
-          log.info('chat', `[${requestId}] Step ${stepCount}: ${tools} (${stepDurationMs}ms)`)
-
-          // Admin tool call events (loading + done) are emitted from the tool wrapper itself,
-          // so no additional emission is needed here.
-        } else {
-          log.info('chat', `[${requestId}] Step ${stepCount}: response (${stepDurationMs}ms)`)
-        }
-
-        stepStartTime = Date.now()
-      },
-      onFinish: (result) => {
-        const totalDurationMs = stepDurations.reduce((a, b) => a + b, 0)
-        requestLog.set({
-          finishReason: result.finishReason,
-          totalInputTokens,
-          totalOutputTokens,
-          totalTokens: totalInputTokens + totalOutputTokens,
-          stepCount,
-          toolCallCount,
-          stepDurations,
-          totalAgentMs: totalDurationMs,
-          ...(routingResult && {
-            routerComplexity: routingResult.routerConfig.complexity,
-            routerMaxSteps: routingResult.routerConfig.maxSteps,
-            effectiveMaxSteps: routingResult.effectiveMaxSteps,
-            stepsMultiplier: routingResult.agentConfig.maxStepsMultiplier,
-            routerReasoning: routingResult.routerConfig.reasoning,
-          }),
-        })
-        log.info('chat', `[${requestId}] Finished: ${result.finishReason} (total: ${totalDurationMs}ms)`)
-      },
-    })
+    const agent = isAdminChat
+      ? createAdminAgent({
+        tools: adminTools,
+        onStepFinish,
+        onFinish,
+      })
+      : createSourceAgent({
+        tools: savoir.tools,
+        getAgentConfig,
+        messages,
+        apiKey: config.savoir?.apiKey ?? '',
+        defaultModel: model,
+        requestId,
+        onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }) => {
+          effectiveModel = routedModel
+          routingResult = { routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }
+          log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfig.maxStepsMultiplier}x)`)
+        },
+        onStepFinish,
+        onFinish,
+      })
 
     const requestStartTime = Date.now()
 
-    // Abort the agent when the client disconnects (e.g. chat.stop())
     const abortController = new AbortController()
     event.node.res.once('close', () => {
-      // Only abort if the response didn't finish normally (i.e. client disconnected)
       if (!event.node.res.writableFinished) {
         log.info('chat', `[${requestId}] Client disconnected, aborting agent`)
         abortController.abort()
       }
     })
 
+    const titleTask = (!chat.title && messages[0])
+      ? generateTitle({
+        firstMessage: messages[0],
+        chatId: id as string,
+        requestId,
+        apiKey: config.savoir?.apiKey ?? '',
+      })
+      : null
+
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        streamWriter = writer
-
-        if (!chat.title && messages[0]) {
-          generateTitle({
-            firstMessage: messages[0],
-            chatId: id as string,
-            requestId,
-            writer,
-          })
-        }
-
         const result = await agent.stream({
           messages: await convertToModelMessages(messages),
           options: {},
           abortSignal: abortController.signal,
         })
         writer.merge(result.toUIMessageStream())
+
+        const title = await titleTask
+        if (title) {
+          writer.write({ type: 'data-chat-title', data: { title }, transient: true })
+        }
       },
       onFinish: async ({ messages: responseMessages }) => {
         const dbStartTime = Date.now()

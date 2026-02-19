@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
 import { count, avg, max, sql, gte, and, isNotNull, desc } from 'drizzle-orm'
+import { preview, cmd } from './_preview'
 
 export type LogStatsUIToolInvocation = UIToolInvocation<typeof logStatsTool>
 
@@ -14,7 +15,11 @@ Returns total requests, error rate, status distribution, latency percentiles, to
   inputSchema: z.object({
     hours: z.number().min(1).max(168).default(24).describe('Number of hours to look back'),
   }),
-  execute: async ({ hours }) => {
+  execute: async function* ({ hours }) {
+    const label = `Log stats (${hours}h)`
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
+    const start = Date.now()
+
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
     const timeFilter = gte(e.timestamp, cutoff)
 
@@ -74,7 +79,11 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         return arr[Math.max(0, idx)]
       }
 
-      return {
+      const overviewData = { total, errors, errorRate: total > 0 ? `${((errors / total) * 100).toFixed(1)}%` : '0%', avgMs: avgDuration, statusDistribution: statusDist.map(r => ({ bucket: r.bucket, count: Number(r.count) })) }
+      yield {
+        status: 'done' as const,
+        commands: [cmd(label, preview(overviewData))],
+        durationMs: Date.now() - start,
         period: `Last ${hours}h`,
         totalRequests: total,
         errorCount: errors,
@@ -92,7 +101,8 @@ Returns total requests, error rate, status distribution, latency percentiles, to
         top10ErrorPaths: errorPaths.map(r => ({ method: r.method, path: r.path, count: Number(r.count) })),
       }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Query failed' }
+      const err = error instanceof Error ? error.message : 'Query failed'
+      yield { status: 'done' as const, commands: [cmd(label, '', err, false)], durationMs: Date.now() - start, error: err }
     }
   },
 })

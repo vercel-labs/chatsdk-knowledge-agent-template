@@ -1,10 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import type { SavoirClient } from '../client'
-import type { ToolCallCallback, ToolExecutionResult, CommandResult } from '../types'
 import { validateShellCommand } from '../shell-policy'
 
-export function createBashTool(client: SavoirClient, onToolCall?: ToolCallCallback) {
+export function createBashTool(client: SavoirClient) {
   return tool({
     description: `Execute a bash command in the documentation sandbox.
 Use standard Unix commands to explore and read files.`,
@@ -15,79 +14,44 @@ Use standard Unix commands to explore and read files.`,
       { input: { command: 'find docs/ -maxdepth 2 -type d' } },
       { input: { command: 'grep -rl "useAsyncData" docs/ --include="*.md" | head -5' } },
     ],
-    onInputAvailable: ({ toolCallId, input }) => {
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash',
-        args: input,
-        state: 'loading',
+    execute: async function* ({ command }) {
+      yield { status: 'loading' as const }
+      const start = Date.now()
+
+      const validation = validateShellCommand(command, {
+        allowedBaseDirectory: '/vercel/sandbox',
       })
-    },
-    execute: async ({ command }, { toolCallId }) => {
-      const startTime = Date.now()
-
-      try {
-        const validation = validateShellCommand(command, {
-          allowedBaseDirectory: '/vercel/sandbox',
-        })
-        if (!validation.ok) {
-          throw new Error(validation.reason)
+      if (!validation.ok) {
+        yield {
+          status: 'done' as const,
+          success: false,
+          durationMs: Date.now() - start,
+          stdout: '',
+          stderr: validation.reason,
+          exitCode: 1,
+          commands: [{ command, stdout: '', stderr: validation.reason, exitCode: 1, success: false }],
         }
+        return
+      }
 
-        const apiResult = await client.bash(command)
-        const durationMs = Date.now() - startTime
+      const result = await client.bash(command)
+      const durationMs = Date.now() - start
+      const success = result.exitCode === 0
 
-        const commandResult: CommandResult = {
-          command,
-          stdout: apiResult.stdout,
-          stderr: apiResult.stderr,
-          exitCode: apiResult.exitCode,
-          success: apiResult.exitCode === 0,
-        }
-
-        const executionResult: ToolExecutionResult = {
-          commands: [commandResult],
-          success: commandResult.success,
-          durationMs,
-        }
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash',
-          args: { command },
-          state: 'done',
-          result: executionResult,
-        })
-
-        return {
-          stdout: apiResult.stdout,
-          stderr: apiResult.stderr,
-          exitCode: apiResult.exitCode,
-        }
-      } catch (error) {
-        const durationMs = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash',
-          args: { command },
-          state: 'error',
-          result: {
-            commands: [{ command, stdout: '', stderr: errorMessage, exitCode: 1, success: false }],
-            success: false,
-            durationMs,
-            error: errorMessage,
-          },
-        })
-
-        throw error
+      yield {
+        status: 'done' as const,
+        success,
+        durationMs,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.exitCode,
+        commands: [{ command, stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode, success }],
       }
     },
   })
 }
 
-export function createBashBatchTool(client: SavoirClient, onToolCall?: ToolCallCallback) {
+export function createBashBatchTool(client: SavoirClient) {
   return tool({
     description: `Execute multiple bash commands in the documentation sandbox in a single request.
 More efficient than multiple single bash calls — use this as your primary tool.
@@ -107,78 +71,44 @@ Maximum 10 commands per batch.`,
         'head -80 docs/nuxt/1.getting-started/3.routing.md',
       ] } },
     ],
-    onInputAvailable: ({ toolCallId, input }) => {
-      onToolCall?.({
-        toolCallId,
-        toolName: 'bash_batch',
-        args: input,
-        state: 'loading',
-      })
-    },
-    execute: async ({ commands }, { toolCallId }) => {
-      const startTime = Date.now()
+    execute: async function* ({ commands }) {
+      yield { status: 'loading' as const }
+      const start = Date.now()
 
-      try {
-        for (const command of commands) {
-          const validation = validateShellCommand(command, {
-            allowedBaseDirectory: '/vercel/sandbox',
-          })
-          if (!validation.ok) {
-            throw new Error(validation.reason)
-          }
-        }
-
-        const apiResult = await client.bashBatch(commands)
-        const durationMs = Date.now() - startTime
-
-        const commandResults: CommandResult[] = apiResult.results.map(r => ({
-          command: r.command,
-          stdout: r.stdout,
-          stderr: r.stderr,
-          exitCode: r.exitCode,
-          success: r.exitCode === 0,
-        }))
-
-        const executionResult: ToolExecutionResult = {
-          commands: commandResults,
-          success: commandResults.every(r => r.success),
-          durationMs,
-        }
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash_batch',
-          args: { commands },
-          state: 'done',
-          result: executionResult,
+      for (const command of commands) {
+        const validation = validateShellCommand(command, {
+          allowedBaseDirectory: '/vercel/sandbox',
         })
-
-        return {
-          results: apiResult.results.map(r => ({
-            command: r.command,
-            stdout: r.stdout,
-            stderr: r.stderr,
-            exitCode: r.exitCode,
-          })),
-        }
-      } catch (error) {
-        const durationMs = Date.now() - startTime
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-
-        onToolCall?.({
-          toolCallId,
-          toolName: 'bash_batch',
-          args: { commands },
-          state: 'error',
-          result: {
-            commands: commands.map(cmd => ({ command: cmd, stdout: '', stderr: '', exitCode: 1, success: false })),
+        if (!validation.ok) {
+          const errorResult = { command, stdout: '', stderr: validation.reason, exitCode: 1, success: false }
+          yield {
+            status: 'done' as const,
             success: false,
-            durationMs,
-            error: errorMessage,
-          },
-        })
+            durationMs: Date.now() - start,
+            results: [{ command, stdout: '', stderr: validation.reason, exitCode: 1 }],
+            commands: [errorResult],
+          }
+          return
+        }
+      }
 
-        throw error
+      const apiResult = await client.bashBatch(commands)
+      const durationMs = Date.now() - start
+
+      const commandResults = apiResult.results.map(r => ({
+        command: r.command,
+        stdout: r.stdout,
+        stderr: r.stderr,
+        exitCode: r.exitCode,
+        success: r.exitCode === 0,
+      }))
+
+      yield {
+        status: 'done' as const,
+        success: commandResults.every(r => r.success),
+        durationMs,
+        results: apiResult.results.map(r => ({ command: r.command, stdout: r.stdout, stderr: r.stderr, exitCode: r.exitCode })),
+        commands: commandResults,
       }
     },
   })

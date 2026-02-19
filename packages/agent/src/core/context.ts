@@ -1,5 +1,4 @@
-import { pruneMessages, type StepResult, type ToolSet } from 'ai'
-import type { ModelMessage } from '@ai-sdk/provider-utils'
+import { pruneMessages, type StepResult, type ToolSet, type ModelMessage } from 'ai'
 
 export function compactContext({
   messages,

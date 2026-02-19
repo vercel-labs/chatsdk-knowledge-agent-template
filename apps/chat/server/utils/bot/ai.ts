@@ -1,9 +1,16 @@
 import { generateText, Output } from 'ai'
 import { log } from 'evlog'
-import { type AgentConfig, agentConfigSchema, DEFAULT_MODEL, getDefaultConfig, ROUTER_MODEL } from '../router/schema'
-import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
-import { buildBotSystemPrompt, buildBotUserMessage } from '../prompts/bot'
-import { createAgent } from '../agent/create-agent'
+import {
+  type AgentConfig,
+  agentConfigSchema,
+  createAgent,
+  DEFAULT_MODEL,
+  getDefaultConfig,
+  ROUTER_MODEL,
+  ROUTER_SYSTEM_PROMPT,
+  buildBotSystemPrompt,
+  buildBotUserMessage,
+} from '@savoir/agent'
 import { createInternalSavoir } from './savoir'
 import type { ThreadContext } from './types'
 
@@ -65,15 +72,11 @@ export async function generateAIResponse(
     const savoir = createInternalSavoir({
       source: context?.platform ? `${context.platform}-bot` : 'bot',
       sourceId: context?.number ? `issue-${context.number}` : undefined,
-      onToolCall: (info) => {
-        if (info.state === 'loading') {
-          log.info('bot', `bash: ${JSON.stringify(info.args).slice(0, 150)}`)
-        }
-      },
     })
 
     const agent = createAgent({
       tools: savoir.tools,
+      getAgentConfig: savoir.getAgentConfig,
       route: () => routeQuestion(question, context),
       buildPrompt: (routerConfig, agentConfig) => buildBotSystemPrompt(context, routerConfig, agentConfig),
       resolveModel: (routerConfig, agentConfig) => agentConfig.defaultModel || routerConfig.model,

@@ -1,5 +1,4 @@
-import { log } from 'evlog'
-import type { ModelMessage } from '@ai-sdk/provider-utils'
+import type { ModelMessage } from 'ai'
 
 /**
  * Ensure all tool-call `input` fields in messages are valid JSON objects.
@@ -11,7 +10,7 @@ export function sanitizeToolCallInputs(messages: ModelMessage[]): ModelMessage[]
     if (message.role !== 'assistant' || !Array.isArray(message.content)) continue
     for (const part of message.content) {
       if (part.type === 'tool-call' && typeof part.input === 'string') {
-        log.warn('agent', `Sanitizing tool-call input for ${part.toolName}: input was a string, parsing to object`)
+        console.warn(`[agent] Sanitizing tool-call input for ${part.toolName}: input was a string, parsing to object`)
         try {
           part.input = JSON.parse(part.input)
         } catch {

@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { db } from '@nuxthub/db'
 import { sql } from 'drizzle-orm'
+import { cmd, preview } from './_preview'
 
 export type RunSqlUIToolInvocation = UIToolInvocation<typeof runSqlTool>
 
@@ -32,24 +33,37 @@ Note: Use double quotes for reserved table names like "user". This is PostgreSQL
   inputSchema: z.object({
     query: z.string().describe('SQL SELECT query to execute'),
   }),
-  execute: async ({ query }) => {
-    const normalized = query.trim().toLowerCase()
+  execute: async function* ({ query }) {
+    const q = query.trim()
+    const label = q.length > 120 ? `${q.slice(0, 120)}…` : q || 'SQL query'
+
+    yield { status: 'loading' as const, commands: [cmd(label, '')] }
+    const start = Date.now()
+
+    const normalized = q.toLowerCase()
     if (!normalized.startsWith('select')) {
-      return { error: 'Only SELECT queries are allowed.' }
+      yield { status: 'done' as const, commands: [cmd(label, '', 'Only SELECT queries are allowed.', false)], durationMs: Date.now() - start, error: 'Only SELECT queries are allowed.' }
+      return
     }
 
     const blocked = ['insert', 'update', 'delete', 'drop', 'alter', 'create', 'truncate', 'replace']
     for (const keyword of blocked) {
       if (new RegExp(`\\b${keyword}\\b`, 'i').test(query)) {
-        return { error: `Query contains blocked keyword: ${keyword}` }
+        const err = `Query contains blocked keyword: ${keyword}`
+        yield { status: 'done' as const, commands: [cmd(label, '', err, false)], durationMs: Date.now() - start, error: err }
+        return
       }
     }
 
     try {
-      const result = await db.execute(sql.raw(query)) as unknown as any[]
-      return { rows: result, rowCount: result.length }
+      const rawResult = await db.execute(sql.raw(query)) as unknown
+      const rows: unknown[] = Array.isArray(rawResult)
+        ? rawResult
+        : ((rawResult as Record<string, unknown>)['rows'] as unknown[] | undefined) ?? []
+      yield { status: 'done' as const, commands: [cmd(label, preview(rows.length === 1 ? rows[0] : rows.slice(0, 5)))], durationMs: Date.now() - start, rows, rowCount: rows.length }
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Query failed' }
+      const err = error instanceof Error ? error.message : 'Query failed'
+      yield { status: 'done' as const, commands: [cmd(label, '', err, false)], durationMs: Date.now() - start, error: err }
     }
   },
 })

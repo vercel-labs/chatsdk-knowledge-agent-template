@@ -1,24 +1,21 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet } from 'ai'
-import { log } from 'evlog'
 import { DEFAULT_MODEL } from '../router/schema'
-import { getAgentConfig } from '../agent-config'
-import { compactContext } from './context-management'
-import { callOptionsSchema } from './schemas'
-import { sanitizeToolCallInputs } from './sanitize'
-import { countConsecutiveToolSteps, shouldForceTextOnlyStep } from './step-policy'
-import type { AgentCallOptions, AgentExecutionContext, CreateAgentOptions } from './types'
+import { compactContext } from '../core/context'
+import { callOptionsSchema } from '../core/schemas'
+import { sanitizeToolCallInputs } from '../core/sanitize'
+import { countConsecutiveToolSteps, shouldForceTextOnlyStep } from '../core/policy'
+import type { AgentCallOptions, AgentExecutionContext, CreateAgentOptions } from '../types'
 
 export function createAgent({
   tools,
+  getAgentConfig,
   route,
   buildPrompt,
   resolveModel,
-  admin,
   onRouted,
   onStepFinish,
   onFinish,
 }: CreateAgentOptions) {
-  let isAdminMode = false
   let maxSteps = 15
 
   return new ToolLoopAgent({
@@ -27,28 +24,6 @@ export function createAgent({
     prepareCall: async ({ options, ...settings }) => {
       const modelOverride = (options as AgentCallOptions | undefined)?.model
       const customContext = (options as AgentCallOptions | undefined)?.context
-
-      if (admin) {
-        isAdminMode = true
-        maxSteps = admin.maxSteps ?? 15
-        const effectiveModel = modelOverride ?? DEFAULT_MODEL
-        const executionContext: AgentExecutionContext = {
-          mode: 'admin',
-          effectiveModel,
-          maxSteps,
-          customContext,
-        }
-        return {
-          ...settings,
-          model: effectiveModel,
-          instructions: admin.systemPrompt,
-          tools: admin.tools,
-          stopWhen: stepCountIs(maxSteps),
-          experimental_context: executionContext,
-        }
-      }
-
-      isAdminMode = false
 
       const [routerConfig, agentConfig] = await Promise.all([
         route(),
@@ -85,23 +60,11 @@ export function createAgent({
     prepareStep: ({ stepNumber, messages, steps }) => {
       sanitizeToolCallInputs(messages)
       const normalizedSteps = (steps as StepResult<ToolSet>[] | undefined) ?? []
-      const compactedMessages = compactContext({
-        messages,
-        steps: normalizedSteps,
-      })
+      const compactedMessages = compactContext({ messages, steps: normalizedSteps })
 
-      if (isAdminMode) {
-        if (compactedMessages !== messages) {
-          return { messages: compactedMessages }
-        }
-        return
-      }
-
-      // Prevent tool-only endings: reserve end of loop for synthesis.
       if (shouldForceTextOnlyStep({ stepNumber, maxSteps, steps: normalizedSteps })) {
-        log.info(
-          'agent',
-          `Forcing text-only step at ${stepNumber + 1}/${maxSteps} (tool streak=${countConsecutiveToolSteps(normalizedSteps)})`,
+        console.info(
+          `[agent] Forcing text-only step at ${stepNumber + 1}/${maxSteps} (tool streak=${countConsecutiveToolSteps(normalizedSteps)})`,
         )
         return {
           tools: {},
