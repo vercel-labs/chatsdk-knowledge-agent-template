@@ -27,6 +27,32 @@ export default defineNuxtConfig({
       service: 'savoir',
       version: '0.1.0',
     },
+    routes: {
+      '/api/admin/**': { service: 'admin-api' },
+      '/api/webhooks/**': { service: 'webhook-api' },
+      '/api/sync/**': { service: 'sync-api' },
+      '/api/sandbox/**': { service: 'sandbox-api' },
+      '/api/stats/**': { service: 'stats-api' },
+    },
+    transport: { enabled: true },
+  },
+
+  $production: {
+    evlog: {
+      sampling: {
+        rates: {
+          debug: 0,
+          info: 10,
+          warn: 50,
+        },
+        keep: [
+          { status: 400 },
+          { duration: 2000 },
+          { path: '/api/webhooks/**' },
+          { path: '/api/sandbox/**' },
+        ],
+      },
+    },
   },
 
   devtools: { enabled: true },

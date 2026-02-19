@@ -11,15 +11,18 @@ const paramsSchema = z.object({
  * Delete a source (admin only)
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
+
+  requestLog.set({ sourceId: id })
 
   const [deleted] = await db.delete(schema.sources)
     .where(eq(schema.sources.id, id))
     .returning()
 
   if (!deleted) {
-    throw createError({ statusCode: 404, message: 'Source not found' })
+    throw createError({ statusCode: 404, message: 'Source not found', data: { why: 'No source exists with this ID', fix: 'Verify the source ID from the sources list' } })
   }
 
   return { success: true }

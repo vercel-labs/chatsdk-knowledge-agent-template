@@ -1,4 +1,5 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet, type UIMessage } from 'ai'
+import { log } from 'evlog'
 import { DEFAULT_MODEL } from '../router/schema'
 import { routeQuestion } from '../router/route-question'
 import { buildChatSystemPrompt } from '../prompts/chat'
@@ -80,9 +81,7 @@ export function createSourceAgent({
       const compactedMessages = compactContext({ messages: stepMessages, steps: normalizedSteps })
 
       if (shouldForceTextOnlyStep({ stepNumber, maxSteps, steps: normalizedSteps })) {
-        console.info(
-          `[agent] Forcing text-only step at ${stepNumber + 1}/${maxSteps} (tool streak=${countConsecutiveToolSteps(normalizedSteps)})`,
-        )
+        log.info({ event: 'agent.force_text_step', step: stepNumber + 1, maxSteps, toolStreak: countConsecutiveToolSteps(normalizedSteps) })
         return {
           tools: {},
           toolChoice: 'none' as const,

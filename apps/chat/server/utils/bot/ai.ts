@@ -95,7 +95,7 @@ export async function generateAIResponse(
     savoir.reportUsage(result, {
       startTime,
       metadata: context ? { source: context.source } : undefined,
-    }).catch(() => {})
+    }).catch(e => log.debug({ event: 'bot.usage_report.failed', error: e instanceof Error ? e.message : 'Unknown' }))
 
     // If the agent exhausted all steps on tool calls without producing text,
     // do one final call with NO tools to force a text response.

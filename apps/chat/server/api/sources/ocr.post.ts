@@ -125,7 +125,7 @@ async function extractFromImage(image: string) {
     const result = await optimizeImage(image, ocrConfig)
     optimizedImage = result.buffer
   } catch (error) {
-    console.error('Image optimization for OCR failed, using original', { error })
+    log.warn({ event: 'ocr.optimization_failed', error: error instanceof Error ? error.message : 'Unknown' })
     optimizedImage = image
   }
 

@@ -7,8 +7,11 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
+
+  requestLog.set({ chatId: id })
 
   const chat = await db.query.chats.findFirst({
     where: () => and(
@@ -23,8 +26,10 @@ export default defineEventHandler(async (event) => {
   })
 
   if (!chat) {
-    throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+    throw createError({ statusCode: 404, statusMessage: 'Chat not found', data: { why: 'No chat exists with this ID for your user account', fix: 'Verify the chat ID is correct' } })
   }
+
+  requestLog.set({ messageCount: chat.messages.length })
 
   return chat
 })

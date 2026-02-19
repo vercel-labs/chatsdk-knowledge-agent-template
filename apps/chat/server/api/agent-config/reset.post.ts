@@ -7,6 +7,7 @@ import { invalidateAgentConfigCache, getDefaultAgentConfig } from '../../utils/a
  * Reset agent configuration to defaults (admin only)
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
 
   const defaults = getDefaultAgentConfig()
@@ -55,6 +56,8 @@ export default defineEventHandler(async (event) => {
   }
 
   invalidateAgentConfigCache()
+
+  requestLog.set({ configId: config?.id })
 
   return config
 })

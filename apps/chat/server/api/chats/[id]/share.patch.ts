@@ -7,12 +7,15 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const { isPublic } = await readValidatedBody(event, z.object({
     isPublic: z.boolean()
   }).parse)
+
+  requestLog.set({ chatId: id, isPublic })
 
   const chat = await db.query.chats.findFirst({
     where: () => and(
@@ -24,7 +27,8 @@ export default defineEventHandler(async (event) => {
   if (!chat) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Chat not found'
+      statusMessage: 'Chat not found',
+      data: { why: 'No chat exists with this ID for your user account', fix: 'Verify the chat ID is correct' },
     })
   }
 

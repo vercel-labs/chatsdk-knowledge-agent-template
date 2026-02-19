@@ -1,6 +1,7 @@
 import { createGateway } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
 import type { UIMessage } from 'ai'
+import { log } from 'evlog'
 import { ROUTER_SYSTEM_PROMPT } from '../prompts/router'
 import { type AgentConfig, agentConfigSchema, getDefaultConfig, ROUTER_MODEL } from './schema'
 
@@ -25,7 +26,7 @@ export async function routeQuestion(
 
   const question = extractQuestionFromMessages(messages)
   if (!question) {
-    console.info(`[chat] [${requestId}] Router: no question found, using default config`)
+    log.info({ event: 'router.no_question', requestId })
     return getDefaultConfig()
   }
 
@@ -40,15 +41,15 @@ export async function routeQuestion(
     })
 
     if (!output) {
-      console.warn(`[chat] [${requestId}] Router returned no output, using default config`)
+      log.warn({ event: 'router.no_output', requestId })
       return getDefaultConfig()
     }
 
-    console.info(`[chat] [${requestId}] Router decision: ${output.complexity} (${output.model}, ${output.maxSteps} steps) - ${output.reasoning}`)
+    log.info({ event: 'router.decision', requestId, complexity: output.complexity, model: output.model, maxSteps: output.maxSteps, reasoning: output.reasoning })
     return output
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error(`[chat] [${requestId}] Router failed: ${errorMessage}, using default config`)
+    log.error({ event: 'router.failed', requestId, error: errorMessage })
     return getDefaultConfig()
   }
 }

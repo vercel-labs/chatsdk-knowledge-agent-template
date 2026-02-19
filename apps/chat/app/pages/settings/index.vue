@@ -7,6 +7,7 @@ useSeoMeta({ title: 'Settings' })
 
 const toast = useToast()
 const overlay = useOverlay()
+const { showError } = useErrorToast()
 const { client, user, session, signOut, fetchSession } = useUserSession()
 
 const nameInput = ref(user.value?.name ?? '')
@@ -22,8 +23,8 @@ async function saveProfile() {
     await client!.updateUser({ name: nameInput.value })
     await fetchSession({ force: true })
     toast.add({ title: 'Profile updated', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to update profile', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to update profile' })
   } finally {
     isSavingProfile.value = false
   }
@@ -40,8 +41,8 @@ async function changePassword() {
     currentPassword.value = ''
     newPassword.value = ''
     toast.add({ title: 'Password changed', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to change password', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to change password' })
   } finally {
     isChangingPassword.value = false
   }
@@ -59,8 +60,8 @@ async function linkGithub() {
   isLinkingGithub.value = true
   try {
     await client!.linkSocial({ provider: 'github' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to link GitHub', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to link GitHub' })
     isLinkingGithub.value = false
   }
 }
@@ -71,8 +72,8 @@ async function unlinkGithub() {
     await client!.unlinkAccount({ providerId: 'github' })
     await refreshAccounts()
     toast.add({ title: 'GitHub account unlinked', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to unlink account', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to unlink account' })
   } finally {
     isUnlinking.value = false
   }
@@ -88,8 +89,8 @@ async function revokeSession(token: string) {
     await client!.revokeSession({ token })
     await refreshSessions()
     toast.add({ title: 'Session revoked', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke session', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to revoke session' })
   } finally {
     revokingSession.value = null
   }
@@ -101,8 +102,8 @@ async function revokeOtherSessions() {
     await client!.revokeOtherSessions()
     await refreshSessions()
     toast.add({ title: 'Other sessions revoked', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke sessions', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to revoke sessions' })
   } finally {
     isRevokingAll.value = false
   }
@@ -128,8 +129,8 @@ async function deleteAccount() {
     await client!.deleteUser()
     await signOut()
     await navigateTo('/login', { replace: true, external: true })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to delete account', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to delete account' })
     isDeletingAccount.value = false
   }
 }

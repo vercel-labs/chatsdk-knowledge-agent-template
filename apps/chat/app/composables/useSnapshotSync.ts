@@ -13,6 +13,7 @@ let pollInterval: ReturnType<typeof setInterval> | null = null
 export function useSnapshotSync() {
   const { isAdmin } = useAdmin()
   const toast = useToast()
+  const { showError } = useErrorToast()
 
   const needsSync = computed(() => status.value?.needsSync ?? false)
 
@@ -34,14 +35,7 @@ export function useSnapshotSync() {
 
       await checkStatus(false)
     } catch (e) {
-      const message = (e as Error).message || 'Failed to sync snapshot'
-      error.value = message
-      toast.add({
-        title: 'Sync failed',
-        description: message,
-        icon: 'i-lucide-alert-circle',
-        color: 'error',
-      })
+      error.value = showError(e, { title: 'Sync failed', fallback: 'Failed to sync snapshot' })
     } finally {
       isSyncing.value = false
     }
@@ -61,7 +55,7 @@ export function useSnapshotSync() {
         await syncNow()
       }
     } catch (e) {
-      error.value = (e as Error).message || 'Failed to check snapshot status'
+      error.value = showError(e, { fallback: 'Failed to check snapshot status' })
     } finally {
       isLoading.value = false
     }

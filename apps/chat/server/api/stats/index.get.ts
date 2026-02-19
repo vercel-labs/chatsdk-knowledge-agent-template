@@ -11,12 +11,15 @@ import { desc, and, gte, lt, eq } from 'drizzle-orm'
  * - models: comma-separated model filter
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
 
   const query = getQuery(event)
   const days = Math.min(Math.max(Number(query.days) || 30, 1), 365)
   const sourcesFilter = typeof query.sources === 'string' && query.sources ? query.sources.split(',') : null
   const modelsFilter = typeof query.models === 'string' && query.models ? query.models.split(',') : null
+
+  requestLog.set({ days, sourcesFilter, modelsFilter })
 
   const endDate = new Date()
   const startDate = new Date()
@@ -448,7 +451,7 @@ export default defineEventHandler(async (event) => {
   const totalFeedback = positiveFeedback + negativeFeedback
   const feedbackScore = totalFeedback > 0 ? Math.round((positiveFeedback / totalFeedback) * 100) : null
 
-  return {
+  const result = {
     period: {
       days,
       from: startDate.toISOString().split('T')[0]!,
@@ -484,4 +487,8 @@ export default defineEventHandler(async (event) => {
     availableSources,
     availableModels,
   }
+
+  requestLog.set({ resultMessageCount: totalMessages, resultModelCount: byModel.length })
+
+  return result
 })

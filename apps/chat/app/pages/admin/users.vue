@@ -16,6 +16,7 @@ interface AdminUserRow {
 }
 
 const toast = useToast()
+const { showError } = useErrorToast()
 const { user: currentUser } = useUserSession()
 
 const searchQuery = ref('')
@@ -94,14 +95,9 @@ async function saveRole(row: AdminUserRow) {
       title: 'Role updated',
       icon: 'i-lucide-check',
     })
-  } catch (error: any) {
+  } catch (e) {
     draftRoles.value[row.id] = row.role
-    toast.add({
-      title: 'Error',
-      description: error?.data?.message || error?.message || 'Failed to update role',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+    showError(e, { fallback: 'Failed to update role' })
   } finally {
     savingUserId.value = null
   }

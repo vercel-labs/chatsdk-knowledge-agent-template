@@ -27,9 +27,12 @@ const bodySchema = z.object({
  * Update an existing source
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const body = await readValidatedBody(event, bodySchema.parse)
+
+  requestLog.set({ sourceId: id, fieldsUpdated: Object.keys(body) })
 
   const [source] = await db.update(schema.sources)
     .set({
@@ -40,7 +43,7 @@ export default defineEventHandler(async (event) => {
     .returning()
 
   if (!source) {
-    throw createError({ statusCode: 404, message: 'Source not found' })
+    throw createError({ statusCode: 404, message: 'Source not found', data: { why: 'No source exists with this ID', fix: 'Verify the source ID from the sources list' } })
   }
 
   return source

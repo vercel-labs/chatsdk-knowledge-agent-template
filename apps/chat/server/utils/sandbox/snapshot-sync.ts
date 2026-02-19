@@ -1,5 +1,6 @@
 import { kv } from '@nuxthub/kv'
 import { Snapshot } from '@vercel/sandbox'
+import { createError } from 'evlog'
 import type { SnapshotMetadata, SnapshotSyncStatus } from './types'
 import { KV_KEYS } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
@@ -81,7 +82,11 @@ export async function syncToSnapshot(snapshotId?: string): Promise<SnapshotMetad
   if (!targetSnapshotId) {
     const latest = await getLatestSnapshot()
     if (!latest) {
-      throw new Error('No snapshots available to sync to')
+      throw createError({
+        message: 'No snapshots available to sync to',
+        why: 'No valid snapshots exist on the Vercel sandbox platform',
+        fix: 'Run the sync workflow to create a snapshot first',
+      })
     }
     targetSnapshotId = latest.id
   }

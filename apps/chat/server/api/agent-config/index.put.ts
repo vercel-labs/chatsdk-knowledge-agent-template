@@ -19,8 +19,11 @@ const bodySchema = z.object({
  * Update the active agent configuration (admin only)
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
   const body = await readValidatedBody(event, bodySchema.parse)
+
+  requestLog.set({ fieldsChanged: Object.keys(body) })
 
   const existing = await db.query.agentConfig.findFirst({
     where: () => eq(schema.agentConfig.isActive, true),
@@ -59,6 +62,8 @@ export default defineEventHandler(async (event) => {
   }
 
   invalidateAgentConfigCache()
+
+  requestLog.set({ configId: config?.id })
 
   return config
 })

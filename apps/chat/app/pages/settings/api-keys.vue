@@ -7,6 +7,7 @@ useSeoMeta({ title: 'API Keys' })
 
 const toast = useToast()
 const overlay = useOverlay()
+const { showError } = useErrorToast()
 const { client } = useUserSession()
 
 const { data: keys, refresh, status } = useLazyAsyncData('user-api-keys', () => client!.apiKey.list())
@@ -31,8 +32,8 @@ async function createKey() {
     newKeyName.value = ''
     await refresh()
     toast.add({ title: 'API key created', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to create API key', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to create API key' })
   } finally {
     isCreating.value = false
   }
@@ -47,8 +48,8 @@ async function revokeKey(keyId: string) {
     await client!.apiKey.delete({ keyId })
     await refresh()
     toast.add({ title: 'API key revoked', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke API key', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to revoke API key' })
   }
 }
 

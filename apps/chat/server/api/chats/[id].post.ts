@@ -54,14 +54,14 @@ export default defineEventHandler(async (event) => {
     if (!chat) {
       requestLog.error(new Error('Chat not found'))
       requestLog.set({ outcome: 'error' })
-      throw createError({ statusCode: 404, statusMessage: 'Chat not found' })
+      throw createError({ statusCode: 404, statusMessage: 'Chat not found', data: { why: 'No chat exists with this ID for your user account', fix: 'Verify the chat ID is correct' } })
     }
     requestLog.set({ existingMessages: chat.messages.length, chatMode: chat.mode })
 
     const isAdminChat = chat.mode === 'admin'
 
     if (isAdminChat && user.role !== 'admin') {
-      throw createError({ statusCode: 403, statusMessage: 'Admin access required' })
+      throw createError({ statusCode: 403, statusMessage: 'Admin access required', data: { why: 'This chat is in admin mode and requires the admin role', fix: 'Contact an administrator to be granted access' } })
     }
 
     const lastMessage = messages[messages.length - 1]

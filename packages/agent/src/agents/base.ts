@@ -1,4 +1,5 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet } from 'ai'
+import { log } from 'evlog'
 import { DEFAULT_MODEL } from '../router/schema'
 import { compactContext } from '../core/context'
 import { callOptionsSchema } from '../core/schemas'
@@ -63,9 +64,7 @@ export function createAgent({
       const compactedMessages = compactContext({ messages, steps: normalizedSteps })
 
       if (shouldForceTextOnlyStep({ stepNumber, maxSteps, steps: normalizedSteps })) {
-        console.info(
-          `[agent] Forcing text-only step at ${stepNumber + 1}/${maxSteps} (tool streak=${countConsecutiveToolSteps(normalizedSteps)})`,
-        )
+        log.info({ event: 'agent.force_text_step', step: stepNumber + 1, maxSteps, toolStreak: countConsecutiveToolSteps(normalizedSteps) })
         return {
           tools: {},
           toolChoice: 'none' as const,

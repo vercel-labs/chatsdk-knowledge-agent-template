@@ -40,7 +40,7 @@ async function processFile(file: FileData): Promise<FileData> {
       filename: `${base}.${ext}`,
     }
   } catch (error) {
-    console.error('Image optimization failed, using original file', { filename: file.filename, error })
+    log.warn({ event: 'image.optimization_failed', filename: file.filename, error: error instanceof Error ? error.message : 'Unknown' })
     return file
   }
 }
@@ -54,24 +54,24 @@ export default defineEventHandler(async (event) => {
   })
 
   if (chat && chat.userId !== user.id) {
-    throw createError({ statusCode: 403, statusMessage: 'You do not have permission to upload files to this chat' })
+    throw createError({ statusCode: 403, statusMessage: 'You do not have permission to upload files to this chat', data: { why: 'This chat belongs to another user', fix: 'Verify the chat ID is correct and belongs to your account' } })
   }
 
   const formData = await readMultipartFormData(event)
   const field = formData?.find(f => f.name === 'files')
 
   if (!field?.data || !field?.filename) {
-    throw createError({ statusCode: 400, statusMessage: 'No file provided' })
+    throw createError({ statusCode: 400, statusMessage: 'No file provided', data: { why: 'The request did not include a file in the "files" form field', fix: 'Attach a file using multipart form data with the field name "files"' } })
   }
 
   const originalType = field.type || 'application/octet-stream'
 
   if (!isAllowedType(originalType, field.filename)) {
-    throw createError({ statusCode: 400, statusMessage: `File type ${originalType} is not allowed` })
+    throw createError({ statusCode: 400, statusMessage: `File type ${originalType} is not allowed`, data: { why: 'Only images, PDFs, and CSV files are supported', fix: 'Upload a file with one of the supported types: image/*, application/pdf, or text/csv' } })
   }
 
   if (field.data.length > 8 * 1024 * 1024) {
-    throw createError({ statusCode: 400, statusMessage: 'File size exceeds 8MB limit' })
+    throw createError({ statusCode: 400, statusMessage: 'File size exceeds 8MB limit', data: { why: 'The uploaded file is too large for processing', fix: 'Reduce the file size to under 8MB' } })
   }
 
   const processed = await processFile({
