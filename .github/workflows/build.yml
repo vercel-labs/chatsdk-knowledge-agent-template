@@ -21,6 +21,6 @@ jobs:
         run: bun install
 
       - name: 🛠️ Build
-        run: bun run build
+        run: bun run prepare
         env:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
