@@ -6,6 +6,8 @@ The Savoir GitHub bot responds to mentions in GitHub issues, using your knowledg
 
 ## Prerequisites
 
+> **Important:** Make sure your GitHub App is **public**. While it's private, the org picker won't appear during installation and users can only install it on their personal account. Set it to public from the **Danger Zone** at the bottom of the app's settings page.
+
 Make sure your GitHub App is configured with:
 
 - **Webhook URL** pointing to `<your-url>/api/webhooks/github`

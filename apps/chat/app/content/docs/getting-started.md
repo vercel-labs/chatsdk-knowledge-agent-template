@@ -78,6 +78,8 @@ From the app settings page, collect:
 | **Private key** (generate one) | `NUXT_GITHUB_APP_PRIVATE_KEY` |
 | **Webhook secret** | `NUXT_GITHUB_WEBHOOK_SECRET` |
 
+> **Important:** Make the GitHub App **public** so users can install it on organizations. While the app is private, the org picker won't appear and installations are limited to your personal account only. You can do this from the app's **Danger Zone** at the bottom of its settings page.
+
 Then install the app on the repositories where you want the bot to be active: **Install App** tab > select your repositories.
 
 For more details on the bot behavior, see the [GitHub Bot documentation](/admin/docs/github-bot).
