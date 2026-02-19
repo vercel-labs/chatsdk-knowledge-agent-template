@@ -20,7 +20,6 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

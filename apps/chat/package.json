@@ -8,7 +8,6 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "test": "bun test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:generate": "nuxt db generate",
