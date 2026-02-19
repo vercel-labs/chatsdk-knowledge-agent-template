@@ -24,7 +24,9 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.45",
     "@ai-sdk/gateway": "^3.0.45",
+    "@ai-sdk/google": "^3.0.29",
     "ai": "^6.0.85",
     "evlog": "^1.9.0",
     "zod": "^4.3.6"

@@ -5,6 +5,7 @@ import { compactContext } from '../core/context'
 import { callOptionsSchema } from '../core/schemas'
 import { sanitizeToolCallInputs } from '../core/sanitize'
 import { countConsecutiveToolSteps, shouldForceTextOnlyStep } from '../core/policy'
+import { getSearchTools } from '../tools/model-config'
 import type { AgentCallOptions, AgentExecutionContext, CreateAgentOptions } from '../types'
 
 export function createAgent({
@@ -53,7 +54,7 @@ export function createAgent({
         ...settings,
         model: effectiveModel,
         instructions: buildPrompt(routerConfig, agentConfig),
-        tools,
+        tools: { ...tools, ...getSearchTools(effectiveModel) },
         stopWhen: stepCountIs(effectiveMaxSteps),
         experimental_context: executionContext,
       }

@@ -22,4 +22,6 @@ Analyze the user's question and determine the appropriate configuration for the 
 - Debugging scenarios describing errors or unexpected behavior
 - Architecture questions spanning multiple systems
 - Deep analysis requiring cross-referencing many files
-- Examples: "My SSR hydration is failing with this error...", "How to build a multi-tenant app with NuxtHub?", "Design a full auth flow with sessions and roles"`
+- Examples: "My SSR hydration is failing with this error...", "How to build a multi-tenant app with NuxtHub?", "Design a full auth flow with sessions and roles"
+
+**Note:** Questions referencing current events, recent releases, or topics unlikely to be covered in the sandbox documentation should be classified as at least **moderate** to allow the agent enough steps for web search.`

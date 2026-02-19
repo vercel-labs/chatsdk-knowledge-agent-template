@@ -1,3 +1,6 @@
+// Tools
+export { getSearchTools } from './tools/model-config'
+
 // Agents
 export { createSourceAgent } from './agents/source'
 export type { SourceAgentOptions } from './agents/source'
