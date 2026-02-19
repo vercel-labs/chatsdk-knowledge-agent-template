@@ -8,9 +8,12 @@ import { requireAdmin } from '../../utils/admin'
  * Response: { success: true, snapshotId }
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
 
   const metadata = await syncToSnapshot()
+
+  requestLog.set({ snapshotId: metadata.snapshotId })
 
   return {
     success: true,

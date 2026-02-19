@@ -8,8 +8,11 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
+
+  requestLog.set({ chat: { id }, user: { id: user.id } })
 
   const chat = await db.query.chats.findFirst({
     where: () => and(eq(schema.chats.id, id), eq(schema.chats.userId, user.id))
@@ -18,7 +21,8 @@ export default defineEventHandler(async (event) => {
   if (!chat) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Chat not found'
+      statusMessage: 'Chat not found',
+      data: { why: 'No chat exists with this ID for your user account', fix: 'Verify the chat ID is correct' },
     })
   }
 
@@ -33,13 +37,13 @@ export default defineEventHandler(async (event) => {
       await Promise.all(
         blobs.map(b =>
           blob.del(b.pathname).catch(error =>
-            console.error('[delete-chat] Failed to delete file:', b.pathname, error)
+            log.warn({ event: 'chat.delete.file_failed', pathname: b.pathname, error: error instanceof Error ? error.message : 'Unknown' })
           )
         )
       )
     }
   } catch (error) {
-    console.error('Failed to list/delete chat files:', error)
+    log.warn({ event: 'chat.delete.blob_cleanup_failed', chatId: id, error: error instanceof Error ? error.message : 'Unknown' })
   }
 
   return await db.delete(schema.chats)

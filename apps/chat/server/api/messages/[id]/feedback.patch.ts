@@ -7,12 +7,15 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { user } = await requireUserSession(event)
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   const { feedback } = await readValidatedBody(event, z.object({
     feedback: z.enum(['positive', 'negative']).nullable()
   }).parse)
+
+  requestLog.set({ userId: user.id, messageId: id, feedback })
 
   // Find the message and verify it belongs to the user's chat
   const message = await db.query.messages.findFirst({
@@ -25,14 +28,16 @@ export default defineEventHandler(async (event) => {
   if (!message) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Message not found'
+      statusMessage: 'Message not found',
+      data: { why: 'No message exists with this ID', fix: 'Verify the message ID is correct' },
     })
   }
 
   if (message.chat.userId !== user.id) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Forbidden'
+      statusMessage: 'Forbidden',
+      data: { why: 'This message belongs to another user\'s chat', fix: 'You can only provide feedback on messages in your own chats' },
     })
   }
 
@@ -40,7 +45,8 @@ export default defineEventHandler(async (event) => {
   if (message.role !== 'assistant') {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Feedback can only be added to assistant messages'
+      statusMessage: 'Feedback can only be added to assistant messages',
+      data: { why: 'User messages cannot receive feedback', fix: 'Select an assistant message to provide feedback on' },
     })
   }
 

@@ -20,9 +20,12 @@ const bodySchema = z
  * - sourceFilter: string - Only sync a specific source
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
   const body = await readValidatedBody(event, data => bodySchema.parse(data))
   const config = useRuntimeConfig()
+
+  requestLog.set({ sourceFilter: body?.sourceFilter })
 
   const dbSources = await db.query.sources.findMany()
 
@@ -60,6 +63,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 404,
         message: `Source not found: ${body.sourceFilter}`,
+        data: { why: 'The specified source filter does not match any configured source', fix: 'Check the source ID and try again' },
       })
     }
   }
@@ -68,6 +72,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       message: 'No sources to sync',
+      data: { why: 'No sources have been configured yet', fix: 'Add at least one source in the admin panel before syncing' },
     })
   }
 
@@ -81,6 +86,8 @@ export default defineEventHandler(async (event) => {
   await start(syncDocumentation, [syncConfig, sources])
 
   await kv.set(KV_KEYS.LAST_SOURCE_SYNC, Date.now())
+
+  requestLog.set({ sourceCount: sources.length })
 
   return {
     status: 'started',

@@ -5,8 +5,11 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   const { user } = await requireAdmin(event)
   const body = await readValidatedBody(event, bodySchema.parse)
+
+  requestLog.set({ adminUserId: user.id, keyName: body.name || 'Admin key' })
 
   const auth = serverAuth(event)
   const result = await auth.api.createApiKey({

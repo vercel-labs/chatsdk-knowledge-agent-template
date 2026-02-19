@@ -23,6 +23,7 @@ function fileToInput(file: File): HTMLInputElement {
 export function useFileUploadWithStatus(chatId: string) {
   const files = shallowRef<FileWithStatus[]>([])
   const toast = useToast()
+  const { showError } = useErrorToast()
   const { loggedIn } = useUserSession()
 
   const upload = useUpload(`/api/upload/${chatId}`, { method: 'PUT' })
@@ -66,15 +67,7 @@ export function useFileUploadWithStatus(chatId: string) {
           uploadedPathname: result.pathname
         })
       } catch (error) {
-        const errorMessage = (error as { data?: { message?: string } }).data?.message
-          || (error as Error).message
-          || 'Upload failed'
-        toast.add({
-          title: 'Upload failed',
-          description: errorMessage,
-          icon: 'i-lucide-alert-circle',
-          color: 'error'
-        })
+        const errorMessage = showError(error, { title: 'Upload failed', fallback: 'Upload failed' })
         updateFileAt(fileWithStatus.id, {
           status: 'error',
           error: errorMessage
@@ -116,7 +109,7 @@ export function useFileUploadWithStatus(chatId: string) {
       fetch(`/api/upload/${file.uploadedPathname}`, {
         method: 'DELETE'
       }).catch((error) => {
-        console.error('Failed to delete file from blob:', error)
+        log.warn({ event: 'file.delete_failed', pathname: file.uploadedPathname, error: error instanceof Error ? error.message : 'Unknown' })
       })
     }
   }

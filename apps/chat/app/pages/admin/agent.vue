@@ -2,6 +2,7 @@
 useSeoMeta({ title: 'Assistant - Admin' })
 
 const toast = useToast()
+const { showError } = useErrorToast()
 
 interface AgentConfig {
   id: string
@@ -117,13 +118,8 @@ async function saveConfig() {
       icon: 'i-lucide-check',
     })
     await refresh()
-  } catch (error: unknown) {
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to save configuration',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to save configuration' })
   } finally {
     isSaving.value = false
   }
@@ -139,13 +135,8 @@ async function resetConfig() {
       icon: 'i-lucide-check',
     })
     await refresh()
-  } catch (error: unknown) {
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to reset configuration',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to reset configuration' })
   } finally {
     isResetting.value = false
   }

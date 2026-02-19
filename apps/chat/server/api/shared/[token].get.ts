@@ -25,7 +25,8 @@ export default defineCachedEventHandler(
     if (!chat) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'Shared chat not found or no longer public'
+        statusMessage: 'Shared chat not found or no longer public',
+        data: { why: 'This share link is invalid or the chat owner has disabled sharing', fix: 'Ask the chat owner for a new share link' },
       })
     }
 

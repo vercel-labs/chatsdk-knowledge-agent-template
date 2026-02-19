@@ -14,8 +14,10 @@ const paramsSchema = z.object({
  * Sync a specific source using Vercel Sandbox (admin only).
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
   const { source: sourceId } = await getValidatedRouterParams(event, paramsSchema.parse)
+  requestLog.set({ sourceId })
   const config = useRuntimeConfig()
 
   const dbSource = await db.query.sources.findFirst({
@@ -26,6 +28,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 404,
       message: `Source not found: ${sourceId}`,
+      data: { why: 'No source exists with this ID in the database', fix: 'Verify the source ID from the sources list' },
     })
   }
 
@@ -64,6 +67,8 @@ export default defineEventHandler(async (event) => {
   }
 
   await start(syncDocumentation, [syncConfig, [source]])
+
+  requestLog.set({ type: source.type, label: source.label })
 
   return {
     status: 'started',

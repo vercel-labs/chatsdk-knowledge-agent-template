@@ -20,6 +20,7 @@ interface ApiKeyRow {
 
 const toast = useToast()
 const overlay = useOverlay()
+const { showError } = useErrorToast()
 
 const { data: keys, refresh, status } = useLazyFetch<ApiKeyRow[]>('/api/admin/api-keys')
 
@@ -45,8 +46,8 @@ async function createAdminKey() {
     newKeyName.value = ''
     await refresh()
     toast.add({ title: 'Admin API key created', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to create API key', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to create API key' })
   } finally {
     isCreating.value = false
   }
@@ -61,8 +62,8 @@ async function revokeKey(id: string) {
     await $fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' })
     await refresh()
     toast.add({ title: 'API key revoked', icon: 'i-lucide-check' })
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: e?.data?.message || e?.message || 'Failed to revoke API key', color: 'error', icon: 'i-lucide-alert-circle' })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to revoke API key' })
   }
 }
 

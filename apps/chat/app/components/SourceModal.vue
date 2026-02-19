@@ -23,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+const { showError } = useErrorToast()
 const isSubmitting = ref(false)
 
 const isEditing = computed(() => !!props.source)
@@ -88,13 +89,8 @@ async function save() {
       icon: 'i-lucide-check',
     })
     emit('saved')
-  } catch (error: unknown) {
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to save source',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to save source' })
   } finally {
     isSubmitting.value = false
   }

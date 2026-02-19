@@ -22,6 +22,7 @@ function validateCommand(command: string): void {
     throw createError({
       statusCode: 400,
       message: validation.reason,
+      data: { why: 'The command failed security validation', fix: 'Use only allowed commands within /vercel/sandbox' },
     })
   }
 }

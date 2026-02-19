@@ -26,6 +26,7 @@ interface SerializedSource {
 
 const toast = useToast()
 const overlay = useOverlay()
+const { showError } = useErrorToast()
 
 const { data: sources, refresh, status } = useLazyFetch('/api/sources')
 
@@ -122,14 +123,9 @@ async function deleteSource(source: SerializedSource) {
       title: 'Source deleted',
       icon: 'i-lucide-check',
     })
-  } catch (error: unknown) {
+  } catch (e) {
     sources.value = previousData
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to delete source',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+    showError(e, { fallback: 'Failed to delete source' })
   }
 }
 
@@ -146,13 +142,8 @@ async function triggerSync(sourceId?: string) {
       icon: 'i-lucide-check',
     })
     await refresh()
-  } catch (error: unknown) {
-    toast.add({
-      title: 'Error',
-      description: error instanceof Error ? error.message : 'Failed to start sync',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+  } catch (e) {
+    showError(e, { fallback: 'Failed to start sync' })
   } finally {
     isSyncingAll.value = false
   }

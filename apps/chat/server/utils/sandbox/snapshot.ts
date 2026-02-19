@@ -1,4 +1,5 @@
 import { kv } from '@nuxthub/kv'
+import { createError } from 'evlog'
 import type { SnapshotMetadata } from './types'
 import { KV_KEYS } from './types'
 
@@ -22,7 +23,11 @@ export async function hasSnapshot(): Promise<boolean> {
 export async function getSnapshotIdOrThrow(): Promise<string> {
   const snapshot = await getCurrentSnapshot()
   if (!snapshot) {
-    throw new Error('No snapshot available. Please create a snapshot first.')
+    throw createError({
+      message: 'No snapshot available',
+      why: 'No sandbox snapshot has been created yet',
+      fix: 'Create a snapshot first by running the sync workflow or using the admin panel',
+    })
   }
   return snapshot.snapshotId
 }

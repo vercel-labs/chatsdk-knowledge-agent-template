@@ -34,6 +34,7 @@ const CONFIG_ACCEPT = CONFIG_EXTENSIONS.join(',')
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const { showError } = useErrorToast()
 
 const { data: sourcesData } = useLazyFetch('/api/sources')
 const youtubeEnabled = computed(() => sourcesData.value?.youtubeEnabled ?? false)
@@ -201,13 +202,8 @@ async function extractAll() {
         icon: 'i-lucide-alert-circle',
       })
     }
-  } catch (error) {
-    toast.add({
-      title: 'Extraction failed',
-      description: error instanceof Error ? error.message : 'Failed to extract sources',
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
+  } catch (e) {
+    showError(e, { title: 'Extraction failed', fallback: 'Failed to extract sources' })
   } finally {
     isExtracting.value = false
   }

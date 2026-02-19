@@ -1,6 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { db, schema } from '@nuxthub/db'
+import { createError } from 'evlog'
 import type { GenerateResult, ReportUsageOptions } from '@savoir/sdk'
 import { getOrCreateSandbox } from '../sandbox/manager'
 import { getAgentConfig, type AgentConfigData } from '../agent-config'
@@ -29,7 +30,11 @@ const MAX_OUTPUT = 50000
 function validateCommand(command: string): void {
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(command)) {
-      throw new Error(`Command contains blocked pattern: ${command.slice(0, 50)}`)
+      throw createError({
+        message: 'Command blocked by security policy',
+        status: 403,
+        why: `Command contains blocked pattern: ${command.slice(0, 50)}`,
+      })
     }
   }
 }

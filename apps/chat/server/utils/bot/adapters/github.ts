@@ -521,7 +521,11 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   decodeThreadId(threadId: string): GitHubThreadId {
     const match = threadId.match(/^github:([^/]+)\/([^:]+):issue:(\d+)$/)
     if (!match || !match[1] || !match[2] || !match[3]) {
-      throw new Error(`Invalid GitHub thread ID: ${threadId}`)
+      throw createError({
+        message: 'Invalid GitHub thread ID',
+        status: 400,
+        why: `Thread ID "${threadId}" does not match expected format github:{owner}/{repo}:issue:{number}`,
+      })
     }
 
     return {

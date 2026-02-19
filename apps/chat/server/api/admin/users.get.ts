@@ -2,6 +2,7 @@ import { db, schema } from '@nuxthub/db'
 import { desc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
 
   const [users, chats, messages] = await Promise.all([
@@ -58,6 +59,8 @@ export default defineEventHandler(async (event) => {
       lastSeenByUserId.set(userId, message.createdAt)
     }
   }
+
+  requestLog.set({ userCount: users.length })
 
   return users.map(user => ({
     id: user.id,

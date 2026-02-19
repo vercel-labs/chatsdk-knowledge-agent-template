@@ -16,6 +16,7 @@ const components = {
 
 const route = useRoute()
 const toast = useToast()
+const { showError } = useErrorToast()
 const clipboard = useClipboard()
 const { model } = useModels()
 const { setMode } = useChatMode()
@@ -137,13 +138,9 @@ async function toggleFeedback(_e: MouseEvent, message: UIMessage, type: 'positiv
       method: 'PATCH',
       body: { feedback: newFeedback }
     })
-  } catch {
+  } catch (e) {
     feedbackMap.value = { ...feedbackMap.value, [message.id]: currentFeedback }
-    toast.add({
-      description: 'Failed to save feedback',
-      icon: 'i-lucide-alert-circle',
-      color: 'error'
-    })
+    showError(e, { fallback: 'Failed to save feedback' })
   }
 }
 

@@ -20,8 +20,11 @@ const bodySchema = z.object({
  * Create a new source (admin only)
  */
 export default defineEventHandler(async (event) => {
+  const requestLog = useLogger(event)
   await requireAdmin(event)
   const body = await readValidatedBody(event, bodySchema.parse)
+
+  requestLog.set({ type: body.type, label: body.label })
 
   const [source] = await db.insert(schema.sources)
     .values({
@@ -41,6 +44,8 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date(),
     })
     .returning()
+
+  requestLog.set({ sourceId: source?.id })
 
   return source
 })
