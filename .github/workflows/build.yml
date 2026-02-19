@@ -23,4 +23,4 @@ jobs:
       - name: 🛠️ Build
         run: bun run build
         env:
-          BETTER_AUTH_SECRET: ci-build-placeholder
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
