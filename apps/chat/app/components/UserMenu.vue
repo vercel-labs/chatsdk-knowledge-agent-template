@@ -75,7 +75,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
     <template #content-top="{ sub }">
       <div v-if="!sub" class="px-1.5 pt-1.5 pb-0.5">
         <div class="flex items-center gap-2 px-1 py-0.5">
-          <UAvatar :src="user?.image" :alt="user?.name ?? user?.username" size="sm" />
+          <UAvatar :src="user?.image || undefined" :alt="user?.name ?? user?.username ?? undefined" size="sm" />
           <div class="min-w-0 flex-1">
             <p class="text-xs font-medium text-highlighted truncate">
               {{ user?.name ?? user?.username }}

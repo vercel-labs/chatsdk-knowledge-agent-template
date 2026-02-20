@@ -1,0 +1,23 @@
+{
+  "name": "@savoir/github",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./nuxt.config.ts",
+    "./server/utils": "./server/utils/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/rest": "^22.0.1",
+    "evlog": "^1.9.0"
+  },
+  "devDependencies": {
+    "nuxt": "^4.3.1"
+  }
+}

@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import { syncDocumentation } from '../../workflows/sync-docs'
 import type { Source } from '../../workflows/sync-docs'
-import { resolveSnapshotGitHubToken } from '../../utils/github'
 import { getSnapshotRepoConfig } from '../../utils/sandbox/snapshot-config'
 
 const paramsSchema = z.object({
@@ -63,12 +62,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const syncConfig = {
-    githubToken: await resolveSnapshotGitHubToken({
-      explicitToken: config.github.token,
-      snapshotRepo: snapshotConfig.snapshotRepo,
-      appId: config.github.appId,
-      appPrivateKey: config.github.appPrivateKey,
-    }),
+    githubToken: await getSnapshotToken(),
     youtubeApiKey: config.youtube?.apiKey,
     snapshotRepo: snapshotConfig.snapshotRepo,
     snapshotBranch: snapshotConfig.snapshotBranch,

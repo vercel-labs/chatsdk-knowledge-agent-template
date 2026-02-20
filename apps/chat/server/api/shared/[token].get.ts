@@ -30,10 +30,10 @@ export default defineCachedEventHandler(
       })
     }
 
-    const user = await db.select({
+    const [user] = await db.select({
       name: schema.user.name,
       image: schema.user.image,
-    }).from(schema.user).where(eq(schema.user.id, chat.userId)).get()
+    }).from(schema.user).where(eq(schema.user.id, chat.userId)).limit(1)
 
     setHeader(event, 'Cache-Control', 's-maxage=300, stale-while-revalidate=3600')
 

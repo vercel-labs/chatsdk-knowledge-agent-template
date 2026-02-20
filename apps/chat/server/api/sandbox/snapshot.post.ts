@@ -1,6 +1,5 @@
 import { start } from 'workflow/api'
 import { createSnapshot } from '../../workflows/create-snapshot'
-import { resolveSnapshotGitHubToken } from '../../utils/github'
 import { getSnapshotRepoConfig } from '../../utils/sandbox/snapshot-config'
 
 export default defineEventHandler(async (event) => {
@@ -10,12 +9,7 @@ export default defineEventHandler(async (event) => {
 
   await start(createSnapshot, [
     {
-      githubToken: await resolveSnapshotGitHubToken({
-        explicitToken: config.github.token,
-        snapshotRepo: snapshotConfig.snapshotRepo,
-        appId: config.github.appId,
-        appPrivateKey: config.github.appPrivateKey,
-      }),
+      githubToken: await getSnapshotToken(),
       snapshotRepo: snapshotConfig.snapshotRepo,
       snapshotBranch: snapshotConfig.snapshotBranch,
     }

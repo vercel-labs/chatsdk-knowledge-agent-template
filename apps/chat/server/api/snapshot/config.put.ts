@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { getSnapshotRepoConfig, setSnapshotRepoConfig } from '../../utils/sandbox/snapshot-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { requireAdmin } from '../../utils/admin'
-import { ensureRepositoryAndBranch } from '../../utils/github'
 
 const bodySchema = z.object({
   snapshotRepo: z.string().min(1),
@@ -24,13 +23,19 @@ export default defineEventHandler(async (event) => {
   const snapshotRepo = body.snapshotRepo.trim()
   const snapshotBranch = body.snapshotBranch?.trim() || 'main'
 
-  const ensuredRepo = await ensureRepositoryAndBranch({
+  const token = await getSnapshotToken()
+  if (!token) {
+    throw createError({
+      statusCode: 400,
+      message: 'GitHub token not found',
+    })
+  }
+
+  const ensuredRepo = await ensureSnapshotRepo({
     repoPath: snapshotRepo,
     branch: snapshotBranch,
     allowExisting: body.allowExistingRepo === true,
-    explicitToken: config.github.token || undefined,
-    appId: config.github.appId || undefined,
-    appPrivateKey: config.github.appPrivateKey || undefined,
+    token,
   })
 
   const previous = await getSnapshotRepoConfig()

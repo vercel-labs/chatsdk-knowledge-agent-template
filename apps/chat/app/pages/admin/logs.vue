@@ -166,6 +166,7 @@ async function deleteLogs() {
 
   const levelLabel = selectedLevel.value ? ` (level: ${selectedLevel.value})` : ''
   const instance = deleteModal.open({
+    title: 'Confirm deletion',
     description: `This will permanently delete ${previewCount.value.toLocaleString()} log entries older than ${activeValue.value} ${unitLabel.value}${activeValue.value === 1 ? '' : 's'}${levelLabel}. This cannot be undone.`,
   })
   const confirmed = await instance.result

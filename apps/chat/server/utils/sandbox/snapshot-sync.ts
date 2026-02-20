@@ -1,10 +1,11 @@
 import { kv } from '@nuxthub/kv'
 import { Snapshot } from '@vercel/sandbox'
 import { createError } from 'evlog'
-import type { SnapshotMetadata, SnapshotSyncStatus } from './types'
+import type { SnapshotMetadata } from './types'
 import { KV_KEYS } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { getSnapshotRepoConfig } from './snapshot-config'
+import type { SnapshotSyncStatus } from '#shared/types/snapshot'
 
 const CACHE_TTL_MS = 60 * 1000
 
@@ -84,6 +85,7 @@ export async function syncToSnapshot(snapshotId?: string): Promise<SnapshotMetad
     const latest = await getLatestSnapshot()
     if (!latest) {
       throw createError({
+        status: 503,
         message: 'No snapshots available to sync to',
         why: 'No valid snapshots exist on the Vercel sandbox platform',
         fix: 'Run the sync workflow to create a snapshot first',

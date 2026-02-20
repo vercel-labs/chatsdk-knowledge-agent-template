@@ -25,12 +25,10 @@ export function isValidSnapshotRepo(repo: string): boolean {
 function validateSnapshotRepo(repo: string): void {
   if (!isValidSnapshotRepo(repo)) {
     throw createError({
-      statusCode: 400,
+      status: 400,
       message: 'Invalid snapshot repository format',
-      data: {
-        why: `Expected "owner/repo", received "${repo}"`,
-        fix: 'Use the owner/repository format (for example: vercel-labs/savoir-snapshot)',
-      },
+      why: `Expected "owner/repo", received "${repo}"`,
+      fix: 'Use the owner/repository format (for example: vercel-labs/savoir-snapshot)',
     })
   }
 }

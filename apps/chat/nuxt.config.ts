@@ -1,5 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  extends: ['../../packages/github'],
+
   modules: [
     '@nuxt/ui',
     '@nuxtjs/mdc',
@@ -123,7 +125,7 @@ export default defineNuxtConfig({
     // Webhook routes should never be cached
     '/api/webhooks/**': { isr: false, cache: false },
     // Admin pages are behind auth
-    '/admin/**': { auth: { user: { role: 'admin' } } },
+    '/admin/**': { auth: { user: { role: 'admin' } as any } },
   },
 
   runtimeConfig: {

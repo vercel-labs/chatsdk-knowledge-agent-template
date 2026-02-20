@@ -19,7 +19,9 @@ const {
 } = useSnapshotSync()
 
 const { data: snapshotConfig, refresh: refreshSnapshotConfig } = useLazyFetch('/api/snapshot/config')
-const { data: repoCatalog, status: repoCatalogStatus } = useFetch('/api/github/repos')
+const { fetchRepos } = useGitHub()
+const { data: repoCatalog, status: repoCatalogStatus } = await fetchRepos()
+
 const snapshotRepoInput = ref('')
 const snapshotBranchInput = ref('main')
 const isSavingConfig = ref(false)
@@ -131,10 +133,10 @@ function selectSuggestedRepo(fullName: string) {
 async function reloadRepositories() {
   isRefreshingRepos.value = true
   try {
-    const fresh = await $fetch('/api/github/repos', {
-      query: { force: true },
-    })
-    repoCatalog.value = fresh
+    const fresh = await fetchRepos({ force: true })
+    if (fresh.data.value) {
+      repoCatalog.value = fresh.data.value
+    }
   } finally {
     isRefreshingRepos.value = false
   }

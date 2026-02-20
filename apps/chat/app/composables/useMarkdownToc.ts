@@ -11,8 +11,8 @@ export function useMarkdownToc(content: string): TocLink[] {
   let match
 
   while ((match = headingRegex.exec(content)) !== null) {
-    const depth = match[1].length
-    const text = match[2].trim()
+    const depth = match[1]?.length ?? 0
+    const text = match[2]?.trim() ?? ''
     const id = text
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
@@ -23,7 +23,7 @@ export function useMarkdownToc(content: string): TocLink[] {
     if (depth === 2) {
       links.push({ ...link, children: [] })
     } else if (depth === 3 && links.length > 0) {
-      links[links.length - 1].children!.push(link)
+      links[links.length - 1]?.children?.push(link)
     }
   }
 

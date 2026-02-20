@@ -1,4 +1,4 @@
-export type ChatMode = 'chat' | 'admin'
+import type { ChatMode } from '#shared/types/chat'
 
 const mode = ref<ChatMode>('chat')
 

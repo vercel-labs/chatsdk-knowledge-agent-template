@@ -27,13 +27,13 @@ const draftRoles = ref<Record<string, UserRole>>({})
 const roleOptions = [
   { label: 'User', value: 'user' },
   { label: 'Admin', value: 'admin' },
-] as const
+]
 
 const filterOptions = [
   { label: 'All roles', value: 'all' },
   { label: 'Admins', value: 'admin' },
   { label: 'Users', value: 'user' },
-] as const
+]
 
 const { data: users, refresh, status } = useLazyFetch<AdminUserRow[]>('/api/admin/users')
 

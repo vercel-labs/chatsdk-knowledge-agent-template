@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { createAppAuth } from '@octokit/auth-app'
+import { getAppTokenForRepo } from '@savoir/github/server/utils'
 import { Octokit } from '@octokit/rest'
 import { Message, parseMarkdown, stringifyMarkdown, type Adapter, type AdapterPostableMessage, type RawMessage, type WebhookOptions, type FetchResult, type ThreadInfo, type FormattedContent, type ChatInstance } from 'chat'
 import { createError, log } from 'evlog'
@@ -114,26 +114,20 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
       return cached.octokit
     }
 
-    const auth = createAppAuth({
+    const token = await getAppTokenForRepo({
       appId: this.appId,
-      privateKey: this.privateKey,
+      appPrivateKey: this.privateKey,
+      repoPath: cacheKey,
     })
 
-    const appOctokit = new Octokit({ authStrategy: createAppAuth, auth: { appId: this.appId, privateKey: this.privateKey } })
-
-    let installation
-    try {
-      const result = await appOctokit.apps.getRepoInstallation({ owner, repo })
-      installation = result.data
-    } catch (error) {
+    if (!token) {
       throw createError({
+        status: 403,
         message: `GitHub App not installed on ${cacheKey}`,
-        why: error instanceof Error ? error.message : 'Failed to get installation',
+        why: 'Failed to get installation token for this repository',
         fix: `Install the GitHub App on the repository ${cacheKey} from the app settings page`,
       })
     }
-
-    const { token } = await auth({ type: 'installation', installationId: installation.id })
 
     const octokit = new Octokit({ auth: token })
 
@@ -142,7 +136,6 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     log.info({
       event: 'github.octokit.created',
       repo: cacheKey,
-      installationId: installation.id,
     })
 
     return octokit
@@ -522,9 +515,10 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     const match = threadId.match(/^github:([^/]+)\/([^:]+):issue:(\d+)$/)
     if (!match || !match[1] || !match[2] || !match[3]) {
       throw createError({
-        message: 'Invalid GitHub thread ID',
         status: 400,
+        message: 'Invalid GitHub thread ID',
         why: `Thread ID "${threadId}" does not match expected format github:{owner}/{repo}:issue:{number}`,
+        fix: 'Use a thread ID from a GitHub issue comment or issue webhook',
       })
     }
 

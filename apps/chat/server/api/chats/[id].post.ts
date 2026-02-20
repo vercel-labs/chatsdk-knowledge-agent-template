@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const config = useRuntimeConfig()
+    const config = useRuntimeConfig() as any
 
     let stepCount = 0
     let toolCallCount = 0

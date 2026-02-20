@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
     filename: field.filename,
   })
 
-  const pathname = generatePathname(user.username, chatId, processed.filename)
+  const pathname = generatePathname(user.username ?? user.id, chatId, processed.filename)
   const result = await blob.put(pathname, processed.buffer, { contentType: processed.type })
 
   return {

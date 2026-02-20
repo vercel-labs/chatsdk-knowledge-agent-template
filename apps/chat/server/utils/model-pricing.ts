@@ -10,7 +10,7 @@ type PricingRecord = Record<string, ModelPricing>
 export const getModelPricingMap = defineCachedFunction(
   async (): Promise<PricingRecord> => {
     try {
-      const config = useRuntimeConfig()
+      const config = useRuntimeConfig() as any
       const gateway = createGateway({ apiKey: config.savoir?.apiKey })
       const { models } = await gateway.getAvailableModels()
 

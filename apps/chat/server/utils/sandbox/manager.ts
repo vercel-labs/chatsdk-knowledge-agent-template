@@ -3,7 +3,6 @@ import { createError, log } from 'evlog'
 import type { ActiveSandbox, SandboxManagerConfig, SnapshotMetadata } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { deleteSandboxSession, generateSessionId, getSandboxSession, setSandboxSession, touchSandboxSession } from './session'
-import { resolveSnapshotGitHubToken } from '../github'
 import { getSnapshotRepoConfig } from './snapshot-config'
 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000
@@ -13,12 +12,7 @@ async function getConfig(): Promise<SandboxManagerConfig> {
   const config = useRuntimeConfig()
   const snapshotConfig = await getSnapshotRepoConfig()
   return {
-    githubToken: await resolveSnapshotGitHubToken({
-      explicitToken: config.github.token,
-      snapshotRepo: snapshotConfig.snapshotRepo,
-      appId: config.github.appId,
-      appPrivateKey: config.github.appPrivateKey,
-    }),
+    githubToken: await getSnapshotToken(),
     snapshotRepo: snapshotConfig.snapshotRepo,
     snapshotBranch: snapshotConfig.snapshotBranch,
     sessionTtlMs: DEFAULT_SESSION_TTL_MS,
