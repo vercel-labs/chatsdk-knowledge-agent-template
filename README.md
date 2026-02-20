@@ -145,8 +145,8 @@ AI_GATEWAY_API_KEY=...                # Vercel AI Gateway API key
 NUXT_ADMIN_USERS=user1,user2          # Comma-separated admin emails/usernames
 
 # Sandbox
-NUXT_GITHUB_TOKEN=ghp_...             # GitHub token for repo access
-NUXT_GITHUB_SNAPSHOT_REPO=org/repo    # Snapshot repository (owner/repo)
+# NUXT_GITHUB_SNAPSHOT_REPO=org/repo  # Optional default (can be set from admin sandbox UI)
+# NUXT_GITHUB_TOKEN=ghp_...           # Optional fallback override (GitHub App is the default path)
 
 # Site
 NUXT_PUBLIC_SITE_URL=https://...      # Public URL of your instance

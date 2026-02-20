@@ -5,6 +5,8 @@ import { db } from '@nuxthub/db'
 import { syncDocumentation } from '../../workflows/sync-docs'
 import type { Source } from '../../workflows/sync-docs'
 import { KV_KEYS } from '../../utils/sandbox/types'
+import { resolveSnapshotGitHubToken } from '../../utils/github'
+import { getSnapshotRepoConfig } from '../../utils/sandbox/snapshot-config'
 
 const bodySchema = z
   .object({
@@ -24,6 +26,7 @@ export default defineEventHandler(async (event) => {
   await requireAdmin(event)
   const body = await readValidatedBody(event, data => bodySchema.parse(data))
   const config = useRuntimeConfig()
+  const snapshotConfig = await getSnapshotRepoConfig()
 
   requestLog.set({ sourceFilter: body?.sourceFilter })
 
@@ -77,10 +80,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const syncConfig = {
-    githubToken: config.github.token,
+    githubToken: await resolveSnapshotGitHubToken({
+      explicitToken: config.github.token,
+      snapshotRepo: snapshotConfig.snapshotRepo,
+      appId: config.github.appId,
+      appPrivateKey: config.github.appPrivateKey,
+    }),
     youtubeApiKey: config.youtube?.apiKey,
-    snapshotRepo: config.github.snapshotRepo,
-    snapshotBranch: config.github.snapshotBranch,
+    snapshotRepo: snapshotConfig.snapshotRepo,
+    snapshotBranch: snapshotConfig.snapshotBranch,
   }
 
   await start(syncDocumentation, [syncConfig, sources])

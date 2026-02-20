@@ -30,7 +30,7 @@ export async function syncDocumentation(
 
   // Validate configuration
   if (!config.snapshotRepo) {
-    throw new FatalError('NUXT_GITHUB_SNAPSHOT_REPO is not configured')
+    throw new FatalError('Snapshot repository is not configured')
   }
 
   if (!sources || sources.length === 0) {

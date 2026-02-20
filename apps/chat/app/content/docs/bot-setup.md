@@ -37,6 +37,13 @@ Users can also install the app from the sidebar suggestion card or from the **Se
 
 The app uses [installation access tokens](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation) to interact with repositories -- no personal access token needed for the bot.
 
+If you also use the snapshot repository management features in Savoir admin, extend app permissions with:
+
+- **Contents (Read & Write)** to push synced docs and marker files
+- **Administration (Read & Write)** when you want Savoir to create repositories automatically
+
+`NUXT_GITHUB_TOKEN` remains optional fallback only and is not required for normal GitHub App-based setup.
+
 ## Trigger the Bot
 
 Mention the bot in any issue comment:

@@ -31,6 +31,7 @@ export interface ActiveSandbox {
 export const KV_KEYS = {
   CURRENT_SNAPSHOT: 'snapshot:current',
   SNAPSHOT_STATUS_CACHE: 'snapshot:status-cache',
+  SNAPSHOT_REPO_CONFIG: 'snapshot:repo-config',
   LAST_SOURCE_SYNC: 'sources:last-sync',
   AGENT_CONFIG_CACHE: 'agent:config-cache',
   session: (sessionId: string) => `session:${sessionId}`,

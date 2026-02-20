@@ -3,16 +3,24 @@ import { createError, log } from 'evlog'
 import type { ActiveSandbox, SandboxManagerConfig, SnapshotMetadata } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { deleteSandboxSession, generateSessionId, getSandboxSession, setSandboxSession, touchSandboxSession } from './session'
+import { resolveSnapshotGitHubToken } from '../github'
+import { getSnapshotRepoConfig } from './snapshot-config'
 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000
 const SANDBOX_TIMEOUT_MS = 5 * 60 * 1000
 
-function getConfig(): SandboxManagerConfig {
+async function getConfig(): Promise<SandboxManagerConfig> {
   const config = useRuntimeConfig()
+  const snapshotConfig = await getSnapshotRepoConfig()
   return {
-    githubToken: config.github.token,
-    snapshotRepo: config.github.snapshotRepo,
-    snapshotBranch: config.github.snapshotBranch,
+    githubToken: await resolveSnapshotGitHubToken({
+      explicitToken: config.github.token,
+      snapshotRepo: snapshotConfig.snapshotRepo,
+      appId: config.github.appId,
+      appPrivateKey: config.github.appPrivateKey,
+    }),
+    snapshotRepo: snapshotConfig.snapshotRepo,
+    snapshotBranch: snapshotConfig.snapshotBranch,
     sessionTtlMs: DEFAULT_SESSION_TTL_MS,
   }
 }
@@ -62,7 +70,7 @@ async function getSandboxById(sandboxId: string): Promise<Sandbox | null> {
 }
 
 export async function createSnapshotFromRepo(repoUrl: string, branch: string = 'main'): Promise<string> {
-  const config = getConfig()
+  const config = await getConfig()
 
   log.info('sandbox', `Creating sandbox from repo: ${repoUrl}#${branch}`)
 
@@ -81,7 +89,7 @@ export async function createSnapshotFromRepo(repoUrl: string, branch: string = '
 }
 
 async function getOrCreateSnapshot(): Promise<string> {
-  const config = getConfig()
+  const config = await getConfig()
 
   const snapshot = await getCurrentSnapshot()
   if (snapshot) {
@@ -91,8 +99,8 @@ async function getOrCreateSnapshot(): Promise<string> {
   if (!config.snapshotRepo) {
     throw createError({
       message: 'No snapshot available',
-      why: 'NUXT_GITHUB_SNAPSHOT_REPO environment variable is not configured',
-      fix: 'Set NUXT_GITHUB_SNAPSHOT_REPO to your snapshot repository',
+      why: 'No snapshot repository is configured',
+      fix: 'Set the snapshot repository in the admin sandbox settings (or NUXT_GITHUB_SNAPSHOT_REPO)',
     })
   }
 
@@ -126,7 +134,7 @@ async function findRunningSandbox(snapshotId: string): Promise<Sandbox | null> {
 }
 
 export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSandbox> {
-  const config = getConfig()
+  const config = await getConfig()
   const startTime = Date.now()
 
   // 1. Try to reconnect via session ID (fastest path)

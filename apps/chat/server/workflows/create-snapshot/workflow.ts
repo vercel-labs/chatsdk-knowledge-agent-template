@@ -15,7 +15,7 @@ export async function createSnapshot(config: SnapshotConfig): Promise<SnapshotRe
 
   // Validation errors should not retry
   if (!config.snapshotRepo) {
-    throw new FatalError('NUXT_GITHUB_SNAPSHOT_REPO is not configured')
+    throw new FatalError('Snapshot repository is not configured')
   }
 
   // Let the step execute - errors will propagate and trigger retries

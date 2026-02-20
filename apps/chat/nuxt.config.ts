@@ -105,7 +105,8 @@ export default defineNuxtConfig({
   hub: {
     db: 'postgresql',
     kv: true,
-    blob: true
+    blob: true,
+    cache: true
   },
 
   ssr: false,

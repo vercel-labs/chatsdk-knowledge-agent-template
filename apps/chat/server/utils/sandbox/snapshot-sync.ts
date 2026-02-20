@@ -4,6 +4,7 @@ import { createError } from 'evlog'
 import type { SnapshotMetadata, SnapshotSyncStatus } from './types'
 import { KV_KEYS } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
+import { getSnapshotRepoConfig } from './snapshot-config'
 
 const CACHE_TTL_MS = 60 * 1000
 
@@ -92,12 +93,12 @@ export async function syncToSnapshot(snapshotId?: string): Promise<SnapshotMetad
   }
 
   const snapshot = await Snapshot.get({ snapshotId: targetSnapshotId })
-  const config = useRuntimeConfig()
+  const snapshotConfig = await getSnapshotRepoConfig()
 
   const metadata: SnapshotMetadata = {
     snapshotId: snapshot.snapshotId,
     createdAt: Date.now(),
-    sourceRepo: config.github.snapshotRepo || '',
+    sourceRepo: snapshotConfig.snapshotRepo || '',
   }
 
   await setCurrentSnapshot(metadata)

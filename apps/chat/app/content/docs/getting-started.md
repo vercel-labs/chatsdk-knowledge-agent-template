@@ -18,8 +18,10 @@ cp apps/chat/.env.example apps/chat/.env
 | `NUXT_ADMIN_USERS` | Comma-separated list of admin emails or GitHub usernames |
 | `NUXT_PUBLIC_SITE_URL` | Public URL of your Savoir instance |
 | `AI_GATEWAY_API_KEY` | [Vercel AI Gateway](https://ai-sdk.dev) API key |
-| `NUXT_GITHUB_TOKEN` | GitHub personal access token for cloning repos and accessing the snapshot repository |
-| `NUXT_GITHUB_SNAPSHOT_REPO` | Snapshot repository in `owner/repo` format |
+
+`NUXT_GITHUB_SNAPSHOT_REPO` and `NUXT_GITHUB_TOKEN` are optional. You can configure the snapshot repository in the admin sandbox UI after startup, and Savoir uses a GitHub App installation access token automatically when app credentials are configured.
+
+`NUXT_GITHUB_TOKEN` is only a fallback. Keep it unset unless you explicitly need to override GitHub App authentication.
 
 ### Optional (for bots)
 
@@ -59,6 +61,15 @@ Savoir uses a single **GitHub App** for both **user authentication** (OAuth logi
 | Issues | Read & Write | Bot needs to read issues and post replies |
 | Metadata | Read-only | Required by GitHub for all apps |
 
+If you want Savoir to manage the snapshot repository automatically from the admin UI (list repos, create repo if missing, write sync commits), add:
+
+| Permission | Access | Why |
+|------------|--------|-----|
+| Contents | Read & Write | Push synced content and maintain the Savoir marker file |
+| Administration | Read & Write* | Needed when creating repositories automatically |
+
+\* Depending on your GitHub setup (user vs org ownership), repository creation can require elevated app permissions and org approval.
+
 ### Events
 
 Subscribe to these webhook events:
@@ -81,6 +92,8 @@ From the app settings page, collect:
 > **Important:** Make the GitHub App **public** so users can install it on organizations. While the app is private, the org picker won't appear and installations are limited to your personal account only. You can do this from the app's **Danger Zone** at the bottom of its settings page.
 
 Then install the app on the repositories where you want the bot to be active: **Install App** tab > select your repositories.
+
+For automatic snapshot repository management, make sure the app is installed on the target owner (user/org) with the updated permissions above.
 
 For more details on the bot behavior, see the [GitHub Bot documentation](/admin/docs/github-bot).
 
@@ -124,7 +137,7 @@ The app will be available at `http://localhost:3000`. Sign in with GitHub using 
 
 ## Adding Sources
 
-Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**.
+Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**. Sources aren't limited to documentation — you can add any content that produces files (GitHub repos, YouTube transcripts, custom APIs). See the [Sources documentation](https://github.com/vercel-labs/savoir/blob/main/docs/SOURCES.md) for all available options.
 
 1. Navigate to the admin panel at `/admin`
 2. Go to the Sources section
@@ -149,7 +162,7 @@ Savoir uses a **file-based search** approach -- no embeddings or vector database
 3. The AI agent uses `bash` and `bash_batch` tools (via the [AI SDK](https://ai-sdk.dev)) to run `grep`, `find`, `cat`, etc. in the sandbox
 4. Results are synthesized into a natural language answer with citations
 
-You can also integrate Savoir into your own applications using the [SDK](/admin/docs/sdk).
+You can also integrate Savoir into your own applications using the [SDK](/admin/docs/sdk). For the full technical architecture, see the [Architecture documentation](https://github.com/vercel-labs/savoir/blob/main/docs/ARCHITECTURE.md) on GitHub.
 
 ## Admin Panel
 

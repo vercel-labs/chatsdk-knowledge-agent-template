@@ -30,8 +30,8 @@ All environment variables for the Savoir project, organized by category.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NUXT_GITHUB_TOKEN` | Yes | GitHub token for cloning repos and accessing the snapshot repository |
-| `NUXT_GITHUB_SNAPSHOT_REPO` | Yes | Snapshot repository in `owner/repo` format |
+| `NUXT_GITHUB_TOKEN` | No | Optional fallback override token for snapshot git operations. If omitted, Savoir uses GitHub App installation tokens by default. |
+| `NUXT_GITHUB_SNAPSHOT_REPO` | No | Default snapshot repository in `owner/repo` format. Can be configured later from the admin sandbox UI. |
 | `NUXT_GITHUB_SNAPSHOT_BRANCH` | No | Snapshot branch (default: `main`) |
 
 ## GitHub Bot
@@ -44,6 +44,18 @@ All environment variables for the Savoir project, organized by category.
 | `NUXT_GITHUB_WEBHOOK_SECRET` | Yes* | Webhook secret set when creating the GitHub App |
 
 \* Required only if enabling the GitHub bot integration.
+
+## GitHub App Permissions (Recommended)
+
+Use a GitHub App as the primary auth mechanism. Keep PAT usage optional.
+
+| Capability | Required permissions |
+|----------|-----------------------|
+| OAuth login + GitHub bot replies | `Issues: Read & Write`, `Metadata: Read-only`, account emails read |
+| Snapshot repo sync (push docs/marker) | `Contents: Read & Write`, `Metadata: Read-only` |
+| Auto-create snapshot repositories | `Administration: Read & Write` (plus org approval when applicable) |
+
+`NUXT_GITHUB_TOKEN` should only be used as a fallback when GitHub App permissions are unavailable or temporarily misconfigured.
 
 ## Discord Bot
 

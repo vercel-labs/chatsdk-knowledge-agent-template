@@ -1,8 +1,13 @@
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   title: string
   description: string
-}>()
+  confirmLabel?: string
+  cancelLabel?: string
+}>(), {
+  confirmLabel: 'Delete',
+  cancelLabel: 'Cancel',
+})
 
 const emit = defineEmits<{ close: [boolean] }>()
 </script>
@@ -18,11 +23,11 @@ const emit = defineEmits<{ close: [boolean] }>()
     :dismissible="false"
   >
     <template #footer>
-      <UButton label="Delete" @click="emit('close', true)" />
+      <UButton :label="confirmLabel" @click="emit('close', true)" />
       <UButton
         color="neutral"
         variant="ghost"
-        label="Cancel"
+        :label="cancelLabel"
         @click="emit('close', false)"
       />
     </template>
