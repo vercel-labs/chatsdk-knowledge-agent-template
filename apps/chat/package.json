@@ -31,7 +31,7 @@
     "@electric-sql/pglite": "^0.3.15",
     "@nuxt/ui": "^4.4.0",
     "@nuxthub/core": "^0.10.6",
-    "@nuxtjs/mdc": "^0.20.1",
+    "comark": "https://pkg.pr.new/comarkdown/comark@e066db0",
     "@octokit/auth-app": "^8.2.0",
     "@octokit/rest": "^22.0.1",
     "@onmax/nuxt-better-auth": "0.0.2-alpha.21",
@@ -56,7 +56,6 @@
     "pathe": "^2.0.3",
     "shaders": "^2.3.63",
     "sharp": "^0.34.5",
-    "shiki-stream": "^0.1.4",
     "workflow": "4.1.0-beta.54",
     "youtube-transcript": "^1.2.1",
     "zod": "^4.3.6"

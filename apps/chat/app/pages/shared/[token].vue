@@ -1,11 +1,4 @@
 <script setup lang="ts">
-import type { DefineComponent } from 'vue'
-import ProseStreamPre from '../../components/prose/PreStream.vue'
-
-const components = {
-  pre: ProseStreamPre as unknown as DefineComponent
-}
-
 const route = useRoute()
 
 function getFileName(url: string): string {
@@ -130,12 +123,9 @@ onMounted(() => {
                     :text="part.text"
                     :is-streaming="false"
                   />
-                  <MDCCached
+                  <Comark
                     v-else-if="part.type === 'text' && message.role === 'assistant'"
-                    :value="part.text"
-                    :cache-key="`${message.id}-${index}`"
-                    :components
-                    :parser-options="{ highlight: false }"
+                    :markdown="part.text"
                     class="*:first:mt-0 *:last:mb-0"
                   />
                   <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">

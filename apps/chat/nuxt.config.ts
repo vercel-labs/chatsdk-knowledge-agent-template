@@ -1,8 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
+    'comark/nuxt',
     '@nuxt/ui',
-    '@nuxtjs/mdc',
     '@nuxthub/core',
     '@onmax/nuxt-better-auth',
     'workflow/nuxt',
@@ -66,15 +66,6 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
-
-  mdc: {
-    headings: {
-      anchorLinks: false
-    },
-    highlight: {
-      shikiEngine: 'javascript'
-    }
-  },
 
   experimental: {
     viewTransition: true

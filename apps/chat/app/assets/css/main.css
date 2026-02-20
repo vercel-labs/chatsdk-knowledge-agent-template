@@ -1,6 +1,8 @@
 @import "tailwindcss" theme(static);
 @import "@nuxt/ui";
 
+@source "../node_modules/comark/dist/*.mjs";
+
 @theme static {
   --font-sans: 'Geist', sans-serif;
   --font-mono: 'Geist Mono', monospace;

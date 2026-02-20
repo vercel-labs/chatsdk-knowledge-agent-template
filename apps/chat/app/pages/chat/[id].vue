@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import type { DefineComponent } from 'vue'
 import { Chat } from '@ai-sdk/vue'
 import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
-import ProseStreamPre from '../../components/prose/PreStream.vue'
 import type { ToolCall } from '#shared/types/tool-call'
 
 definePageMeta({ auth: 'user' })
-
-const components = {
-  pre: ProseStreamPre as unknown as DefineComponent
-}
 
 const route = useRoute()
 const toast = useToast()
@@ -380,12 +374,10 @@ watch(() => chat.status, (newStatus, oldStatus) => {
             />
             <template v-for="(part, index) in getContentParts(message)" :key="partKey(message.id, part, index)">
               <!-- Markdown only for assistant (XSS prevention) -->
-              <MDCCached
+              <Comark
                 v-if="part.type === 'text' && message.role === 'assistant'"
-                :value="part.text"
-                :cache-key="`${message.id}-${index}`"
-                :components
-                :parser-options="{ highlight: false }"
+                :markdown="part.text"
+                streaming
                 class="*:first:mt-0 *:last:mb-0"
               />
               <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
