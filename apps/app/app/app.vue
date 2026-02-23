@@ -24,13 +24,17 @@ useHead({
   titleTemplate: `%s - ${appConfig.app.name}`
 })
 
+const config = useRuntimeConfig()
+const siteUrl = config.public.siteUrl as string
+const ogImage = siteUrl ? `${siteUrl.replace(/\/$/, '')}/og.jpg` : '/og.jpg'
+
 useSeoMeta({
   title: appConfig.app.name,
   description: appConfig.app.description,
   ogTitle: appConfig.app.name,
   ogDescription: appConfig.app.description,
-  ogImage: '/og.jpg',
-  twitterImage: '/og.jpg',
+  ogImage,
+  twitterImage: ogImage,
   twitterCard: 'summary_large_image',
 })
 </script>

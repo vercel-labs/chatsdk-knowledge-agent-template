@@ -114,7 +114,8 @@ export default defineNuxtConfig({
   ssr: false,
 
   routeRules: {
-    // Login page: SSR for fast first paint
+    // Root and login: SSR for OG meta tags and fast first paint
+    '/': { ssr: true },
     '/login': { ssr: true },
     // Shared chats: SSR + ISR for public access and SEO
     '/shared/**': { ssr: true, isr: { expiration: 300 } },
