@@ -1,7 +1,7 @@
 export default defineAppConfig({
   app: {
     name: 'Savoir',
-    description: 'Your intelligent AI assistant for knowledge and insights.',
+    description: 'Open source file-system and knowledge based agent template.',
     icon: 'i-custom-savoir',
   },
   ui: {

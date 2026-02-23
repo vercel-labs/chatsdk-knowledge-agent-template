@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "Framework-agnostic agent core for Savoir",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel-labs/savoir.git",
+    "directory": "packages/agent"
+  },
+  "bugs": {
+    "url": "https://github.com/vercel-labs/savoir/issues"
+  },
+  "homepage": "https://github.com/vercel-labs/savoir/tree/main/packages/agent#readme",
   "type": "module",
   "exports": {
     ".": {

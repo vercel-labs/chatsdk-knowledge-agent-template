@@ -30,7 +30,10 @@ body:
     attributes:
       label: Reproduction
       description: A reproduction is strongly encouraged, to help us identify the issue and fix it. You can use a code sandbox or a repository to reproduce the issue.
-      placeholder: https://stackblitz.com/edit/savoir
+      placeholder: |
+        1. Clone the repo and follow the Quick Start in README
+        2. Describe the minimal steps to reproduce the issue
+        3. Or link to a CodeSandbox/StackBlitz if applicable
     validations:
       required: true
   - type: textarea

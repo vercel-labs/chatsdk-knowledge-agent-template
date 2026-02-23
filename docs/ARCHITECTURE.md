@@ -2,7 +2,7 @@
 
 > Back to [README](../README.md)
 
-This document describes the technical architecture of Savoir, a platform for building AI agents with up-to-date knowledge access.
+This document describes the technical architecture of Savoir, an open-source file-system and knowledge based agent template for building AI agents with up-to-date knowledge access.
 
 ## System Overview
 

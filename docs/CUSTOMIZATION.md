@@ -27,7 +27,7 @@ Edit `apps/app/app/app.config.ts` to change the branding:
 export default defineAppConfig({
   app: {
     name: 'My Assistant',
-    description: 'AI assistant for my documentation.',
+    description: 'Open source file-system and knowledge based agent template.',
     icon: 'i-custom-savoir', // Replace with your own icon
   },
   // ...

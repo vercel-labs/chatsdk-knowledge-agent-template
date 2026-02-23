@@ -2,6 +2,7 @@
   "name": "@savoir/app",
   "private": true,
   "license": "MIT",
+  "description": "Unified Nuxt app for Savoir (chat UI, API, bots)",
   "type": "module",
   "scripts": {
     "build": "nuxt build",

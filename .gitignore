@@ -29,8 +29,6 @@ node_modules
 
 .swc*
 .workflow-data*
-apps/web/.data
 apps/app/.data
-apps/bot/.data
 .vercel
 .env*.local

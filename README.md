@@ -4,18 +4,18 @@
   <br>
   <b>Savoir</b>
   <br>
-  <i>Build AI agents with up-to-date knowledge access.</i>
+  <i>Open source file-system and knowledge based agent template.</i>
   <br>
   <br>
 </p>
 
 <p align="center">
-  <b>Template.</b> Fork it, customize it, and deploy your own AI documentation assistant.
+  <b>Template.</b> Fork it, customize it, and deploy your own file-system based AI agent.
 </p>
 
 ---
 
-Open-source infrastructure to build AI agents powered by up-to-date file-based knowledge. Plug any source — GitHub repos, YouTube transcripts, custom APIs — and deploy as a chat app, a GitHub bot, a Discord bot, or all at once.
+Open source file-system and knowledge based agent template. Build AI agents that stay up to date with your knowledge base — grep, find, and cat across your sources, no embeddings, no vector DB. Plug any source (GitHub repos, YouTube transcripts, custom APIs) and deploy as a chat app, a GitHub bot, a Discord bot, or all at once.
 
 ## Features
 
@@ -25,7 +25,7 @@ No vector database. No chunking pipeline. No embedding model. Savoir agents use 
 
 ### Multi-Platform Bots — One Agent, Everywhere
 
-Write your agent once, deploy it on the web chat, GitHub Issues, Discord — and soon Slack, Linear, and more. Powered by pluggable adapters via the [Chat SDK](https://github.com/vercel-labs/chat). Adding a new platform is [a single adapter file](./docs/CUSTOMIZATION.md#4-add-a-bot-adapter).
+Write your agent once, deploy it on the web chat, GitHub Issues, Discord - and soon Slack, Linear, and more. Powered by pluggable adapters via the [Chat SDK](https://github.com/vercel-labs/chat). Adding a new platform is [a single adapter file](./docs/CUSTOMIZATION.md#4-add-a-bot-adapter).
 
 ### Built-in Admin Panel
 
@@ -37,7 +37,7 @@ Ask your app about itself. "What errors happened in the last 24 hours?", "Show t
 
 ### Smart Complexity Router
 
-Every incoming question is classified by complexity (trivial → complex) and [routed to the right model](./docs/ARCHITECTURE.md#4-ai-agent-router--model-selection). Simple questions go to fast, cheap models. Hard questions go to powerful ones. Cost optimization happens automatically — no manual rules to maintain.
+Every incoming question is classified by complexity (trivial → complex) and [routed to the right model](./docs/ARCHITECTURE.md#4-ai-agent-router--model-selection). Simple questions go to fast, cheap models. Hard questions go to powerful ones. Cost optimization happens automatically, no manual rules to maintain.
 
 ### Real-Time Tool Visualization
 

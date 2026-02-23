@@ -5,7 +5,20 @@ import { Circle, DotGrid, Glow, ProgressiveBlur, Saturation, Shader, Swirl } fro
 const appConfig = useAppConfig()
 
 definePageMeta({ layout: false, auth: 'guest' })
-useSeoMeta({ title: 'Sign in' })
+
+const config = useRuntimeConfig()
+const siteUrl = config.public.siteUrl as string
+const ogImage = siteUrl ? `${siteUrl.replace(/\/$/, '')}/og.jpg` : '/og.jpg'
+
+useSeoMeta({
+  title: 'Sign in',
+  description: appConfig.app.description,
+  ogTitle: appConfig.app.name,
+  ogDescription: appConfig.app.description,
+  ogImage,
+  twitterImage: ogImage,
+  twitterCard: 'summary_large_image',
+})
 
 const route = useRoute()
 const mode = ref<'signin' | 'signup'>('signin')

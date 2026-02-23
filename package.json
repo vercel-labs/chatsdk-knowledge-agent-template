@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
-  "description": "Monorepo for Savoir",
+  "description": "Open source file-system and knowledge based agent template",
   "author": "HugoRCD",
   "repository": {
     "type": "git",
