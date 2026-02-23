@@ -1,4 +1,4 @@
-import { Chat, ConsoleLogger, type Adapter, type Message, type Thread } from 'chat'
+import { Chat, ConsoleLogger, emoji, type Adapter, type Message, type Thread } from 'chat'
 import { createDiscordAdapter } from '@chat-adapter/discord'
 import { createMemoryState } from '@chat-adapter/state-memory'
 import { createRedisState } from '@chat-adapter/state-redis'
@@ -22,7 +22,8 @@ async function handleBotResponse(thread: Thread, message: Message) {
     messageLength: message.text.length,
   })
 
-  await adapter.addReaction(thread.id, message.id, 'eyes').catch((error) => {
+  const incoming = thread.createSentMessageFromMessage(message)
+  await incoming.addReaction(emoji.eyes).catch((error) => {
     log.warn({
       event: 'bot.reaction.failed',
       emoji: 'eyes',
@@ -47,8 +48,8 @@ async function handleBotResponse(thread: Thread, message: Message) {
 
     await thread.post(response)
 
-    await adapter.removeReaction(thread.id, message.id, 'eyes').catch(e => log.debug({ event: 'bot.reaction.cleanup_failed', emoji: 'eyes', error: e instanceof Error ? e.message : 'Unknown' }))
-    await adapter.addReaction(thread.id, message.id, 'thumbs_up').catch(e => log.debug({ event: 'bot.reaction.add_failed', emoji: 'thumbs_up', error: e instanceof Error ? e.message : 'Unknown' }))
+    await incoming.removeReaction(emoji.eyes).catch(e => log.debug({ event: 'bot.reaction.cleanup_failed', emoji: 'eyes', error: e instanceof Error ? e.message : 'Unknown' }))
+    await incoming.addReaction(emoji.thumbs_up).catch(e => log.debug({ event: 'bot.reaction.add_failed', emoji: 'thumbs_up', error: e instanceof Error ? e.message : 'Unknown' }))
 
     log.info({
       event: 'bot.response.success',
@@ -66,7 +67,7 @@ async function handleBotResponse(thread: Thread, message: Message) {
       error: error instanceof Error ? error.message : 'Unknown',
     })
 
-    await adapter.removeReaction(thread.id, message.id, 'eyes').catch(e => log.debug({ event: 'bot.reaction.cleanup_failed', emoji: 'eyes', error: e instanceof Error ? e.message : 'Unknown' }))
+    await incoming.removeReaction(emoji.eyes).catch(e => log.debug({ event: 'bot.reaction.cleanup_failed', emoji: 'eyes', error: e instanceof Error ? e.message : 'Unknown' }))
 
     try {
       await thread.post(`Sorry, I encountered an error while processing your request. Please try again later.
@@ -146,15 +147,11 @@ function createBot(): Chat {
       author: message.author.userName,
     })
     await handleBotResponse(thread, message)
+    await thread.subscribe()
   })
 
-  bot.onNewMessage(/.*/, async (thread, message) => {
-    if (message.isMention || message.author.isBot) return
-    if (thread.adapter.name === 'github') return
-
-    const { messages } = await thread.adapter.fetchMessages(thread.id, { limit: 50 })
-    const botHasReplied = messages.some((m: Message) => m.author.isBot)
-    if (!botHasReplied) return
+  bot.onSubscribedMessage(async (thread, message) => {
+    if (message.author.isBot) return
 
     log.info({
       event: 'bot.thread_continuation',

@@ -15,9 +15,9 @@
       "dependencies": {
         "@ai-sdk/gateway": "^3.0.45",
         "@ai-sdk/vue": "^3.0.85",
-        "@chat-adapter/discord": "^4.9.0",
-        "@chat-adapter/state-memory": "^4.9.0",
-        "@chat-adapter/state-redis": "^4.9.0",
+        "@chat-adapter/discord": "^4.13.0",
+        "@chat-adapter/state-memory": "^4.13.0",
+        "@chat-adapter/state-redis": "^4.13.0",
         "@electric-sql/pglite": "^0.3.15",
         "@evlog/nuxthub": "^1.1.0",
         "@googleapis/youtube": "^31.0.0",
@@ -39,7 +39,7 @@
         "@vercel/sandbox": "^1.4.1",
         "ai": "^6.0.85",
         "better-auth": "^1.4.18",
-        "chat": "^4.9.0",
+        "chat": "^4.13.0",
         "date-fns": "^4.1.0",
         "drizzle-orm": "^0.45.1",
         "giget": "^3.1.2",
@@ -304,13 +304,13 @@
 
     "@cbor-extract/cbor-extract-win32-x64": ["@cbor-extract/cbor-extract-win32-x64@2.2.0", "", { "os": "win32", "cpu": "x64" }, "sha512-l2M+Z8DO2vbvADOBNLbbh9y5ST1RY5sqkWOg/58GkUPBYou/cuNZ68SGQ644f1CvZ8kcOxyZtw06+dxWHIoN/w=="],
 
-    "@chat-adapter/discord": ["@chat-adapter/discord@4.11.0", "", { "dependencies": { "@chat-adapter/shared": "4.11.0", "chat": "4.11.0", "discord-api-types": "^0.37.119", "discord-interactions": "^4.4.0", "discord.js": "^14.25.1" } }, "sha512-gl4dercf9pCm5aHu+fGhRZmVg+wc2Vkm+LzJDPQELMf/gD30OLcuB2bro8FHcTqghIvBIxyqE+Vgorc9PK8rlA=="],
+    "@chat-adapter/discord": ["@chat-adapter/discord@4.13.2", "", { "dependencies": { "@chat-adapter/shared": "4.13.2", "chat": "4.13.2", "discord-api-types": "^0.37.119", "discord-interactions": "^4.4.0", "discord.js": "^14.25.1" } }, "sha512-l9gM6353xU0c0OyBncyAyiOo6U+DT61LVjzx57BpsU8lyelF0SV/Ufh9ReLRJyOkygf7zHUclkSAjF4Sc7gqtg=="],
 
-    "@chat-adapter/shared": ["@chat-adapter/shared@4.11.0", "", { "dependencies": { "chat": "4.11.0" } }, "sha512-HTuUIRiD5R4Z5+JV7+dNdP+g8UQvXgmeJBjtZFDozfgvjd3ACMdCNdjolryL1LB1h73GLU/BdLBjl6rjU4B36A=="],
+    "@chat-adapter/shared": ["@chat-adapter/shared@4.13.2", "", { "dependencies": { "chat": "4.13.2" } }, "sha512-Hu2K7e4KddUBWwdBxdmvZzOgOqd7g0RcJ6ekxkDI0F/gQJY/cmGc/eAjhhyNHfehjoARD9iYve8uJt4sne1GFQ=="],
 
-    "@chat-adapter/state-memory": ["@chat-adapter/state-memory@4.11.0", "", { "dependencies": { "chat": "4.11.0" } }, "sha512-RrqHzZIcIwb5v7Sm60TY1+KpdDgm56MUoXsItxFtWMdbZobNwSFGC18696bM96XXj2FZ7Jyvgis+tji+vuwaVg=="],
+    "@chat-adapter/state-memory": ["@chat-adapter/state-memory@4.13.2", "", { "dependencies": { "chat": "4.13.2" } }, "sha512-k6QIdvQp+mKJcpWMl9OG9AGJygPT1ctPAaHRSVB3ghrEEdGC+d0QpGqVWj8HjLr5McBKn13eHkJcWxEjyiO0WQ=="],
 
-    "@chat-adapter/state-redis": ["@chat-adapter/state-redis@4.11.0", "", { "dependencies": { "chat": "4.11.0", "redis": "^4.7.0" } }, "sha512-1FcD9WvVP7TGh/GHdsAkkVrletd8dFciZYXvx4gDKEeDehndd4RhvMcLnGuyTeURPSiWwPkLM7qZVwuGbu80QQ=="],
+    "@chat-adapter/state-redis": ["@chat-adapter/state-redis@4.13.2", "", { "dependencies": { "chat": "4.13.2", "redis": "^4.7.0" } }, "sha512-8YQ5vs6678YeCowWRdlWXDskVWHFf46xad2GTe4qXOk9CMvQdpAisM81eRtD7dyZhiTBmuvC7z7eBawd0aCy5Q=="],
 
     "@chevrotain/cst-dts-gen": ["@chevrotain/cst-dts-gen@10.5.0", "", { "dependencies": { "@chevrotain/gast": "10.5.0", "@chevrotain/types": "10.5.0", "lodash": "4.17.21" } }, "sha512-lhmC/FyqQ2o7pGK4Om+hzuDrm9rhFYIJ/AXoQBeongmn870Xeb0L6oGEiuR8nohFNL5sMaQEJWCxr1oIVIVXrw=="],
 
@@ -1630,7 +1630,7 @@
 
     "@workflow/rollup": ["@workflow/rollup@4.0.0-beta.11", "", { "dependencies": { "@swc/core": "1.15.3", "@workflow/builders": "4.0.1-beta.45", "@workflow/swc-plugin": "4.1.0-beta.17", "exsolve": "1.0.7" } }, "sha512-MwRIlUqaUhGfl7IspO4c822z02niSc6YLLvdahviXLFS70NKv7KBgf18ja22/pMWnKxuUFIyOBNUCdPfMzu5+g=="],
 
-    "@workflow/serde": ["@workflow/serde@4.0.1-beta.1", "", {}, "sha512-JdCvZk0sD1qk2XzteSHVNGbpRM8YcvRBglSJy3FysYgi19pBkk3me2P9gzFpPrnQS6IhAPnEqnJOAODHg1iZrA=="],
+    "@workflow/serde": ["@workflow/serde@4.1.0-beta.2", "", {}, "sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww=="],
 
     "@workflow/sveltekit": ["@workflow/sveltekit@4.0.0-beta.43", "", { "dependencies": { "@swc/core": "1.15.3", "@workflow/builders": "4.0.1-beta.45", "@workflow/rollup": "4.0.0-beta.11", "@workflow/swc-plugin": "4.1.0-beta.17", "@workflow/vite": "4.0.0-beta.4", "exsolve": "^1.0.7", "fs-extra": "^11.3.2", "pathe": "^2.0.3" } }, "sha512-+IY0LmqANmyjDjqjZ0laeXsxpSwrvNoa2PsCx9rvTl+GhpjMqC11kFp0MYiyL7ubyLDGtFPHjOWtRpuP4JSJPw=="],
 
@@ -1828,7 +1828,7 @@
 
     "character-reference-invalid": ["character-reference-invalid@2.0.1", "", {}, "sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw=="],
 
-    "chat": ["chat@4.11.0", "", { "dependencies": { "@workflow/serde": "4.0.1-beta.1", "mdast-util-to-string": "^4.0.0", "remark-gfm": "^4.0.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "unified": "^11.0.5" } }, "sha512-Kypd2RO/RB+WJlTcIy9RLUv1LCT6dLX61EvxS9ugZgj7tIoKn1hwktN9whESyXqoNkFDwhJogtisOdYJpiKTNg=="],
+    "chat": ["chat@4.13.2", "", { "dependencies": { "@workflow/serde": "4.1.0-beta.2", "mdast-util-to-string": "^4.0.0", "remark-gfm": "^4.0.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "unified": "^11.0.5" } }, "sha512-4PF3AYMFd7zHE3BURLJuBx3y7SWjFYNaHQjazc+GQqXrvsc0weilprgL8oLvW326ALoDTofCXS9xb7uBUxoXkg=="],
 
     "chevrotain": ["chevrotain@10.5.0", "", { "dependencies": { "@chevrotain/cst-dts-gen": "10.5.0", "@chevrotain/gast": "10.5.0", "@chevrotain/types": "10.5.0", "@chevrotain/utils": "10.5.0", "lodash": "4.17.21", "regexp-to-ast": "0.5.0" } }, "sha512-Pkv5rBY3+CsHOYfV5g/Vs5JY9WTHHDEKOlohI2XeygaZhUeqhAlldZ8Hz9cRmxu709bvS08YzxHdTPHhffc13A=="],
 
@@ -4243,8 +4243,6 @@
     "@workflow/cli/zod": ["zod@4.1.11", "", {}, "sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg=="],
 
     "@workflow/core/@standard-schema/spec": ["@standard-schema/spec@1.0.0", "", {}, "sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA=="],
-
-    "@workflow/core/@workflow/serde": ["@workflow/serde@4.1.0-beta.2", "", {}, "sha512-8kkeoQKLDaKXefjV5dbhBj2aErfKp1Mc4pb6tj8144cF+Em5SPbyMbyLCHp+BVrFfFVCBluCtMx+jjvaFVZGww=="],
 
     "@workflow/core/devalue": ["devalue@5.6.0", "", {}, "sha512-BaD1s81TFFqbD6Uknni42TrolvEWA1Ih5L+OiHWmi4OYMJVwAYPGtha61I9KxTf52OvVHozHyjPu8zljqdF3uA=="],
 

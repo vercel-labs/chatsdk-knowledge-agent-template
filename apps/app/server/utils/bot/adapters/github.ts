@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { getAppTokenForRepo } from '@savoir/github/server/utils'
 import { Octokit } from '@octokit/rest'
-import { Message, parseMarkdown, stringifyMarkdown, type Adapter, type AdapterPostableMessage, type RawMessage, type WebhookOptions, type FetchResult, type ThreadInfo, type FormattedContent, type ChatInstance } from 'chat'
+import { Message, parseMarkdown, stringifyMarkdown, type Adapter, type AdapterPostableMessage, type RawMessage, type WebhookOptions, type FetchOptions, type FetchResult, type ThreadInfo, type FormattedContent, type ChatInstance, type EmojiValue } from 'chat'
 import { createError, log } from 'evlog'
 import type { ThreadContext } from '../types'
 
@@ -79,14 +79,14 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
   private chat: ChatInstance | null = null
   private octokitCache = new Map<string, { octokit: Octokit, expiresAt: number }>()
 
-  /** Map normalized SDK emoji names to GitHub reaction content names */
   private static readonly EMOJI_MAP: Record<string, string> = {
     thumbs_up: '+1',
     thumbs_down: '-1',
   }
 
-  private resolveEmoji(emoji: string): string {
-    return SavoirGitHubAdapter.EMOJI_MAP[emoji] ?? emoji
+  private resolveEmoji(emojiInput: EmojiValue | string): string {
+    const name = typeof emojiInput === 'string' ? emojiInput : emojiInput.name
+    return SavoirGitHubAdapter.EMOJI_MAP[name] ?? name
   }
 
   constructor(config: GitHubAdapterConfig) {
@@ -389,7 +389,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     })
   }
 
-  async addReaction(threadId: string, messageId: string, emoji: string): Promise<void> {
+  async addReaction(threadId: string, messageId: string, emoji: EmojiValue | string): Promise<void> {
     const { owner, repo, issueNumber } = this.decodeThreadId(threadId)
     const octokit = await this.getOctokit(owner, repo)
 
@@ -412,7 +412,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     }
   }
 
-  async removeReaction(threadId: string, messageId: string, emoji: string): Promise<void> {
+  async removeReaction(threadId: string, messageId: string, emoji: EmojiValue | string): Promise<void> {
     const { owner, repo, issueNumber } = this.decodeThreadId(threadId)
     const octokit = await this.getOctokit(owner, repo)
 
@@ -460,7 +460,7 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
 
   async startTyping(_threadId: string): Promise<void> {}
 
-  async fetchMessages(threadId: string, options?: { limit?: number, cursor?: string, direction?: string }): Promise<FetchResult<GitHubRawMessage>> {
+  async fetchMessages(threadId: string, options?: FetchOptions): Promise<FetchResult<GitHubRawMessage>> {
     const { owner, repo, issueNumber } = this.decodeThreadId(threadId)
     const octokit = await this.getOctokit(owner, repo)
 
