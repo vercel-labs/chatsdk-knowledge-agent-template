@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { Circle, DotGrid, Glow, Godrays, ProgressiveBlur, Saturation, Shader, SolidColor } from 'shaders/vue'
+import { Circle, DotGrid, Glow, ProgressiveBlur, Saturation, Shader, Swirl } from 'shaders/vue'
 
 const appConfig = useAppConfig()
 
@@ -20,7 +20,7 @@ const oauthErrors: Record<string, string> = {
   temporarily_unavailable: 'GitHub is temporarily unavailable. Please try again later.',
 }
 
-const shaderColors = reactive({ solid: '', circle: '', dots: '', rays: '' })
+const shaderColors = reactive({ swirlA: '', swirlB: '', circle: '', dots: '', rays: '' })
 
 function primary(shade: number) {
   return getComputedStyle(document.documentElement).getPropertyValue(`--color-primary-${shade}`).trim()
@@ -28,7 +28,8 @@ function primary(shade: number) {
 
 onMounted(() => {
   Object.assign(shaderColors, {
-    solid: primary(600),
+    swirlA: primary(800),
+    swirlB: primary(400),
     circle: primary(100),
     dots: primary(300),
     rays: primary(500),
@@ -180,27 +181,17 @@ function onGitHub() {
         <Shader class="absolute inset-0 size-full">
           <Glow :intensity="2.69" :size="27.5" :threshold="0.37">
             <Saturation :intensity="1.13">
-              <SolidColor :color="shaderColors.solid" />
+              <Swirl
+                :color-a="shaderColors.swirlA"
+                :color-b="shaderColors.swirlB"
+                :speed="0.8"
+                :detail="1.2"
+                :blend="50"
+              />
             </Saturation>
-            <Circle
-              blend-mode="normal-oklch"
-              :center="{ x: 0.5, y: 1 }"
-              :color="shaderColors.circle"
-              :radius="1.03"
-              :softness="0.57"
-            />
             <ProgressiveBlur :angle="270" blend-mode="linearDodge" :center="{ x: 0.5, y: 0.5 }" :intensity="5">
-              <DotGrid :color="shaderColors.dots" :density="160" :dot-size="0.22" :twinkle="1" />
+              <DotGrid :color="shaderColors.dots" :density="190" :dot-size="0.22" :twinkle="1" />
             </ProgressiveBlur>
-            <Godrays
-              blend-mode="linearDodge"
-              :center="{ x: 0.5, y: 1 }"
-              :density="0.1"
-              :intensity="0.55"
-              :ray-color="shaderColors.rays"
-              :speed="1.82"
-              :spotty="0.14"
-            />
           </Glow>
         </Shader>
       </ClientOnly>
