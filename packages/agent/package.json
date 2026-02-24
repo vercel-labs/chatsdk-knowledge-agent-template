@@ -5,13 +5,13 @@
   "description": "Framework-agnostic agent core for Knowledge Agent Template",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vercel-labs/chatsdk-knowledge-agent-template.git",
+    "url": "git+https://github.com/vercel-labs/knowledge-agent-template.git",
     "directory": "packages/agent"
   },
   "bugs": {
-    "url": "https://github.com/vercel-labs/chatsdk-knowledge-agent-template/issues"
+    "url": "https://github.com/vercel-labs/knowledge-agent-template/issues"
   },
-  "homepage": "https://github.com/vercel-labs/chatsdk-knowledge-agent-template/tree/main/packages/agent#readme",
+  "homepage": "https://github.com/vercel-labs/knowledge-agent-template/tree/main/packages/agent#readme",
   "type": "module",
   "exports": {
     ".": {

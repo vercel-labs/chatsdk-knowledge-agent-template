@@ -78,4 +78,4 @@ Admin mode uses a completely separate AI pipeline from the regular chat:
 
 Admin chats are stored like regular chats but tagged with `mode: 'admin'` in the database.
 
-For a deeper look at the architecture behind admin mode and other components, see the [Architecture documentation](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) on GitHub.
+For a deeper look at the architecture behind admin mode and other components, see the [Architecture documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) on GitHub.

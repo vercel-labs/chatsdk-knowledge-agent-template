@@ -7,10 +7,10 @@
   "author": "HugoRCD",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vercel-labs/chatsdk-knowledge-agent-template.git"
+    "url": "git+https://github.com/vercel-labs/knowledge-agent-template.git"
   },
   "bugs": {
-    "url": "https://github.com/vercel-labs/chatsdk-knowledge-agent-template/issues"
+    "url": "https://github.com/vercel-labs/knowledge-agent-template/issues"
   },
   "workspaces": [
     "apps/*",

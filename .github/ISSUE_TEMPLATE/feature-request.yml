@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before requesting a feature, please make sure that you have read through our documentation and existing [issues](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/issues) to see if the feature has already been requested or implemented. If it has, please add your reaction to the existing issue instead of creating a new one.
+        Before requesting a feature, please make sure that you have read through our documentation and existing [issues](https://github.com/vercel-labs/knowledge-agent-template/issues) to see if the feature has already been requested or implemented. If it has, please add your reaction to the existing issue instead of creating a new one.
   - type: textarea
     id: description
     attributes:

@@ -43,7 +43,7 @@ GitHub OAuth credentials for user login. You need a **GitHub App** (not an OAuth
    - Copy the **Client ID** → `GITHUB_CLIENT_ID`
    - Click **Generate a new client secret** → `GITHUB_CLIENT_SECRET`
 
-> See the [Getting Started guide](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/apps/app/app/content/docs/getting-started.md#github-app-setup) for the full GitHub App setup with bot permissions.
+> See the [Getting Started guide](https://github.com/vercel-labs/knowledge-agent-template/blob/main/apps/app/app/content/docs/getting-started.md#github-app-setup) for the full GitHub App setup with bot permissions.
 
 ### `NUXT_SESSION_PASSWORD` (optional)
 

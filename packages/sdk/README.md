@@ -1,6 +1,6 @@
 # @savoir/sdk
 
-SDK for [Knowledge Agent Template](https://github.com/vercel-labs/chatsdk-knowledge-agent-template) — AI agents with up-to-date knowledge base access.
+SDK for [Knowledge Agent Template](https://github.com/vercel-labs/knowledge-agent-template) — AI agents with up-to-date knowledge base access.
 
 Provides [AI SDK](https://ai-sdk.dev) compatible tools to query content in a sandboxed environment.
 

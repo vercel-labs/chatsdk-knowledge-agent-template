@@ -1,6 +1,6 @@
 # Knowledge Agent Template SDK
 
-The [`@savoir/sdk`](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/tree/main/packages/sdk) package provides a TypeScript client for interacting with Knowledge Agent Template programmatically. It exposes [AI SDK](https://ai-sdk.dev)-compatible tools that let any AI model search and read your knowledge base. For the full API reference and error handling, see the [SDK README](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/packages/sdk/README.md) on GitHub.
+The [`@savoir/sdk`](https://github.com/vercel-labs/knowledge-agent-template/tree/main/packages/sdk) package provides a TypeScript client for interacting with Knowledge Agent Template programmatically. It exposes [AI SDK](https://ai-sdk.dev)-compatible tools that let any AI model search and read your knowledge base. For the full API reference and error handling, see the [SDK README](https://github.com/vercel-labs/knowledge-agent-template/blob/main/packages/sdk/README.md) on GitHub.
 
 ## Installation
 

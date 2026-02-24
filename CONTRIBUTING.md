@@ -4,13 +4,13 @@ Thank you for your interest in contributing to Knowledge Agent Template!
 
 ## Reporting Bugs
 
-- Search [existing issues](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/issues) before opening a new one
+- Search [existing issues](https://github.com/vercel-labs/knowledge-agent-template/issues) before opening a new one
 - Include steps to reproduce, expected behavior, and actual behavior
 - Include your environment (Node version, OS, browser)
 
 ## Suggesting Features
 
-- Open a [feature request issue](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/issues/new)
+- Open a [feature request issue](https://github.com/vercel-labs/knowledge-agent-template/issues/new)
 - Describe the use case and why it would be valuable
 - If possible, outline a proposed implementation
 
@@ -18,8 +18,8 @@ Thank you for your interest in contributing to Knowledge Agent Template!
 
 ```bash
 # Clone the repo
-git clone https://github.com/vercel-labs/chatsdk-knowledge-agent-template.git
-cd chatsdk-knowledge-agent-template
+git clone https://github.com/vercel-labs/knowledge-agent-template.git
+cd knowledge-agent-template
 
 # Install dependencies
 bun install

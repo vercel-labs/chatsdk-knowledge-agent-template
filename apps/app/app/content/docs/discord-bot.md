@@ -70,4 +70,4 @@ Bot conversation state is stored in:
 - [**Redis**](https://upstash.com/docs/redis) if `REDIS_URL` is set (recommended for production -- state persists across restarts)
 - **In-memory** as fallback (state is lost on restart)
 
-For the full architecture and how to build custom adapters, see the [Architecture](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) and [Customization Guide](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/CUSTOMIZATION.md#4-add-a-bot-adapter) on GitHub.
+For the full architecture and how to build custom adapters, see the [Architecture](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) and [Customization Guide](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/CUSTOMIZATION.md#4-add-a-bot-adapter) on GitHub.

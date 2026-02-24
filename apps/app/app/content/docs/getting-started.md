@@ -135,7 +135,7 @@ The app will be available at `http://localhost:3000`. The first user to sign up 
 
 ## Adding Sources
 
-Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**. Sources aren't limited to documentation — you can add any content that produces files (GitHub repos, YouTube transcripts, custom APIs). See the [Sources documentation](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/SOURCES.md) for all available options.
+Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**. Sources aren't limited to documentation — you can add any content that produces files (GitHub repos, YouTube transcripts, custom APIs). See the [Sources documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/SOURCES.md) for all available options.
 
 1. Navigate to the admin panel at `/admin`
 2. Go to the Sources section
@@ -152,7 +152,7 @@ After adding or updating sources, trigger a sync from the admin interface. The s
 4. Pushes changes to the snapshot repository
 5. Takes a new sandbox snapshot for instant startup
 
-> **Note:** Only documentation files are synced. Source code (`.ts`, `.js`, `.vue`, etc.), images, and binaries are automatically excluded. See the [Sources documentation](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/SOURCES.md#content-normalization) for details.
+> **Note:** Only documentation files are synced. Source code (`.ts`, `.js`, `.vue`, etc.), images, and binaries are automatically excluded. See the [Sources documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/SOURCES.md#content-normalization) for details.
 
 ## How It Works
 
@@ -163,7 +163,7 @@ Knowledge Agent Template uses a **file-based search** approach -- no embeddings 
 3. The AI agent uses `bash` and `bash_batch` tools (via the [AI SDK](https://ai-sdk.dev)) to run `grep`, `find`, `cat`, etc. in the sandbox
 4. Results are synthesized into a natural language answer with citations
 
-You can also integrate the app into your own applications using the [SDK](/admin/docs/sdk). For the full technical architecture, see the [Architecture documentation](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) on GitHub.
+You can also integrate the app into your own applications using the [SDK](/admin/docs/sdk). For the full technical architecture, see the [Architecture documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/ARCHITECTURE.md) on GitHub.
 
 ## Admin Panel
 
