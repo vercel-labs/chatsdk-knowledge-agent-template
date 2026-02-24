@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fknowledge-agent-template&env=BETTER_AUTH_SECRET,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,AI_GATEWAY_API_KEY&envDescription=Required%20environment%20variables.%20See%20docs%2FENVIRONMENT.md%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fknowledge-agent-template%2Fblob%2Fmain%2Fdocs%2FENVIRONMENT.md&project-name=knowledge-agent&repository-name=knowledge-agent"><img src="https://vercel.com/button" alt="Deploy with Vercel" /></a>
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fchatsdk-knowledge-agent-template&env=BETTER_AUTH_SECRET,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,AI_GATEWAY_API_KEY&envDescription=Required%20environment%20variables.%20See%20docs%2FENVIRONMENT.md%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fchatsdk-knowledge-agent-template%2Fblob%2Fmain%2Fdocs%2FENVIRONMENT.md&project-name=knowledge-agent&repository-name=knowledge-agent"><img src="https://vercel.com/button" alt="Deploy with Vercel" /></a>
 </p>
 
 ---
@@ -120,7 +120,7 @@ console.log(text)
 
 ### Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fknowledge-agent-template&env=BETTER_AUTH_SECRET,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,AI_GATEWAY_API_KEY&envDescription=Required%20environment%20variables.%20See%20docs%2FENVIRONMENT.md%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fknowledge-agent-template%2Fblob%2Fmain%2Fdocs%2FENVIRONMENT.md&project-name=knowledge-agent&repository-name=knowledge-agent)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fchatsdk-knowledge-agent-template&env=BETTER_AUTH_SECRET,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,AI_GATEWAY_API_KEY&envDescription=Required%20environment%20variables.%20See%20docs%2FENVIRONMENT.md%20for%20details.&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fchatsdk-knowledge-agent-template%2Fblob%2Fmain%2Fdocs%2FENVIRONMENT.md&project-name=knowledge-agent&repository-name=knowledge-agent)
 
 ### Self-hosting
 

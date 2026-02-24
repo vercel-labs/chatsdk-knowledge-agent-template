@@ -2,107 +2,155 @@
 
 > Back to [README](../README.md) | See also: [Architecture](./ARCHITECTURE.md), [Customization](./CUSTOMIZATION.md)
 
-All environment variables for the Knowledge Agent Template project, organized by category.
+Copy the example file and fill in the values:
+
+```bash
+cp apps/app/.env.example apps/app/.env
+```
+
+## Quick Start (minimum required)
+
+| Variable | How to get it |
+|----------|---------------|
+| `BETTER_AUTH_SECRET` | Run `openssl rand -hex 32` in your terminal |
+| `GITHUB_CLIENT_ID` | From your [GitHub App settings](https://github.com/settings/apps) → Client ID |
+| `GITHUB_CLIENT_SECRET` | From your [GitHub App settings](https://github.com/settings/apps) → Generate a client secret |
+| `AI_GATEWAY_API_KEY` | From the [Vercel AI Gateway dashboard](https://vercel.com/~/ai) → Create Gateway → Copy API key |
+
+These four variables are all you need to run the app locally. Everything else is optional.
 
 ## Authentication
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `BETTER_AUTH_SECRET` | Yes | Secret used to sign sessions and tokens |
-| `GITHUB_CLIENT_ID` | Yes | GitHub OAuth app client ID |
-| `GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth app client secret |
-| `NUXT_SESSION_PASSWORD` | No | Session encryption password |
+### `BETTER_AUTH_SECRET` (required)
+
+Random secret used by [Better Auth](https://www.better-auth.com/docs/installation#set-environment-variables) to sign sessions and tokens. Generate one with:
+
+```bash
+openssl rand -hex 32
+```
+
+### `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` (required)
+
+GitHub OAuth credentials for user login. You need a **GitHub App** (not an OAuth App) — the same app can also power the GitHub bot later.
+
+1. Go to [**GitHub Settings → Developer settings → GitHub Apps → New GitHub App**](https://github.com/settings/apps/new)
+2. Fill in:
+   - **App name**: your bot name (e.g. `my-agent`)
+   - **Homepage URL**: your instance URL (or `http://localhost:3000` for dev)
+   - **Callback URL**: `<your-url>/api/auth/callback/github`
+3. Under **Account permissions**, set **Email addresses** → Read-only
+4. Create the app, then from the app settings page:
+   - Copy the **Client ID** → `GITHUB_CLIENT_ID`
+   - Click **Generate a new client secret** → `GITHUB_CLIENT_SECRET`
+
+> See the [Getting Started guide](https://github.com/vercel-labs/chatsdk-knowledge-agent-template/blob/main/apps/app/app/content/docs/getting-started.md#github-app-setup) for the full GitHub App setup with bot permissions.
+
+### `NUXT_SESSION_PASSWORD` (optional)
+
+Session encryption password. Auto-generated if not set.
 
 ## AI
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `AI_GATEWAY_API_KEY` | Yes | Vercel AI Gateway API key (used by `@ai-sdk/gateway`) |
+### `AI_GATEWAY_API_KEY` (required)
+
+API key for [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) (used by `@ai-sdk/gateway` to route to any AI model).
+
+1. Go to the [Vercel AI dashboard](https://vercel.com/~/ai)
+2. Create a new Gateway (or use an existing one)
+3. Copy the API key → `AI_GATEWAY_API_KEY`
 
 ## Sandbox & Sync
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NUXT_GITHUB_TOKEN` | No | Optional fallback override token for snapshot git operations. If omitted, the app uses GitHub App installation tokens by default. |
-| `NUXT_GITHUB_SNAPSHOT_REPO` | No | Default snapshot repository in `owner/repo` format. Can be configured later from the admin sandbox UI. |
-| `NUXT_GITHUB_SNAPSHOT_BRANCH` | No | Snapshot branch (default: `main`) |
+These control how the app syncs knowledge sources into the sandbox. All are optional — you can configure them later from the admin UI.
 
-## GitHub Bot
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NUXT_GITHUB_SNAPSHOT_REPO` | — | Snapshot repository in `owner/repo` format. Configurable from admin UI. |
+| `NUXT_GITHUB_SNAPSHOT_BRANCH` | `main` | Branch to use for snapshots |
+| `NUXT_GITHUB_TOKEN` | — | Fallback PAT for git operations. Only needed if GitHub App tokens are unavailable. |
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NUXT_PUBLIC_GITHUB_BOT_TRIGGER` | Yes* | Bot mention trigger (e.g. `@your-bot-name`). Required if using the GitHub bot. |
-| `NUXT_GITHUB_APP_ID` | Yes* | GitHub App ID |
-| `NUXT_GITHUB_APP_PRIVATE_KEY` | Yes* | GitHub App private key (PEM format, can be base64-encoded) |
-| `NUXT_GITHUB_WEBHOOK_SECRET` | Yes* | Webhook secret set when creating the GitHub App |
+## GitHub Bot (optional)
 
-\* Required only if enabling the GitHub bot integration.
+To enable the GitHub bot that responds to mentions in issues, add these from your [GitHub App settings page](https://github.com/settings/apps):
 
-## GitHub App Permissions (Recommended)
+| Variable | Where to find it |
+|----------|-----------------|
+| `NUXT_PUBLIC_GITHUB_APP_NAME` | Your GitHub App name (e.g. `my-agent`) |
+| `NUXT_PUBLIC_GITHUB_BOT_TRIGGER` | Override mention trigger (defaults to app name) |
+| `NUXT_GITHUB_APP_ID` | App settings → **App ID** |
+| `NUXT_GITHUB_APP_PRIVATE_KEY` | App settings → **Generate a private key** (PEM format, can be base64-encoded) |
+| `NUXT_GITHUB_WEBHOOK_SECRET` | The secret you set when creating the app's webhook |
 
-Use a GitHub App as the primary auth mechanism. Keep PAT usage optional.
+The webhook URL should be `<your-url>/api/webhooks/github`. Subscribe to **Issues** and **Issue comments** events.
 
-| Capability | Required permissions |
-|----------|-----------------------|
-| OAuth login + GitHub bot replies | `Issues: Read & Write`, `Metadata: Read-only`, account emails read |
-| Snapshot repo sync (push docs/marker) | `Contents: Read & Write`, `Metadata: Read-only` |
-| Auto-create snapshot repositories | `Administration: Read & Write` (plus org approval when applicable) |
+### Required GitHub App permissions for the bot
 
-`NUXT_GITHUB_TOKEN` should only be used as a fallback when GitHub App permissions are unavailable or temporarily misconfigured.
+| Permission | Access | Why |
+|------------|--------|-----|
+| Issues | Read & Write | Read issues and post replies |
+| Metadata | Read-only | Required by GitHub for all apps |
+| Contents | Read & Write | Push synced content (if using snapshot management) |
+| Administration | Read & Write | Auto-create snapshot repos (optional, needs org approval) |
 
-## Discord Bot
+## Discord Bot (optional)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NUXT_DISCORD_BOT_TOKEN` | Yes* | Discord bot token |
-| `NUXT_DISCORD_PUBLIC_KEY` | Yes* | Discord application public key |
-| `NUXT_DISCORD_APPLICATION_ID` | Yes* | Discord application ID |
-| `NUXT_DISCORD_MENTION_ROLE_IDS` | No | Comma-separated role IDs that can trigger the bot |
+To add a Discord bot, create an app in the [Discord Developer Portal](https://discord.com/developers/applications):
 
-\* Required only if enabling the Discord bot integration.
+| Variable | Where to find it |
+|----------|-----------------|
+| `NUXT_DISCORD_BOT_TOKEN` | Bot → **Reset Token** → copy |
+| `NUXT_DISCORD_PUBLIC_KEY` | General Information → **Public Key** |
+| `NUXT_DISCORD_APPLICATION_ID` | General Information → **Application ID** |
+| `NUXT_DISCORD_MENTION_ROLE_IDS` | Comma-separated role IDs that can trigger the bot (optional) |
 
-## YouTube
+Set the interactions endpoint URL to `<your-url>/api/webhooks/discord`.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NUXT_YOUTUBE_API_KEY` | Yes* | YouTube Data API key for fetching video transcripts |
+## YouTube (optional)
 
-\* Required only if syncing YouTube sources.
+### `NUXT_YOUTUBE_API_KEY`
 
-## Storage
+Required only if syncing YouTube sources (video transcripts).
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `BLOB_READ_WRITE_TOKEN` | No | Vercel Blob token for file uploads |
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create a project (or select an existing one)
+3. Enable the [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)
+4. Go to **Credentials** → **Create Credentials** → **API Key**
+5. Copy the key → `NUXT_YOUTUBE_API_KEY`
 
-## Optional
+## Storage (optional)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `REDIS_URL` | No | Redis URL for bot state persistence. Falls back to in-memory state if not set. |
-| `VERCEL_OIDC_TOKEN` | No | Vercel OIDC token (auto-injected in Vercel deployments) |
+### `BLOB_READ_WRITE_TOKEN`
+
+[Vercel Blob](https://vercel.com/docs/storage/vercel-blob) token for file uploads. Auto-injected in Vercel deployments.
+
+To get one manually: [Vercel Dashboard](https://vercel.com) → your project → **Storage** → **Blob** → **Connect** → copy the token.
+
+## State (optional)
+
+### `REDIS_URL`
+
+Redis connection URL for bot state persistence (tracks which threads the bot is subscribed to). Falls back to in-memory state if not set — fine for development, but state is lost on restart.
+
+Any Redis-compatible provider works: [Upstash](https://upstash.com), [Redis Cloud](https://redis.io/cloud), etc.
+
+### `VERCEL_OIDC_TOKEN`
+
+Auto-injected in Vercel deployments. No action needed.
 
 ## SDK (`@savoir/sdk`)
 
 When using the SDK from an external application:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SAVOIR_API_URL` | Yes | Base URL of your API |
-| `SAVOIR_API_KEY` | No | API key for authentication (Better Auth API key) |
+| Variable | Description |
+|----------|-------------|
+| `SAVOIR_API_URL` | Base URL of your deployed instance (e.g. `https://your-app.vercel.app`) |
+| `SAVOIR_API_KEY` | API key generated from the admin panel at `/admin/api-keys` |
 
 ## Database
 
-Migrations run automatically when the application starts -- no manual `db:migrate` step is needed.
+Migrations run automatically when the application starts — no manual step needed.
 
 ```bash
 # Generate new migrations after schema changes
 bun run db:generate
-```
-
-## Workflows
-
-```bash
-# Monitor workflow progress
-bun run workflow:web
 ```
