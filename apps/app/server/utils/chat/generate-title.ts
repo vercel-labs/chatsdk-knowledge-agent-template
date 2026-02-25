@@ -10,7 +10,8 @@ interface GenerateTitleOptions {
   firstMessage: UIMessage
   chatId: string
   requestId: string
-  apiKey: string
+  /** AI Gateway API key. Optional — falls back to OIDC on Vercel or AI_GATEWAY_API_KEY env var. */
+  apiKey?: string
 }
 
 /**
@@ -20,7 +21,7 @@ interface GenerateTitleOptions {
  */
 export async function generateTitle({ firstMessage, chatId, requestId, apiKey }: GenerateTitleOptions): Promise<string | null> {
   try {
-    const gateway = createGateway({ apiKey })
+    const gateway = createGateway(apiKey ? { apiKey } : undefined)
     const { text: title } = await generateText({
       model: gateway(ROUTER_MODEL),
       system: `Generate a short chat title (max 30 chars) from the user's message.

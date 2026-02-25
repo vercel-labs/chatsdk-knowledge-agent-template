@@ -20,9 +20,9 @@ function extractQuestionFromMessages(messages: UIMessage[]): string {
 export async function routeQuestion(
   messages: UIMessage[],
   requestId: string,
-  apiKey: string,
+  apiKey?: string,
 ): Promise<AgentConfig> {
-  const gateway = createGateway({ apiKey })
+  const gateway = createGateway(apiKey ? { apiKey } : undefined)
 
   const question = extractQuestionFromMessages(messages)
   if (!question) {

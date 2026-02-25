@@ -83,8 +83,6 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const config = useRuntimeConfig() as any
-
     let stepCount = 0
     let toolCallCount = 0
     let totalInputTokens = 0
@@ -102,7 +100,6 @@ export default defineEventHandler(async (event) => {
     const cookie = getHeader(event, 'cookie')
     const savoir = createSavoir({
       apiUrl: getRequestURL(event).origin,
-      apiKey: config.savoir?.apiKey || undefined,
       headers: cookie ? { cookie } : undefined,
       sessionId: existingSessionId || undefined,
     })
@@ -160,7 +157,6 @@ export default defineEventHandler(async (event) => {
         tools: savoir.tools,
         getAgentConfig,
         messages,
-        apiKey: config.savoir?.apiKey ?? '',
         defaultModel: model,
         requestId,
         onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }) => {
@@ -187,7 +183,6 @@ export default defineEventHandler(async (event) => {
         firstMessage: messages[0],
         chatId: id as string,
         requestId,
-        apiKey: config.savoir?.apiKey ?? '',
       })
       : null
 

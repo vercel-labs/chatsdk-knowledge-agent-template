@@ -15,7 +15,8 @@ export interface SourceAgentOptions {
   tools: Record<string, unknown>
   getAgentConfig: () => Promise<AgentConfigData>
   messages: UIMessage[]
-  apiKey: string
+  /** AI Gateway API key. Optional — falls back to OIDC on Vercel or AI_GATEWAY_API_KEY env var. */
+  apiKey?: string
   requestId?: string
   /** Falls back to agentConfig.defaultModel then DEFAULT_MODEL */
   defaultModel?: string
