@@ -1,5 +1,6 @@
 import { kv } from '@nuxthub/kv'
 import { z } from 'zod'
+import { createError } from 'evlog'
 import { getSnapshotRepoConfig, setSnapshotRepoConfig } from '../../utils/sandbox/snapshot-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { requireAdmin } from '../../utils/admin'
@@ -23,11 +24,13 @@ export default defineEventHandler(async (event) => {
   const snapshotRepo = body.snapshotRepo.trim()
   const snapshotBranch = body.snapshotBranch?.trim() || 'main'
 
-  const token = await getSnapshotToken()
+  const token = await getSnapshotToken(snapshotRepo)
   if (!token) {
     throw createError({
-      statusCode: 400,
+      status: 400,
       message: 'GitHub token not found',
+      why: 'Could not resolve a GitHub token for this repository',
+      fix: 'Ensure your GitHub App is installed on this repository, or set NUXT_GITHUB_TOKEN',
     })
   }
 
