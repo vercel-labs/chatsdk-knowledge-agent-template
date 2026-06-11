@@ -64,16 +64,13 @@ export interface ApiErrorResponse {
 
 export interface SyncSource {
   id: string
-  type: 'github' | 'youtube'
+  type: 'github' | 'file'
   label: string
   repo?: string | null
   branch?: string | null
   contentPath?: string | null
   outputPath?: string | null
   readmeOnly?: boolean | null
-  channelId?: string | null
-  handle?: string | null
-  maxVideos?: number | null
 }
 
 export interface SyncOptions {
@@ -111,12 +108,11 @@ export interface GitHubSource {
   readmeOnly: boolean
 }
 
-export interface YouTubeSource {
+export interface FileSource {
   id: string
   label: string
-  type: 'youtube'
-  channelId: string
-  handle: string
+  type: 'file'
+  outputPath: string
 }
 
 export interface SourcesResponse {
@@ -125,9 +121,9 @@ export interface SourcesResponse {
     count: number
     sources: GitHubSource[]
   }
-  youtube: {
+  file: {
     count: number
-    sources: YouTubeSource[]
+    sources: FileSource[]
   }
 }
 

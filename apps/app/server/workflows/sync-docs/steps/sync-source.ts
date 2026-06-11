@@ -1,7 +1,7 @@
 /**
  * Step: Sync Single Source
  *
- * Syncs a single source (GitHub or YouTube) to the sandbox.
+ * Syncs a single source (GitHub or file) to the sandbox.
  * Each source is its own step for granular retry and observability.
  */
 
@@ -9,12 +9,11 @@ import { getStepMetadata, RetryableError } from 'workflow'
 import { log } from 'evlog'
 import { Sandbox } from '@vercel/sandbox'
 import type { Source, SyncSourceResult } from '../types'
-import { syncFileSource, syncGitHubSource, syncYouTubeSource } from '../../../utils/sandbox/source-sync'
+import { syncFileSource, syncGitHubSource } from '../../../utils/sandbox/source-sync'
 
 export async function stepSyncSource(
   sandboxId: string,
   source: Source,
-  config: { githubToken?: string; youtubeApiKey?: string },
 ): Promise<SyncSourceResult> {
   'use step'
 
@@ -22,24 +21,12 @@ export async function stepSyncSource(
   log.info('sync', `[${stepId}] Syncing source "${source.label}" (attempt ${attempt})`)
 
   // Reconnect to existing sandbox
-  const sandbox = await Sandbox.get({ sandboxId })
+  const sandbox = await Sandbox.get({ name: sandboxId })
 
   let result: SyncSourceResult
 
   if (source.type === 'github') {
     result = await syncGitHubSource(sandbox, source)
-  } else if (source.type === 'youtube') {
-    if (!config.youtubeApiKey) {
-      result = {
-        sourceId: source.id,
-        label: source.label,
-        success: false,
-        fileCount: 0,
-        error: 'YouTube API key not configured',
-      }
-    } else {
-      result = await syncYouTubeSource(sandbox, source, config.youtubeApiKey)
-    }
   } else if (source.type === 'file') {
     result = await syncFileSource(sandbox, source)
   } else {

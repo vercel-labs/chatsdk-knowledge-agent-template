@@ -8,7 +8,7 @@ useSeoMeta({ title: 'API Keys' })
 const toast = useToast()
 const overlay = useOverlay()
 const { showError } = useErrorToast()
-const { client } = useUserSession()
+const client = useAuthClient()
 
 const { data: keys, refresh, status } = useLazyAsyncData('user-api-keys', () => client!.apiKey.list())
 

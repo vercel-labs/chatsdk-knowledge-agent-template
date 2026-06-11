@@ -2,7 +2,7 @@ import { db, schema } from '@nuxthub/db'
 import { z } from 'zod'
 
 const bodySchema = z.object({
-  type: z.enum(['github', 'youtube', 'file']),
+  type: z.enum(['github', 'file']),
   label: z.string().min(1),
   basePath: z.string().optional().default('/docs'),
   repo: z.string().optional(),
@@ -10,9 +10,6 @@ const bodySchema = z.object({
   contentPath: z.string().optional(),
   outputPath: z.string().optional(),
   readmeOnly: z.boolean().optional().default(false),
-  channelId: z.string().optional(),
-  handle: z.string().optional(),
-  maxVideos: z.number().optional().default(50),
 })
 
 /**
@@ -37,9 +34,6 @@ export default defineEventHandler(async (event) => {
       contentPath: body.contentPath,
       outputPath: body.outputPath,
       readmeOnly: body.readmeOnly,
-      channelId: body.channelId,
-      handle: body.handle,
-      maxVideos: body.maxVideos,
       createdAt: new Date(),
       updatedAt: new Date(),
     })

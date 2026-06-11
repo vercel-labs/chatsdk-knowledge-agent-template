@@ -34,7 +34,7 @@ export async function stepPushChanges(
   log.info('sync', `[${stepId}] Pushing changes to ${config.snapshotRepo}#${config.snapshotBranch}`)
 
   // Reconnect to existing sandbox
-  const sandbox = await Sandbox.get({ sandboxId })
+  const sandbox = await Sandbox.get({ name: sandboxId })
 
   const commitMessage = generateCommitMessage(results)
   const repoUrl = generateAuthRepoUrl(config.snapshotRepo, config.githubToken)

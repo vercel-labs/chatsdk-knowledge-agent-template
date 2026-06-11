@@ -19,7 +19,7 @@ export async function stepTakeSnapshot(sandboxId: string): Promise<TakeSnapshotR
   log.info('sync', `[${stepId}] Taking snapshot of sandbox ${sandboxId}`)
 
   // Reconnect to existing sandbox
-  const sandbox = await Sandbox.get({ sandboxId })
+  const sandbox = await Sandbox.get({ name: sandboxId })
 
   const snapshot = await sandbox.snapshot()
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type SourceType = 'github' | 'youtube' | 'file'
+type SourceType = 'github' | 'file'
 
 const ALLOWED_EXTENSIONS = ['.md', '.mdx', '.txt', '.yml', '.yaml', '.json']
 
@@ -12,9 +12,6 @@ interface SourceData {
   contentPath: string | null
   outputPath: string | null
   readmeOnly: boolean | null
-  channelId: string | null
-  handle: string | null
-  maxVideos: number | null
 }
 
 interface PendingFile {
@@ -47,19 +44,14 @@ const form = ref({
   outputPath: props.source?.outputPath || '',
   basePath: (() => {
     const type = props.source?.type || props.defaultType || 'github'
-    if (type === 'youtube') return '/youtube'
     if (type === 'file') return '/files'
     return '/docs'
   })(),
   readmeOnly: props.source?.readmeOnly || false,
-  channelId: props.source?.channelId || '',
-  handle: props.source?.handle || '',
-  maxVideos: props.source?.maxVideos || 50,
 })
 
 const typeOptions = [
   { label: 'GitHub Repository', value: 'github', icon: 'i-simple-icons-github' },
-  { label: 'YouTube Channel', value: 'youtube', icon: 'i-simple-icons-youtube' },
   { label: 'File Upload', value: 'file', icon: 'i-lucide-file-text' },
 ]
 
@@ -79,7 +71,6 @@ const effectiveOutputPath = computed(() => {
 })
 
 const defaultBasePath = computed(() => {
-  if (form.value.type === 'youtube') return '/youtube'
   if (form.value.type === 'file') return '/files'
   return '/docs'
 })
@@ -91,8 +82,7 @@ const snapshotPreviewPath = computed(() => {
 })
 
 watch(() => form.value.type, (newType) => {
-  if (newType === 'youtube') form.value.basePath = '/youtube'
-  else if (newType === 'file') form.value.basePath = '/files'
+  if (newType === 'file') form.value.basePath = '/files'
   else form.value.basePath = '/docs'
 })
 
@@ -329,49 +319,6 @@ async function save() {
               <p class="text-xs text-muted">
                 Only <code class="text-highlighted">.md</code>, <code class="text-highlighted">.mdx</code>, <code class="text-highlighted">.yml</code>, <code class="text-highlighted">.yaml</code>, <code class="text-highlighted">.json</code> files are synced
               </p>
-            </div>
-          </template>
-
-          <template v-if="form.type === 'youtube'">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-highlighted">
-                  Channel ID <span class="text-error">*</span>
-                </label>
-                <UInput
-                  v-model="form.channelId"
-                  placeholder="UCxxxxxxxxxxxxxxxxxxxxxx"
-                  icon="i-simple-icons-youtube"
-                />
-                <p class="text-xs text-muted">
-                  Starts with UC
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-highlighted">Handle</label>
-                <UInput
-                  v-model="form.handle"
-                  placeholder="@TheAlexLichter"
-                  icon="i-lucide-at-sign"
-                />
-              </div>
-            </div>
-
-            <div class="w-1/2">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-sm font-medium text-highlighted">Max Videos</label>
-                <UInput
-                  v-model.number="form.maxVideos"
-                  type="number"
-                  :min="1"
-                  :max="500"
-                  icon="i-lucide-video"
-                />
-                <p class="text-xs text-muted">
-                  Between 1 and 500
-                </p>
-              </div>
             </div>
           </template>
 

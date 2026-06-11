@@ -18,7 +18,7 @@ interface SourceFiles {
 interface ExtractedSource {
   id: string
   data: {
-    type: 'github' | 'youtube' | 'file'
+    type: 'github' | 'file'
     label: string
     repo: string
     branch: string
@@ -26,9 +26,6 @@ interface ExtractedSource {
     outputPath: string
     basePath: string
     readmeOnly: boolean
-    channelId: string
-    handle: string
-    maxVideos: number
   }
   confidence: number
   uploadFiles?: SourceFiles[]
@@ -43,11 +40,8 @@ const route = useRoute()
 const toast = useToast()
 const { showError } = useErrorToast()
 
-const { data: sourcesData } = useLazyFetch('/api/sources')
-const youtubeEnabled = computed(() => sourcesData.value?.youtubeEnabled ?? false)
-
-const requestedType = (['youtube', 'file'].includes(route.query.type as string) ? route.query.type : 'github') as 'github' | 'youtube' | 'file'
-const initialType = (requestedType === 'youtube' && !youtubeEnabled.value ? 'github' : requestedType) as 'github' | 'youtube' | 'file'
+const requestedType = (route.query.type === 'file' ? 'file' : 'github') as 'github' | 'file'
+const initialType = requestedType
 
 const isSubmitting = ref(false)
 const isExtracting = ref(false)
@@ -64,11 +58,8 @@ const sources = ref<ExtractedSource[]>([
       branch: 'main',
       contentPath: '',
       outputPath: '',
-      basePath: initialType === 'youtube' ? '/youtube' : initialType === 'file' ? '/files' : '/docs',
+      basePath: initialType === 'file' ? '/files' : '/docs',
       readmeOnly: false,
-      channelId: '',
-      handle: '',
-      maxVideos: 50,
     },
     confidence: 1,
   }
@@ -82,7 +73,7 @@ watch(pendingFiles, (files) => {
 })
 
 function createSourceData(item?: SourceOcrItem) {
-  const type = (item?.type || 'github') as 'github' | 'youtube' | 'file'
+  const type = (item?.type || 'github') as 'github' | 'file'
   return {
     type,
     label: item?.label || '',
@@ -90,11 +81,8 @@ function createSourceData(item?: SourceOcrItem) {
     branch: item?.branch || 'main',
     contentPath: item?.contentPath || '',
     outputPath: '',
-    basePath: type === 'youtube' ? '/youtube' : type === 'file' ? '/files' : '/docs',
+    basePath: type === 'file' ? '/files' : '/docs',
     readmeOnly: false,
-    channelId: item?.channelId || '',
-    handle: item?.handle || '',
-    maxVideos: 50,
   }
 }
 
@@ -256,10 +244,7 @@ function isSourceEmpty(source: ExtractedSource): boolean {
   if (d.type === 'github') {
     return !d.label && !d.repo && !d.contentPath
   }
-  if (d.type === 'file') {
-    return !d.label && (!source.uploadFiles || source.uploadFiles.length === 0)
-  }
-  return !d.label && !d.channelId && !d.handle
+  return !d.label && (!source.uploadFiles || source.uploadFiles.length === 0)
 }
 
 function resetSource(source: ExtractedSource) {
@@ -296,7 +281,7 @@ function getEffectiveOutputPath(source: ExtractedSource) {
 
 function getSnapshotPreview(source: ExtractedSource) {
   const { type } = source.data
-  const base = source.data.basePath || (type === 'youtube' ? '/youtube' : type === 'file' ? '/files' : '/docs')
+  const base = source.data.basePath || (type === 'file' ? '/files' : '/docs')
   const folder = getEffectiveOutputPath(source) || 'folder-name'
   return `${base}/${folder}/`
 }
@@ -402,17 +387,10 @@ async function saveAll() {
   }
 }
 
-const typeOptions = computed(() => {
-  const options = [{ label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' }]
-
-  if (youtubeEnabled.value) {
-    options.push({ label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' })
-  }
-
-  options.push({ label: 'File Upload', value: 'file', icon: 'i-lucide-file-text' })
-
-  return options
-})
+const typeOptions = [
+  { label: 'GitHub', value: 'github', icon: 'i-simple-icons-github' },
+  { label: 'File Upload', value: 'file', icon: 'i-lucide-file-text' },
+]
 
 const hasValidSources = computed(() => sources.value.some(s => s.data.label))
 const validSourcesCount = computed(() => sources.value.filter(s => s.data.label).length)
@@ -425,7 +403,7 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
         Add Sources
       </h1>
       <p class="text-sm text-muted">
-        Sources provide context to the AI. Connect your GitHub docs{{ youtubeEnabled ? ', YouTube channels,' : '' }} or upload files.
+        Sources provide context to the AI. Connect your GitHub docs or upload files.
       </p>
     </header>
 
@@ -548,7 +526,7 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
                 :items="typeOptions"
                 value-key="value"
                 size="sm"
-                @update:model-value="source.data.basePath = $event === 'youtube' ? '/youtube' : $event === 'file' ? '/files' : '/docs'"
+                @update:model-value="source.data.basePath = $event === 'file' ? '/files' : '/docs'"
               />
               <div class="col-span-2">
                 <UInput
@@ -591,25 +569,6 @@ const validSourcesCount = computed(() => sources.value.filter(s => s.data.label)
                   placeholder="docs/content"
                   size="sm"
                   icon="i-lucide-folder-open"
-                  autocomplete="off"
-                />
-              </div>
-            </template>
-
-            <template v-else-if="source.data.type === 'youtube'">
-              <div class="grid grid-cols-2 gap-2">
-                <UInput
-                  v-model="source.data.channelId"
-                  placeholder="UCxxxx…"
-                  size="sm"
-                  icon="i-simple-icons-youtube"
-                  autocomplete="off"
-                />
-                <UInput
-                  v-model="source.data.handle"
-                  placeholder="@handle"
-                  size="sm"
-                  icon="i-lucide-at-sign"
                   autocomplete="off"
                 />
               </div>

@@ -10,16 +10,13 @@ const ITEMS_PER_PAGE = 5
 
 interface SerializedSource {
   id: string
-  type: 'github' | 'youtube' | 'file'
+  type: 'github' | 'file'
   label: string
   repo: string | null
   branch: string | null
   contentPath: string | null
   outputPath: string | null
   readmeOnly: boolean | null
-  channelId: string | null
-  handle: string | null
-  maxVideos: number | null
   createdAt: string
   updatedAt: string
 }
@@ -44,7 +41,6 @@ const isSyncingAll = ref(false)
 
 const searchQuery = ref('')
 const githubPage = ref(1)
-const youtubePage = ref(1)
 const filePage = ref(1)
 
 const deleteModal = overlay.create(LazyModalConfirm)
@@ -67,24 +63,16 @@ function filterSources(sourceList: SerializedSource[] | undefined) {
   return sourceList.filter((source) => {
     const label = source.label.toLowerCase()
     const repo = source.repo?.toLowerCase() || ''
-    const handle = source.handle?.toLowerCase() || ''
-    const channelId = source.channelId?.toLowerCase() || ''
-    return label.includes(query) || repo.includes(query) || handle.includes(query) || channelId.includes(query)
+    return label.includes(query) || repo.includes(query)
   })
 }
 
 const filteredGithubSources = computed(() => filterSources(sources.value?.github?.sources as SerializedSource[] | undefined))
-const filteredYoutubeSources = computed(() => filterSources(sources.value?.youtube?.sources as SerializedSource[] | undefined))
 const filteredFileSources = computed(() => filterSources(sources.value?.file?.sources as SerializedSource[] | undefined))
 
 const paginatedGithubSources = computed(() => {
   const start = (githubPage.value - 1) * ITEMS_PER_PAGE
   return filteredGithubSources.value.slice(start, start + ITEMS_PER_PAGE)
-})
-
-const paginatedYoutubeSources = computed(() => {
-  const start = (youtubePage.value - 1) * ITEMS_PER_PAGE
-  return filteredYoutubeSources.value.slice(start, start + ITEMS_PER_PAGE)
 })
 
 const paginatedFileSources = computed(() => {
@@ -94,7 +82,6 @@ const paginatedFileSources = computed(() => {
 
 watch(searchQuery, () => {
   githubPage.value = 1
-  youtubePage.value = 1
   filePage.value = 1
 })
 
@@ -113,17 +100,12 @@ async function deleteSource(source: SerializedSource) {
       total: sources.value.total - 1,
       github: {
         ...sources.value.github,
-        sources: sources.value.github.sources.filter(s => s.id !== source.id),
+        sources: sources.value.github.sources.filter((s: SerializedSource) => s.id !== source.id),
         count: source.type === 'github' ? sources.value.github.count - 1 : sources.value.github.count,
-      },
-      youtube: {
-        ...sources.value.youtube,
-        sources: sources.value.youtube.sources.filter(s => s.id !== source.id),
-        count: source.type === 'youtube' ? sources.value.youtube.count - 1 : sources.value.youtube.count,
       },
       file: {
         ...sources.value.file,
-        sources: sources.value.file.sources.filter(s => s.id !== source.id),
+        sources: sources.value.file.sources.filter((s: SerializedSource) => s.id !== source.id),
         count: source.type === 'file' ? sources.value.file.count - 1 : sources.value.file.count,
       },
     }
@@ -167,7 +149,7 @@ function handleSaved() {
   refresh()
 }
 
-const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources.value?.youtube?.count || 0) + (sources.value?.file?.count || 0) > 0)
+const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources.value?.file?.count || 0) > 0)
 </script>
 
 <template>
@@ -177,7 +159,7 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
         Sources
       </h1>
       <p class="text-sm text-muted max-w-lg">
-        Sources are knowledge bases that give the AI context. Connect GitHub repositories, YouTube channels, or upload files directly.
+        Sources are knowledge bases that give the AI context. Connect GitHub repositories or upload files directly.
       </p>
     </header>
 
@@ -349,57 +331,6 @@ const hasSources = computed(() => (sources.value?.github?.count || 0) + (sources
             icon="i-lucide-plus"
           >
             Add a GitHub repository
-          </UButton>
-        </section>
-
-        <section v-if="sources?.youtubeEnabled">
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] text-muted font-pixel tracking-wide uppercase">
-              YouTube Channels
-            </p>
-            <p v-if="filteredYoutubeSources.length" class="text-xs text-muted">
-              {{ filteredYoutubeSources.length }} {{ filteredYoutubeSources.length === 1 ? 'channel' : 'channels' }}
-            </p>
-          </div>
-
-          <template v-if="filteredYoutubeSources.length">
-            <div class="rounded-lg border border-default divide-y divide-default overflow-hidden">
-              <div v-for="source in paginatedYoutubeSources" :key="source.id" class="px-4 hover:bg-elevated/50 transition-colors">
-                <SourceCard
-                  :source
-                  @edit="editingSource = source"
-                  @delete="deleteSource(source)"
-                  @sync="triggerSync(source.id)"
-                />
-              </div>
-            </div>
-            <div v-if="filteredYoutubeSources.length > ITEMS_PER_PAGE" class="flex justify-center mt-4">
-              <UPagination
-                v-model:page="youtubePage"
-                :items-per-page="ITEMS_PER_PAGE"
-                :total="filteredYoutubeSources.length"
-                :sibling-count="1"
-                show-edges
-                size="sm"
-              />
-            </div>
-          </template>
-          <template v-else-if="sources?.youtube?.count && searchQuery">
-            <div class="py-8 text-center border border-dashed border-default rounded-lg">
-              <p class="text-sm text-muted">
-                No YouTube channels match your search
-              </p>
-            </div>
-          </template>
-          <UButton
-            v-else-if="sources?.youtubeEnabled"
-            color="neutral"
-            variant="ghost"
-            class="w-full h-14 border border-dashed border-default hover:border-muted"
-            to="/admin/new?type=youtube"
-            icon="i-lucide-plus"
-          >
-            Add a YouTube channel
           </UButton>
         </section>
 

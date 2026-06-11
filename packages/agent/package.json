@@ -34,18 +34,18 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^3.0.45",
-    "@ai-sdk/openai": "^3.0.30",
-    "@ai-sdk/provider": "^3.0.8",
-    "ai": "^6.0.85",
-    "evlog": "^2.8.0",
-    "zod": "^4.3.6"
+    "@ai-sdk/gateway": "^3.0.126",
+    "@ai-sdk/openai": "^3.0.68",
+    "@ai-sdk/provider": "^3.0.10",
+    "ai": "^6.0.198",
+    "evlog": "^2.18.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@hrcd/eslint-config": "^3.0.3",
-    "@types/node": "^25.2.2",
-    "eslint": "^9.23.0",
-    "tsdown": "^0.20.3",
+    "@types/node": "^25.9.2",
+    "eslint": "^9.39.4",
+    "tsdown": "^0.22.2",
     "typescript": "^5.9.3"
   },
   "engines": {

@@ -32,10 +32,10 @@ export async function stepCreateSandbox(
     runtime: 'node24',
   })
 
-  log.info('sync', `[${stepId}] Sandbox created: ${sandbox.sandboxId}`)
+  log.info('sync', `[${stepId}] Sandbox created: ${sandbox.name}`)
 
   return {
-    sandboxId: sandbox.sandboxId,
+    sandboxId: sandbox.name,
   }
 }
 

@@ -3,16 +3,13 @@ import { useTimeoutFn } from '@vueuse/core'
 
 interface SourceData {
   id: string
-  type: 'github' | 'youtube' | 'file'
+  type: 'github' | 'file'
   label: string
   repo: string | null
   branch: string | null
   contentPath: string | null
   outputPath: string | null
   readmeOnly: boolean | null
-  channelId: string | null
-  handle: string | null
-  maxVideos: number | null
 }
 
 const props = defineProps<{
@@ -41,17 +38,13 @@ const sourceUrl = computed(() => {
   if (props.source.type === 'github' && props.source.repo) {
     return `https://github.com/${props.source.repo}`
   }
-  if (props.source.type === 'youtube') {
-    if (props.source.handle) return `https://youtube.com/${props.source.handle}`
-    if (props.source.channelId) return `https://youtube.com/channel/${props.source.channelId}`
-  }
   return null
 })
 
 const sourceIdentifier = computed(() => {
   if (props.source.type === 'github') return props.source.repo
   if (props.source.type === 'file') return 'Uploaded files'
-  return props.source.handle || props.source.channelId
+  return null
 })
 </script>
 
@@ -105,15 +98,6 @@ const sourceIdentifier = computed(() => {
               class="inline-flex items-center h-[22px] px-2 rounded-md text-[11px] font-medium text-warning bg-warning/10"
             >
               README only
-            </div>
-          </template>
-          <template v-else-if="source.type === 'youtube'">
-            <div
-              v-if="source.maxVideos"
-              class="inline-flex items-center gap-1 h-[22px] px-2 rounded-md text-[11px] font-medium text-muted bg-muted"
-            >
-              <UIcon name="i-lucide-video" class="size-3 opacity-60" />
-              {{ source.maxVideos }} videos max
             </div>
           </template>
           <template v-else-if="source.type === 'file'">

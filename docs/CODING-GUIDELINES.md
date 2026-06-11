@@ -44,9 +44,6 @@ export const sources = sqliteTable('sources', {
   // GitHub fields
   repo: text('repo'),
   branch: text('branch'),
-
-  // YouTube fields
-  channelId: text('channel_id'),
 })
 ```
 

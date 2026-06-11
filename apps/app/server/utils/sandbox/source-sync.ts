@@ -1,24 +1,6 @@
 import type { Sandbox } from '@vercel/sandbox'
 import { createError, log } from 'evlog'
-import { youtube } from '@googleapis/youtube'
-import { YoutubeTranscript } from 'youtube-transcript'
-import type { FileSource, GitHubSource, Source, SyncSourceResult, YouTubeSource } from '../../workflows/sync-docs/types'
-
-interface YouTubeVideo {
-  id: string
-  title: string
-  description: string
-  publishedAt: string
-  thumbnailUrl: string
-}
-
-interface VideoIndex {
-  id: string
-  title: string
-  publishedAt: string
-  file: string
-  hasTranscript: boolean
-}
+import type { FileSource, GitHubSource, Source, SyncSourceResult } from '../../workflows/sync-docs/types'
 
 /** Syncs GitHub source to sandbox, returns result with file count and status */
 export async function syncGitHubSource(
@@ -144,217 +126,6 @@ async function syncFullRepository(
   return parseInt((await countResult.stdout()).trim()) || 0
 }
 
-/** Synchronizes a YouTube channel to the sandbox filesystem */
-export async function syncYouTubeSource(
-  sandbox: Sandbox,
-  source: YouTubeSource,
-  apiKey: string,
-): Promise<SyncSourceResult> {
-  try {
-    log.info('sync', `Starting YouTube sync for ${source.label} (${source.channelId})`)
-
-    const videos = await fetchChannelVideos(source.channelId, source.maxVideos, apiKey)
-    log.info('sync', `Found ${videos.length} videos to sync`)
-
-    if (videos.length === 0) {
-      return {
-        sourceId: source.id,
-        label: source.label,
-        success: true,
-        fileCount: 0,
-      }
-    }
-
-    const targetDir = `${source.basePath}/${source.outputPath}`
-    await sandbox.runCommand({
-      cmd: 'mkdir',
-      args: ['-p', targetDir],
-      cwd: '/vercel/sandbox',
-    })
-
-    const videosIndex: VideoIndex[] = []
-    let successCount = 0
-
-    for (const video of videos) {
-      try {
-        const transcript = await fetchVideoTranscript(video.id)
-        const markdown = generateVideoMarkdown(video, transcript)
-        const filename = `${video.id}-${slugify(video.title)}.md`
-        const filepath = `${targetDir}/${filename}`
-
-        // Write file using shell command
-        await sandbox.runCommand({
-          cmd: 'sh',
-          args: ['-c', `cat > '${filepath}' << 'EOFMARKER'\n${markdown}\nEOFMARKER`],
-          cwd: '/vercel/sandbox',
-        })
-
-        videosIndex.push({
-          id: video.id,
-          title: video.title,
-          publishedAt: video.publishedAt,
-          file: filename,
-          hasTranscript: !!transcript,
-        })
-        successCount++
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        log.warn('sync', `Failed to sync video ${video.id}: ${errorMessage}`)
-      }
-    }
-
-    const indexData = {
-      lastSync: new Date().toISOString(),
-      totalVideos: successCount,
-      channelId: source.channelId,
-      handle: source.handle,
-      videos: videosIndex,
-    }
-    // Write index file
-    const indexContent = JSON.stringify(indexData, null, 2)
-    await sandbox.runCommand({
-      cmd: 'sh',
-      args: ['-c', `cat > '${targetDir}/videos.json' << 'EOFMARKER'\n${indexContent}\nEOFMARKER`],
-      cwd: '/vercel/sandbox',
-    })
-
-    log.info('sync', `YouTube sync completed: ${successCount}/${videos.length} videos`)
-
-    return {
-      sourceId: source.id,
-      label: source.label,
-      success: true,
-      fileCount: successCount + 1,
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    log.error('sync', `YouTube sync failed for ${source.label}: ${errorMessage}`)
-    return {
-      sourceId: source.id,
-      label: source.label,
-      success: false,
-      fileCount: 0,
-      error: errorMessage,
-    }
-  }
-}
-
-async function fetchChannelVideos(
-  channelId: string,
-  maxVideos: number,
-  apiKey: string,
-): Promise<YouTubeVideo[]> {
-  const yt = youtube({ version: 'v3', auth: apiKey })
-  const videos: YouTubeVideo[] = []
-  let pageToken: string | undefined
-
-  while (videos.length < maxVideos) {
-    try {
-      const response = await yt.search.list({
-        part: ['snippet'],
-        channelId,
-        maxResults: Math.min(50, maxVideos - videos.length),
-        order: 'date',
-        type: ['video'],
-        pageToken,
-      })
-
-      for (const item of response.data.items || []) {
-        if (!item.id?.videoId)
-          continue
-
-        videos.push({
-          id: item.id.videoId,
-          title: item.snippet?.title || 'Untitled',
-          description: item.snippet?.description || '',
-          publishedAt: item.snippet?.publishedAt || new Date().toISOString(),
-          thumbnailUrl: item.snippet?.thumbnails?.high?.url || '',
-        })
-      }
-
-      pageToken = response.data.nextPageToken || undefined
-      if (!pageToken)
-        break
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      log.error('sync', `Failed to fetch videos from channel ${channelId}: ${errorMessage}`)
-      throw error
-    }
-  }
-
-  return videos.slice(0, maxVideos)
-}
-
-async function fetchVideoTranscript(videoId: string): Promise<string | null> {
-  try {
-    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId)
-
-    if (!transcriptItems || transcriptItems.length === 0) {
-      log.warn('sync', `No transcript found for video ${videoId}`)
-      return null
-    }
-
-    const transcript = transcriptItems
-      .map(item => item.text)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    return transcript
-  } catch (error) {
-    log.warn('sync', `Failed to fetch transcript for ${videoId}: ${error}`)
-    return null
-  }
-}
-
-function generateVideoMarkdown(video: YouTubeVideo, transcript: string | null): string {
-  const escapedTitle = video.title.replace(/"/g, '\\"')
-  const escapedDescription = video.description
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, ' ')
-    .slice(0, 200)
-
-  const publishedDate = new Date(video.publishedAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
-  return `---
-title: "${escapedTitle}"
-description: "${escapedDescription}"
-videoId: "${video.id}"
-publishedAt: "${video.publishedAt}"
-url: "https://youtube.com/watch?v=${video.id}"
-hasTranscript: ${!!transcript}
----
-
-# ${video.title}
-
-> Published on ${publishedDate}
-
-## Description
-
-${video.description}
-
-## Watch on YouTube
-
-[Watch this video](https://youtube.com/watch?v=${video.id})
-
-${transcript ? `## Transcript\n\n${transcript}` : '⚠️ No transcript available for this video'}
-`
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50)
-}
-
 /** Writes pre-loaded file contents to sandbox */
 export async function syncFileSource(
   sandbox: Sandbox,
@@ -415,7 +186,7 @@ export async function cleanupStaleSources(
   const expectedDirs = new Map<string, Set<string>>()
 
   for (const source of sources) {
-    const basePath = source.basePath || (source.type === 'youtube' ? '/youtube' : source.type === 'file' ? '/files' : '/docs')
+    const basePath = source.basePath || (source.type === 'file' ? '/files' : '/docs')
     const outputPath = source.outputPath || source.id
     if (!expectedDirs.has(basePath)) {
       expectedDirs.set(basePath, new Set())
@@ -461,7 +232,6 @@ export async function cleanupStaleSources(
 export async function syncSources(
   sandbox: Sandbox,
   sources: Source[],
-  config?: { githubToken?: string; youtubeApiKey?: string },
 ): Promise<SyncSourceResult[]> {
   const results: SyncSourceResult[] = []
 
@@ -470,18 +240,6 @@ export async function syncSources(
 
     if (source.type === 'github') {
       result = await syncGitHubSource(sandbox, source)
-    } else if (source.type === 'youtube') {
-      if (!config?.youtubeApiKey) {
-        result = {
-          sourceId: source.id,
-          label: source.label,
-          success: false,
-          fileCount: 0,
-          error: 'YouTube API key not configured',
-        }
-      } else {
-        result = await syncYouTubeSource(sandbox, source, config.youtubeApiKey)
-      }
     } else if (source.type === 'file') {
       result = await syncFileSource(sandbox, source)
     } else {

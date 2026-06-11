@@ -273,7 +273,7 @@ function getContentParts(message: UIMessage) {
   })
 }
 
-const chatMessagesRef = ref<InstanceType<typeof import('#components').UChatMessages>>()
+const chatMessagesRef = ref<{ $el?: HTMLElement }>()
 
 function getScrollParent(node: HTMLElement | null): HTMLElement | null {
   let current = node

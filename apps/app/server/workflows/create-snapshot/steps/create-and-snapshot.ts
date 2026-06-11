@@ -21,14 +21,14 @@ export async function stepCreateAndSnapshot(config: SnapshotConfig): Promise<Sna
   log.info('snapshot', `[${stepId}] Creating sandbox from ${config.snapshotRepo}#${config.snapshotBranch} (attempt ${attempt})`)
 
   const sandbox = await createSandbox(config, 2 * 60 * 1000)
-  log.info('snapshot', `[${stepId}] Sandbox created: ${sandbox.sandboxId}`)
+  log.info('snapshot', `[${stepId}] Sandbox created: ${sandbox.name}`)
 
   const snapshot = await sandbox.snapshot()
   log.info('snapshot', `[${stepId}] Snapshot created: ${snapshot.snapshotId}`)
 
   return {
     snapshotId: snapshot.snapshotId,
-    sandboxId: sandbox.sandboxId,
+    sandboxId: sandbox.name,
   }
 }
 

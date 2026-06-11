@@ -4,7 +4,6 @@
 
 export interface SyncConfig {
   githubToken?: string
-  youtubeApiKey?: string
   snapshotRepo: string
   snapshotBranch: string
 }
@@ -21,17 +20,6 @@ export interface GitHubSource {
   readmeOnly: boolean
 }
 
-export interface YouTubeSource {
-  id: string
-  type: 'youtube'
-  label: string
-  basePath: string
-  channelId: string
-  handle: string
-  maxVideos: number
-  outputPath: string
-}
-
 export interface FileSourceEntry {
   filename: string
   content: string
@@ -46,7 +34,7 @@ export interface FileSource {
   files: FileSourceEntry[]
 }
 
-export type Source = GitHubSource | YouTubeSource | FileSource
+export type Source = GitHubSource | FileSource
 
 export interface SyncSourceResult {
   sourceId: string

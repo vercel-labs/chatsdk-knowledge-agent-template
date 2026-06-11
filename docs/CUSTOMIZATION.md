@@ -11,7 +11,7 @@ Knowledge Agent Template includes **local project skills** in `.agents/skills/` 
 | Skill | File | Purpose |
 |-------|------|---------|
 | **Add Tool** | `add-tool.md` | Add a new AI SDK tool to the agent (generator pattern, status yields) |
-| **Add Source** | `add-source.md` | Add a knowledge source (GitHub, YouTube) via admin UI or API |
+| **Add Source** | `add-source.md` | Add a knowledge source (GitHub, file upload) via admin UI or API |
 | **Add Bot Adapter** | `add-bot-adapter.md` | Add a new platform adapter (Slack, Linear, etc.) to the bot system |
 | **Rename Project** | `rename-project.md` | Fully rename the project from "Knowledge Agent Template" to a custom name |
 
@@ -46,7 +46,7 @@ Sources define your knowledge base. Manage them through the **Admin UI**:
 
 1. Navigate to `/admin`
 2. Click **Add source**
-3. Configure a GitHub repository or YouTube channel
+3. Configure a GitHub repository or upload files
 4. Click **Sync** to pull content
 
 See [Sources](./SOURCES.md) for all source options and how to add custom source types.

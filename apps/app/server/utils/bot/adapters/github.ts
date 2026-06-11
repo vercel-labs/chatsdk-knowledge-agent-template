@@ -511,6 +511,11 @@ export class SavoirGitHubAdapter implements Adapter<GitHubThreadId, GitHubRawMes
     return `github:${data.owner}/${data.repo}:issue:${data.issueNumber}`
   }
 
+  channelIdFromThreadId(threadId: string): string {
+    const { owner, repo } = this.decodeThreadId(threadId)
+    return `github:${owner}/${repo}`
+  }
+
   decodeThreadId(threadId: string): GitHubThreadId {
     const match = threadId.match(/^github:([^/]+)\/([^:]+):issue:(\d+)$/)
     if (!match || !match[1] || !match[2] || !match[3]) {

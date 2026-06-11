@@ -23,19 +23,12 @@ STRICT FORMAT RULES:
 - contentPath: folder path only (e.g. "docs", "docs/content")
 - label: short name from repo, keep dots if present (e.g. "nuxt", "nuxt.com", "h3")
 
-**YouTube channels:**
-- channelId: MUST start with "UC" followed by 22 characters
-- handle: @username format (e.g. "@TheAlexLichter")
-- label: short channel name
-
 IMPORTANT:
 - label should match the repo name (e.g. repo "nuxt/nuxt.com" → label "nuxt.com")
 - repo must be owner/repo format only (no URLs, no status codes, no extra text)
 - Only extract clearly defined sources, ignore partial or unclear data
 
 Return ALL valid sources found.`
-
-const YOUTUBE_CHANNEL_PATTERN = /^UC[a-zA-Z0-9_-]{22}$/
 
 function sanitizeLabel(label: string): string {
   return label
@@ -79,43 +72,29 @@ function sanitizeSource(source: SourceOcrItem): SourceOcrItem | null {
   let label = sanitizeLabel(source.label || '')
   if (!label) return null
 
-  if (source.type === 'github') {
-    const repo = sanitizeRepo(source.repo || '')
-    if (!repo) return null
+  if (source.type !== 'github') return null
 
-    // Derive label from repo name if model lost the dot
-    // e.g. repo "nuxt/nuxt.com" + label "nuxtcom" → label "nuxt.com"
-    const [, repoName] = repo.split('/')
-    if (repoName && repoName.includes('.')) {
-      const labelWithoutDots = label.replace(/\./g, '')
-      const repoNameWithoutDots = repoName.replace(/\./g, '')
-      if (labelWithoutDots === repoNameWithoutDots) {
-        label = repoName
-      }
-    }
+  const repo = sanitizeRepo(source.repo || '')
+  if (!repo) return null
 
-    return {
-      ...source,
-      label,
-      repo,
-      branch: source.branch?.toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'main',
-      contentPath: source.contentPath?.replace(/^\/+|\/+$/g, '') || '',
+  // Derive label from repo name if model lost the dot
+  // e.g. repo "nuxt/nuxt.com" + label "nuxtcom" → label "nuxt.com"
+  const [, repoName] = repo.split('/')
+  if (repoName && repoName.includes('.')) {
+    const labelWithoutDots = label.replace(/\./g, '')
+    const repoNameWithoutDots = repoName.replace(/\./g, '')
+    if (labelWithoutDots === repoNameWithoutDots) {
+      label = repoName
     }
   }
 
-  if (source.type === 'youtube') {
-    const channelId = source.channelId?.trim()
-    if (!channelId || !YOUTUBE_CHANNEL_PATTERN.test(channelId)) return null
-
-    return {
-      ...source,
-      label,
-      channelId,
-      handle: source.handle?.startsWith('@') ? source.handle : source.handle ? `@${source.handle}` : '',
-    }
+  return {
+    ...source,
+    label,
+    repo,
+    branch: source.branch?.toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'main',
+    contentPath: source.contentPath?.replace(/^\/+|\/+$/g, '') || '',
   }
-
-  return null
 }
 
 async function extractFromImage(image: string) {
@@ -185,10 +164,7 @@ export default defineEventHandler(async (event) => {
     const sanitized = sanitizeSource(source)
     if (!sanitized) continue
 
-    const key = sanitized.type === 'github'
-      ? sanitized.repo
-      : sanitized.channelId
-
+    const key = sanitized.repo
     if (!key || seen.has(key)) continue
     seen.add(key)
     uniqueSources.push(sanitized)

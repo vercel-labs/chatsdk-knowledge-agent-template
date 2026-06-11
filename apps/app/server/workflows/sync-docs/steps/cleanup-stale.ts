@@ -24,7 +24,7 @@ export async function stepCleanupStale(
   const { stepId } = getStepMetadata()
   log.info('sync', `[${stepId}] Cleaning up stale source directories`)
 
-  const sandbox = await Sandbox.get({ sandboxId })
+  const sandbox = await Sandbox.get({ name: sandboxId })
   const removed = await cleanupStaleSources(sandbox, sources)
 
   if (removed.length > 0) {

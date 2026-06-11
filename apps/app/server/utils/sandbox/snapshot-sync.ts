@@ -5,6 +5,7 @@ import type { SnapshotMetadata } from './types'
 import { KV_KEYS } from './types'
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { getSnapshotRepoConfig } from './snapshot-config'
+import { listSnapshotSummaries } from './helpers'
 import type { SnapshotSyncStatus } from '#shared/types/snapshot'
 
 const CACHE_TTL_MS = 60 * 1000
@@ -21,14 +22,13 @@ interface VercelSnapshot {
   status: 'failed' | 'created' | 'deleted'
   createdAt: number
   updatedAt: number
-  sourceSandboxId: string
+  sourceSessionId: string
   sizeBytes: number
-  expiresAt: number
+  expiresAt?: number
 }
 
-export async function listSnapshots(): Promise<VercelSnapshot[]> {
-  const result = await Snapshot.list()
-  return result.json.snapshots
+export function listSnapshots(): Promise<VercelSnapshot[]> {
+  return listSnapshotSummaries()
 }
 
 export async function getLatestSnapshot(): Promise<VercelSnapshot | null> {

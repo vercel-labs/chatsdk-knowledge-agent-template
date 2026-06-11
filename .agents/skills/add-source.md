@@ -20,15 +20,15 @@ Guide for adding a new knowledge source to the Knowledge Agent Template instance
 | `outputPath` | No | Output directory in snapshot (default: `id`) |
 | `readmeOnly` | No | Only fetch README.md (default: `false`) |
 
-### YouTube Source
+### File Source
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `id` | Yes | Unique identifier |
 | `label` | Yes | Display name |
-| `channelId` | Yes | YouTube channel ID (starts with `UC`) |
-| `handle` | No | YouTube handle (e.g. `@MyChannel`) |
-| `maxVideos` | No | Maximum videos to fetch (default: `50`) |
+| `outputPath` | No | Output directory in snapshot (default: `id`) |
+
+Upload `.md`, `.mdx`, `.txt`, `.yml`, `.yaml`, or `.json` files when creating the source.
 
 4. Click **Sync** to pull content into the knowledge base
 
@@ -55,5 +55,4 @@ curl -X POST <your-url>/api/sync \
 ## Notes
 
 - After adding sources, always trigger a **sync** to pull content
-- YouTube sources require `NUXT_YOUTUBE_API_KEY` to be set
-- Sources are stored in SQLite and can be managed from the admin UI at any time
+- Sources are stored in PostgreSQL and can be managed from the admin UI at any time

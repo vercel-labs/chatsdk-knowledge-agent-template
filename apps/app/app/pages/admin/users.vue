@@ -22,7 +22,7 @@ const toast = useToast()
 const { showError } = useErrorToast()
 const { user: currentUser } = useUserSession()
 
-const table = useTemplateRef('table')
+const table = useTemplateRef('table') as Ref<{ tableApi?: { getFilteredRowModel: () => { rows: unknown[] }, getPageCount: () => number } } | null>
 const savingUserId = ref<string | null>(null)
 const deletingUserId = ref<string | null>(null)
 const userToDelete = ref<AdminUserRow | null>(null)
@@ -86,11 +86,11 @@ const totalUsers = computed(() => users.value?.length ?? 0)
 const adminCount = computed(() => users.value?.filter(u => u.role === 'admin').length ?? 0)
 const activeCount = computed(() => users.value?.filter(u => u.lastSeenAt !== null).length ?? 0)
 
-const filteredRowCount = computed(() =>
+const filteredRowCount = computed((): number =>
   table.value?.tableApi?.getFilteredRowModel().rows.length ?? 0,
 )
 
-const pageCount = computed(() =>
+const pageCount = computed((): number =>
   table.value?.tableApi?.getPageCount() ?? 0,
 )
 
@@ -250,8 +250,8 @@ async function changeRole(row: AdminUserRow, newRole: UserRole) {
         :data="users ?? []"
         :columns
         :loading="status === 'pending' && !users"
-        :global-filter-options="{ filterFn: 'custom' }"
-        :sorting-options="{ getSortedRowModel: getSortedRowModel() }"
+        :global-filter-options="{ filterFn: 'custom' } as any"
+        :sorting-options="{ getSortedRowModel: getSortedRowModel() } as any"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
       >
         <template #name-cell="{ row }">

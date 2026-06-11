@@ -26,7 +26,6 @@ export default defineEventHandler(async (event) => {
   const requestLog = useLogger(event)
   await requireAdmin(event)
   const body = await readValidatedBody(event, data => bodySchema.parse(data))
-  const config = useRuntimeConfig()
   const snapshotConfig = await getSnapshotRepoConfig()
 
   requestLog.set({ sourceFilter: body?.sourceFilter })
@@ -78,16 +77,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    return {
-      id: s.id,
-      type: 'youtube' as const,
-      label: s.label,
-      basePath: s.basePath || '/docs',
-      channelId: s.channelId || '',
-      handle: s.handle || '',
-      maxVideos: s.maxVideos || 50,
-      outputPath: s.outputPath || s.id,
-    }
+    throw createError({
+      statusCode: 400,
+      message: `Unsupported source type: ${s.type}`,
+      data: { why: 'This source type is no longer supported', fix: 'Remove the source from the admin panel' },
+    })
   }))
 
   if (body?.sourceFilter) {
@@ -111,7 +105,6 @@ export default defineEventHandler(async (event) => {
 
   const syncConfig = {
     githubToken: await getSnapshotToken(),
-    youtubeApiKey: config.youtube?.apiKey,
     snapshotRepo: snapshotConfig.snapshotRepo,
     snapshotBranch: snapshotConfig.snapshotBranch,
   }

@@ -1,6 +1,8 @@
 import type { SharedV3ProviderOptions } from '@ai-sdk/provider'
 import { z } from 'zod'
 
+type JSONObject = NonNullable<SharedV3ProviderOptions[string]>
+
 export const ROUTER_MODEL = 'google/gemini-2.5-flash-lite'
 export const DEFAULT_MODEL = 'google/gemini-3-flash'
 
@@ -50,7 +52,7 @@ export function buildProviderOptions(
   metadata?: { userId?: string, tags?: string[] },
 ): SharedV3ProviderOptions | undefined {
   const fallbacks = MODEL_FALLBACKS[model]
-  const gateway: Record<string, unknown> = {}
+  const gateway: JSONObject = {}
 
   if (fallbacks?.length) gateway.models = fallbacks
   if (metadata?.userId) gateway.user = metadata.userId
@@ -62,7 +64,7 @@ export function buildProviderOptions(
 export function buildGatewayProviderOptions(
   metadata?: { userId?: string, tags?: string[] },
 ): SharedV3ProviderOptions | undefined {
-  const gateway: Record<string, unknown> = {}
+  const gateway: JSONObject = {}
 
   if (metadata?.userId) gateway.user = metadata.userId
   if (metadata?.tags?.length) gateway.tags = metadata.tags

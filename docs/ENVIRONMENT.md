@@ -106,18 +106,6 @@ To add a Discord bot, create an app in the [Discord Developer Portal](https://di
 
 Set the interactions endpoint URL to `<your-url>/api/webhooks/discord`.
 
-## YouTube (optional)
-
-### `NUXT_YOUTUBE_API_KEY`
-
-Required only if syncing YouTube sources (video transcripts).
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create a project (or select an existing one)
-3. Enable the [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com)
-4. Go to **Credentials** → **Create Credentials** → **API Key**
-5. Copy the key → `NUXT_YOUTUBE_API_KEY`
-
 ## Storage (optional)
 
 ### `BLOB_READ_WRITE_TOKEN`

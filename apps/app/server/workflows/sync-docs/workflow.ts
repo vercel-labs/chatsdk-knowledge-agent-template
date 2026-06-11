@@ -1,7 +1,7 @@
 /**
  * Sync Documentation Workflow
  *
- * Syncs documentation from GitHub/YouTube sources into a Vercel Sandbox,
+ * Syncs documentation from GitHub and file sources into a Vercel Sandbox,
  * pushes changes to git, then takes a snapshot for instant startup.
  *
  * This workflow is composed of granular steps for better retry semantics
@@ -39,33 +39,17 @@ export async function syncDocumentation(
     throw new FatalError('No sources provided')
   }
 
-  // Filter out YouTube sources if API key is not configured
-  const filteredSources = sources.filter((s) => {
-    if (s.type === 'youtube' && !config.youtubeApiKey) {
-      log.warn('sync', `Skipping YouTube source "${s.label}" - NUXT_YOUTUBE_API_KEY not configured`)
-      return false
-    }
-    return true
-  })
-
-  if (filteredSources.length === 0) {
-    throw new FatalError('No sources to sync after filtering')
-  }
-
   // Step 1: Create sandbox
   const { sandboxId } = await stepCreateSandbox(config)
 
   // Step 2: Remove directories from deleted sources
-  await stepCleanupStale(sandboxId, filteredSources)
+  await stepCleanupStale(sandboxId, sources)
 
   // Step 3: Sync all sources in parallel
   // Each source is its own step for granular retry and observability
   const results = await Promise.all(
-    filteredSources.map(source =>
-      stepSyncSource(sandboxId, source, {
-        githubToken: config.githubToken,
-        youtubeApiKey: config.youtubeApiKey,
-      }),
+    sources.map(source =>
+      stepSyncSource(sandboxId, source),
     ),
   )
 

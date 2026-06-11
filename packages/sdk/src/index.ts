@@ -4,7 +4,7 @@ import type { AgentConfig, GenerateResult, ReportUsageOptions, SavoirConfig } fr
 
 export { ALLOWED_BASH_COMMANDS, BLOCKED_SHELL_PATTERNS, isPathWithinDirectory, pathMatchesGlob, validateShellCommand } from './shell-policy'
 
-export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, YouTubeSource, SourcesResponse, SyncSourceResponse, AgentConfig, GenerateResult, ReportUsageOptions } from './types'
+export type { SavoirConfig, ShellResponse, ShellBatchResponse, ShellCommandResult, SyncOptions, SyncResponse, SnapshotResponse, GitHubSource, FileSource, SourcesResponse, SyncSourceResponse, AgentConfig, GenerateResult, ReportUsageOptions } from './types'
 export { SavoirError, NetworkError } from './errors'
 export { SavoirClient } from './client'
 

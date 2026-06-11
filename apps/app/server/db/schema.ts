@@ -47,7 +47,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 
 export const sources = pgTable('sources', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  type: text('type', { enum: ['github', 'youtube', 'file'] }).notNull(),
+  type: text('type', { enum: ['github', 'file'] }).notNull(),
   label: text('label').notNull(),
   basePath: text('base_path').default('/docs'),
   repo: text('repo'),
@@ -55,9 +55,6 @@ export const sources = pgTable('sources', {
   contentPath: text('content_path'),
   outputPath: text('output_path'),
   readmeOnly: boolean('readme_only').default(false),
-  channelId: text('channel_id'),
-  handle: text('handle'),
-  maxVideos: integer('max_videos').default(50),
   ...timestamps,
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, table => [index('sources_type_idx').on(table.type)])

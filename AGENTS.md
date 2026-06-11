@@ -39,6 +39,6 @@ Project-specific guides for AI-assisted customization. When the user asks to add
 | Skill | File | Use when |
 |-------|------|----------|
 | Add Tool | `add-tool.md` | Adding a new AI SDK tool |
-| Add Source | `add-source.md` | Adding a GitHub/YouTube knowledge source |
+| Add Source | `add-source.md` | Adding a GitHub or file knowledge source |
 | Add Bot Adapter | `add-bot-adapter.md` | Adding a new platform (Slack, Linear, etc.) |
 | Rename Project | `rename-project.md` | Renaming the project from "Knowledge Agent Template" |

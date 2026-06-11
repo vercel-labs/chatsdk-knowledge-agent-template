@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '@onmax/nuxt-better-auth',
     'workflow/nuxt',
     '@evlog/nuxthub',
+    '@vercel/analytics',
     'nuxt-charts',
   ],
 
@@ -136,9 +137,6 @@ export default defineNuxtConfig({
       publicKey: '',
       applicationId: '',
       mentionRoleIds: '',
-    },
-    youtube: {
-      apiKey: '',
     },
     public: {
       github: {

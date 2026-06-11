@@ -23,7 +23,7 @@ const mode = ref<'signin' | 'signup'>('signin')
 const loading = ref(false)
 const githubLoading = ref(false)
 const error = ref('')
-const { signIn, signUp } = useUserSession()
+const { signIn, signUp } = useAuthActionNamespaces()
 
 const oauthErrors: Record<string, string> = {
   access_denied: 'Access denied by GitHub.',

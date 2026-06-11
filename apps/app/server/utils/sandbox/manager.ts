@@ -4,6 +4,7 @@ import type { ActiveSandbox, SandboxManagerConfig, SnapshotMetadata } from './ty
 import { getCurrentSnapshot, setCurrentSnapshot } from './snapshot'
 import { deleteSandboxSession, generateSessionId, getSandboxSession, setSandboxSession, touchSandboxSession } from './session'
 import { getSnapshotRepoConfig } from './snapshot-config'
+import { getSandboxByName, getSandboxName, listSandboxSummaries } from './helpers'
 
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000
 const SANDBOX_TIMEOUT_MS = 5 * 60 * 1000
@@ -50,17 +51,12 @@ async function createSandboxFromSnapshot(snapshotId: string): Promise<Sandbox> {
     runtime: 'node24',
   })
 
-  log.info('sandbox', `Sandbox created: ${sandbox.sandboxId} (${Date.now() - startTime}ms)`)
+  log.info('sandbox', `Sandbox created: ${getSandboxName(sandbox)} (${Date.now() - startTime}ms)`)
   return sandbox
 }
 
-async function getSandboxById(sandboxId: string): Promise<Sandbox | null> {
-  try {
-    const sandbox = await Sandbox.get({ sandboxId })
-    return sandbox.status === 'running' ? sandbox : null
-  } catch {
-    return null
-  }
+async function getSandboxById(sandboxName: string): Promise<Sandbox | null> {
+  return await getSandboxByName(sandboxName)
 }
 
 export async function createSnapshotFromRepo(repoUrl: string, branch: string = 'main'): Promise<string> {
@@ -74,7 +70,7 @@ export async function createSnapshotFromRepo(repoUrl: string, branch: string = '
     runtime: 'node24',
   })
 
-  log.info('sandbox', `Sandbox created: ${sandbox.sandboxId}, taking snapshot...`)
+  log.info('sandbox', `Sandbox created: ${getSandboxName(sandbox)}, taking snapshot...`)
 
   const snapshot = await sandbox.snapshot()
 
@@ -114,12 +110,12 @@ async function getOrCreateSnapshot(): Promise<string> {
 
 async function findRunningSandbox(snapshotId: string): Promise<Sandbox | null> {
   try {
-    const result = await Sandbox.list({ limit: 20 })
-    const running = result.json.sandboxes.find(
-      (s: { status: string, sourceSnapshotId?: string }) => s.status === 'running' && s.sourceSnapshotId === snapshotId,
+    const sandboxes = await listSandboxSummaries(20)
+    const running = sandboxes.find(
+      s => s.status === 'running' && s.currentSnapshotId === snapshotId,
     )
     if (running) {
-      return await Sandbox.get({ sandboxId: running.id })
+      return await Sandbox.get({ name: running.name })
     }
     return null
   } catch {
@@ -137,7 +133,7 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     if (session) {
       const sandbox = await getSandboxById(session.sandboxId)
       if (sandbox) {
-        log.info('sandbox', `Reusing sandbox ${sandbox.sandboxId} for session ${sessionId} (${Date.now() - startTime}ms)`)
+        log.info('sandbox', `Reusing sandbox ${getSandboxName(sandbox)} for session ${sessionId} (${Date.now() - startTime}ms)`)
         await touchSandboxSession(sessionId, config.sessionTtlMs)
         return { sandbox, session, sessionId }
       }
@@ -154,13 +150,13 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
     const session = await setSandboxSession(
       reusedSessionId,
       {
-        sandboxId: existingSandbox.sandboxId,
+        sandboxId: getSandboxName(existingSandbox),
         snapshotId,
         createdAt: Date.now(),
       },
       config.sessionTtlMs,
     )
-    log.info('sandbox', `Found running sandbox ${existingSandbox.sandboxId}, reusing for session ${reusedSessionId} (${Date.now() - startTime}ms)`)
+    log.info('sandbox', `Found running sandbox ${getSandboxName(existingSandbox)}, reusing for session ${reusedSessionId} (${Date.now() - startTime}ms)`)
     return { sandbox: existingSandbox, session, sessionId: reusedSessionId }
   }
 
@@ -171,7 +167,7 @@ export async function getOrCreateSandbox(sessionId?: string): Promise<ActiveSand
   const session = await setSandboxSession(
     newSessionId,
     {
-      sandboxId: sandbox.sandboxId,
+      sandboxId: getSandboxName(sandbox),
       snapshotId,
       createdAt: Date.now(),
     },

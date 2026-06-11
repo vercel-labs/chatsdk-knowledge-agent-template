@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const sourceOcrItemSchema = z.object({
-  type: z.enum(['github', 'youtube']).describe('Source type'),
+  type: z.enum(['github']).describe('Source type'),
   label: z.string()
     .max(50)
     .describe('Short lowercase name (e.g. "nuxt", "nuxt.com", "vue", "h3")'),
@@ -16,14 +16,6 @@ export const sourceOcrItemSchema = z.object({
   contentPath: z.string()
     .max(100)
     .describe('Folder path to docs (e.g. "docs", "docs/content")')
-    .optional(),
-  channelId: z.string()
-    .length(24)
-    .describe('YouTube channel ID starting with UC (e.g. "UCxxxxxxxxxxxxxxxx")')
-    .optional(),
-  handle: z.string()
-    .max(50)
-    .describe('YouTube handle with @ (e.g. "@TheAlexLichter")')
     .optional(),
   confidence: z.number()
     .min(0)

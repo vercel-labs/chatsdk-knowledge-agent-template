@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
 
   const sandboxStart = Date.now()
   const { sandbox, sessionId } = await getOrCreateSandbox(body.sessionId)
-  requestLog.set({ sandboxMs: Date.now() - sandboxStart, sandboxId: sandbox.sandboxId, sessionId })
+  requestLog.set({ sandboxMs: Date.now() - sandboxStart, sandboxId: sandbox.name, sessionId })
 
   const results: CommandResult[] = []
 

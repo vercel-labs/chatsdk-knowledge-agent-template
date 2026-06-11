@@ -32,8 +32,6 @@ cp apps/app/.env.example apps/app/.env
 | `NUXT_DISCORD_BOT_TOKEN` | Discord bot token. See [Discord Bot Setup](/admin/docs/discord-bot). |
 | `NUXT_DISCORD_PUBLIC_KEY` | Discord application public key |
 | `NUXT_DISCORD_APPLICATION_ID` | Discord application ID |
-| `NUXT_YOUTUBE_API_KEY` | [YouTube Data API](https://developers.google.com/youtube/v3) key (for syncing YouTube sources) |
-
 ## GitHub App Setup
 
 Knowledge Agent Template uses a single **GitHub App** for both **user authentication** (OAuth login) and the **GitHub bot** (webhook events). This avoids creating two separate apps.
@@ -135,11 +133,11 @@ The app will be available at `http://localhost:3000`. The first user to sign up 
 
 ## Adding Sources
 
-Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**. Sources aren't limited to documentation — you can add any content that produces files (GitHub repos, YouTube transcripts, custom APIs). See the [Sources documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/SOURCES.md) for all available options.
+Sources define the knowledge base the app uses to answer questions. They are managed through the **admin interface**. Sources aren't limited to documentation — you can add any content that produces files (GitHub repos, file uploads, custom APIs). See the [Sources documentation](https://github.com/vercel-labs/knowledge-agent-template/blob/main/docs/SOURCES.md) for all available options.
 
 1. Navigate to the admin panel at `/admin`
 2. Go to the Sources section
-3. Click **Add source** and configure it (GitHub repository or YouTube channel)
+3. Click **Add source** and configure it (GitHub repository or file upload)
 4. Click **Sync** to pull the content into the knowledge base
 
 ## Syncing Content
@@ -169,7 +167,7 @@ You can also integrate the app into your own applications using the [SDK](/admin
 
 The admin panel at `/admin` provides:
 
-- **Sources** (`/admin`): Manage knowledge base sources (GitHub repos, YouTube channels)
+- **Sources** (`/admin`): Manage knowledge base sources (GitHub repos, file uploads)
 - **Agent Configuration** (`/admin/agent`): Customize the AI agent's behavior (response style, model, temperature, citations, etc.)
 - **Sandbox** (`/admin/sandbox`): Snapshot status and sync controls
 - **Stats** (`/admin/stats`): Usage statistics and analytics

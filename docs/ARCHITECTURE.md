@@ -119,7 +119,7 @@ Sources are stored in SQLite via [NuxtHub](https://hub.nuxt.com) and managed thr
 ```typescript
 export const sources = sqliteTable('sources', {
   id: text('id').primaryKey(),
-  type: text('type', { enum: ['github', 'youtube'] }).notNull(),
+  type: text('type', { enum: ['github', 'file'] }).notNull(),
   label: text('label').notNull(),
   basePath: text('base_path').default('/docs'),
 
@@ -129,11 +129,6 @@ export const sources = sqliteTable('sources', {
   contentPath: text('content_path'),
   outputPath: text('output_path'),
   readmeOnly: integer('readme_only', { mode: 'boolean' }),
-
-  // YouTube fields
-  channelId: text('channel_id'),
-  handle: text('handle'),
-  maxVideos: integer('max_videos'),
 
   createdAt: integer('created_at', { mode: 'timestamp' }),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
@@ -342,7 +337,7 @@ Used for persistent data (via [Drizzle ORM](https://orm.drizzle.team)):
 ```
 chats          - Chat sessions (id, title, userId, mode, sharing)
 messages       - Chat messages (role, parts, feedback, model, tokens)
-sources        - Content sources (GitHub repos, YouTube channels)
+sources        - Content sources (GitHub repos, file uploads)
 agent_config   - AI agent configuration (admin-managed)
 api_usage      - External API usage tracking (bots, SDK)
 usage_stats    - Aggregated daily usage statistics
@@ -375,8 +370,8 @@ Used for file uploads (images, PDFs, CSVs attached to chats).
 │   │   └── composables/
 │   ├── my-library/
 │   └── ...
-└── youtube/
-    └── my-channel/
+└── files/
+    └── my-uploads/
 ```
 
 ## Environment Variables

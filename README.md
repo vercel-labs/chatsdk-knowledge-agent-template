@@ -19,7 +19,7 @@
 
 ---
 
-Open source file-system and knowledge based agent template. Build AI agents that stay up to date with your knowledge base — grep, find, and cat across your sources, no embeddings, no vector DB. Plug any source (GitHub repos, YouTube transcripts, custom APIs) and deploy as a chat app, a GitHub bot, a Discord bot, or all at once.
+Open source file-system and knowledge based agent template. Build AI agents that stay up to date with your knowledge base — grep, find, and cat across your sources, no embeddings, no vector DB. Plug any source (GitHub repos, file uploads, custom APIs) and deploy as a chat app, a GitHub bot, a Discord bot, or all at once.
 
 ## Features
 
@@ -164,7 +164,7 @@ See [ENVIRONMENT.md](./docs/ENVIRONMENT.md) for the full list of environment var
 Knowledge Agent Template is designed as a **reusable template**. See the [Customization Guide](./docs/CUSTOMIZATION.md) for how to:
 
 - Rename your instance (name, icon, description)
-- Add [content sources](./docs/SOURCES.md) (GitHub repos, YouTube channels, custom)
+- Add [content sources](./docs/SOURCES.md) (GitHub repos, file uploads, custom)
 - Add custom AI tools
 - Add bot adapters (Slack, Linear, etc.)
 - Customize AI prompts
@@ -175,7 +175,7 @@ Knowledge Agent Template is designed as a **reusable template**. See the [Custom
 
 ## Configuration
 
-Sources are managed through the **admin interface** at `/admin`. You can add GitHub repositories and YouTube channels as knowledge sources, then trigger a sync from the UI.
+Sources are managed through the **admin interface** at `/admin`. You can add GitHub repositories and file uploads as knowledge sources, then trigger a sync from the UI.
 
 Sources can also be listed programmatically via the SDK (`savoir.client.getSources()`).
 
@@ -186,7 +186,7 @@ See [SOURCES.md](./docs/SOURCES.md) for detailed source configuration options.
 > For the full technical deep-dive, see [Architecture](./docs/ARCHITECTURE.md).
 
 1. **Sources in Database**: Sources are stored in SQLite via [NuxtHub](https://hub.nuxt.com), managed through the admin interface
-2. **Content Aggregation**: Sources (GitHub repos, YouTube transcripts, custom APIs, etc.) are synced to a snapshot repository via [Vercel Workflow](https://useworkflow.dev)
+2. **Content Aggregation**: Sources (GitHub repos, file uploads, custom APIs, etc.) are synced to a snapshot repository via [Vercel Workflow](https://useworkflow.dev)
 3. **Sandbox Creation**: When an agent needs to search, the API creates/recovers a [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) with the snapshot repo cloned
 4. **File-based Search**: The SDK `bash` and `bash_batch` tools execute grep/find/cat commands in the sandbox to search and read content
 5. **AI Integration**: Tools are compatible with the [Vercel AI SDK](https://ai-sdk.dev) for seamless integration with any LLM

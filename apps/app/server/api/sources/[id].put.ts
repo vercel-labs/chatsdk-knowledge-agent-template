@@ -16,10 +16,6 @@ const bodySchema = z.object({
   contentPath: z.string().optional(),
   outputPath: z.string().optional(),
   readmeOnly: z.boolean().optional(),
-  // YouTube fields
-  channelId: z.string().optional(),
-  handle: z.string().optional(),
-  maxVideos: z.number().optional(),
 })
 
 /**

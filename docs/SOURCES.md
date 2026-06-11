@@ -2,15 +2,15 @@
 
 > Back to [README](../README.md) | See also: [Customization](./CUSTOMIZATION.md), [Architecture](./ARCHITECTURE.md)
 
-Knowledge Agent Template aggregates content from multiple sources into a unified, searchable knowledge base. A source is anything that produces files — GitHub repos, YouTube transcripts, and any custom source you build. Everything ends up as files in a sandbox, and the AI agent searches across all of them.
+Knowledge Agent Template aggregates content from multiple sources into a unified, searchable knowledge base. A source is anything that produces files — GitHub repos, uploaded files, and any custom source you build. Everything ends up as files in a sandbox, and the AI agent searches across all of them.
 
-The system is designed to be extensible. Built-in source types handle GitHub and YouTube, but the architecture supports any source that can output files: Reddit threads, Slack exports, RSS feeds, custom APIs, static markdown — anything.
+The system is designed to be extensible. Built-in source types handle GitHub and file uploads, but the architecture supports any source that can output files: Reddit threads, Slack exports, RSS feeds, custom APIs, static markdown — anything.
 
 ## Managing Sources
 
 Sources are managed through the **admin interface** at `/admin`. From there you can:
 
-- Add new sources (GitHub repositories, YouTube channels, or custom types)
+- Add new sources (GitHub repositories, file uploads, or custom types)
 - Edit existing source configurations
 - Delete sources
 - Trigger a sync to update the knowledge base
@@ -23,12 +23,12 @@ const sources = await savoir.client.getSources()
 
 ## Database Storage
 
-Sources are stored in SQLite via NuxtHub. The schema:
+Sources are stored in PostgreSQL via NuxtHub. The schema:
 
 ```typescript
-export const sources = sqliteTable('sources', {
+export const sources = pgTable('sources', {
   id: text('id').primaryKey(),
-  type: text('type', { enum: ['github', 'youtube'] }).notNull(),
+  type: text('type', { enum: ['github', 'file'] }).notNull(),
   label: text('label').notNull(),
   basePath: text('base_path').default('/docs'),
 
@@ -37,15 +37,10 @@ export const sources = sqliteTable('sources', {
   branch: text('branch'),
   contentPath: text('content_path'),
   outputPath: text('output_path'),
-  readmeOnly: integer('readme_only', { mode: 'boolean' }),
+  readmeOnly: boolean('readme_only').default(false),
 
-  // YouTube fields
-  channelId: text('channel_id'),
-  handle: text('handle'),
-  maxVideos: integer('max_videos').default(50),
-
-  createdAt: integer('created_at', { mode: 'timestamp' }),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
 })
 ```
 
@@ -67,17 +62,16 @@ Fetches Markdown documentation from GitHub repositories.
 | `readmeOnly` | `boolean?` | Only fetch README.md (default: `false`) |
 | `additionalSyncs` | `array?` | Extra repos to sync into the same source |
 
-### YouTube Sources
+### File Sources
 
-Fetches video transcripts from YouTube channels.
+Uploads documentation files directly (`.md`, `.mdx`, `.txt`, `.yml`, `.yaml`, `.json`).
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | `string` | Unique identifier |
 | `label` | `string` | Display name |
-| `channelId` | `string` | YouTube channel ID |
-| `handle` | `string?` | YouTube handle (e.g. `@TheAlexLichter`) |
-| `maxVideos` | `number?` | Maximum videos to fetch (default: `50`) |
+| `outputPath` | `string?` | Output directory in snapshot (default: `id`) |
+| `basePath` | `string?` | URL base path for this source (default: `/files`) |
 
 ## Syncing
 
@@ -141,8 +135,8 @@ The snapshot repository contains all aggregated content:
 │   │   └── api/
 │   ├── my-library/
 │   └── ...
-└── youtube/
-    └── my-channel/
+└── files/
+    └── my-uploads/
 ```
 
 Configure via environment variable:

@@ -19,7 +19,7 @@ IMPORTANT: The "timestamp" and "created_at" columns in evlog_events are TEXT (IS
 Available tables and their columns:
 - chats (id text, title text, user_id text, mode text, is_public boolean, share_token text, created_at timestamp)
 - messages (id text, chat_id text, role text, parts jsonb, feedback text, model text, input_tokens int, output_tokens int, duration_ms int, source text, created_at timestamp)
-- sources (id text, type text, label text, base_path text, repo text, branch text, content_path text, output_path text, readme_only boolean, channel_id text, handle text, max_videos int, created_at timestamp, updated_at timestamp)
+- sources (id text, type text, label text, base_path text, repo text, branch text, content_path text, output_path text, readme_only boolean, created_at timestamp, updated_at timestamp)
 - agent_config (id text, name text, additional_prompt text, response_style text, language text, default_model text, max_steps_multiplier real, temperature real, search_instructions text, citation_format text, is_active boolean, created_at timestamp, updated_at timestamp)
 - api_usage (id text, source text, source_id text, model text, input_tokens int, output_tokens int, duration_ms int, metadata jsonb, created_at timestamp)
 - usage_stats (id text, date text, user_id text, source text, model text, message_count int, total_input_tokens int, total_output_tokens int, total_duration_ms int, created_at timestamp)
