@@ -2,6 +2,10 @@
 
 Thank you for your interest in contributing to Knowledge Agent Template!
 
+## Reporting Security Vulnerabilities
+
+Do not open a public GitHub issue. See [SECURITY.md](./SECURITY.md) for how to report vulnerabilities privately.
+
 ## Reporting Bugs
 
 - Search [existing issues](https://github.com/vercel-labs/knowledge-agent-template/issues) before opening a new one

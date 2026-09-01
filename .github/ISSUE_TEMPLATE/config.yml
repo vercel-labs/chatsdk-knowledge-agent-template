@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/vercel-labs/knowledge-agent-template/security/advisories/new
+    about: Report security issues privately through GitHub's vulnerability reporting
   - name: GitHub Discussions
     url: https://github.com/vercel-labs/knowledge-agent-template/discussions
     about: Ask questions and discuss ideas with the community

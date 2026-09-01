@@ -233,7 +233,7 @@ bun run lint:fix
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to get involved.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to get involved. To report a security vulnerability, see [SECURITY.md](./SECURITY.md).
 
 ## License
 
